@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/whiteBlank"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_alignParentBottom="true"
+        android:adjustViewBounds="false"
+        android:scaleType="fitStart"
+        android:src="@drawable/ic_brush_black_24dp"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
     <ImageButton
         android:id="@+id/openRecyclerView"
         android:layout_width="wrap_content"
@@ -33,4 +48,4 @@
         android:translationZ="0dp">
     </com.esri.arcgisruntime.mapping.view.MapView>
 
-</FrameLayout>
+</RelativeLayout>
