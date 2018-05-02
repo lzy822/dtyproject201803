@@ -6,6 +6,10 @@ public class layer {
     private String name;
     private boolean status;
 
+    public layer(String name) {
+        this.name = name;
+    }
+
     public layer(String type, String path, String name) {
         this.type = type;
         this.path = path;
