@@ -29,8 +29,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.cocoahero.android.geojson.GeoJSONObject;
-import com.cocoahero.android.geojson.MultiLineString;
+import com.alibaba.fastjson.JSON;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
 import com.esri.arcgisruntime.data.FeatureQueryResult;
@@ -40,7 +39,10 @@ import com.esri.arcgisruntime.data.ServiceFeatureTable;
 import com.esri.arcgisruntime.geometry.Envelope;
 import com.esri.arcgisruntime.geometry.Geometry;
 import com.esri.arcgisruntime.geometry.GeometryEngine;
+import com.esri.arcgisruntime.geometry.Part;
 import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.geometry.PolylineBuilder;
+import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.layers.ArcGISMapImageLayer;
 import com.esri.arcgisruntime.layers.ArcGISMapImageSublayer;
@@ -70,6 +72,10 @@ import com.flask.colorpicker.OnColorSelectedListener;
 import com.flask.colorpicker.builder.ColorPickerClickListener;
 import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
 import com.github.clans.fab.FloatingActionButton;
+import com.google.gson.Gson;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
     public static final int PERMISSION_CODE = 42042;
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
+    List<Point> whiteBlankPts;
 
     //获取文件读取权限
     void pickFile() {
@@ -208,21 +215,52 @@ public class MainActivity extends AppCompatActivity {
         frameLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                String whiteBlankPtstr = "";
                 switch (event.getAction()){
                     case MotionEvent.ACTION_DOWN:
                         //按下
-                        android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
-                                Math.round(v.getY()));
-                        // create a map point from screen point
-                        Point mapPoint = mMapView.screenToLocation(screenPoint);
                         break;
                     case MotionEvent.ACTION_UP:
                         //抬起
+                        int size = whiteBlankPts.size();
+                        whiteBlankPtstr = "{ \"type\": \"FeatureCollection\",\n" +
+                                "  \"features\": [\n" +
+                                "    { \"type\": \"Feature\",\n" +
+                                "      \"geometry\": {\n" +
+                                "        \"type\": \"LineString\",\n" +
+                                "        \"coordinates\": [";
+                        for (int i = 0; i < size; i++){
+                            if (i == 0) whiteBlankPtstr = whiteBlankPtstr + "[" + whiteBlankPts.get(i).getX() + ", " + whiteBlankPts.get(i).getY() + "]";
+                            else whiteBlankPtstr = whiteBlankPtstr + ", [" + whiteBlankPts.get(i).getX() + ", " + whiteBlankPts.get(i).getY() + "]";
+                        }
+                        whiteBlankPtstr = whiteBlankPtstr + "]\n" +
+                                "        }" + " ]\n" +
+                                "   }";
+                        Log.w(TAG, "JSON: " + whiteBlankPtstr);
                         //Toast.makeText(MainInterface.this, "抬起", Toast.LENGTH_SHORT).show();
                         break;
                 }
 
-                PointF pt = new PointF(event.getRawX(), event.getRawY());
+                android.graphics.Point screenPoint = new android.graphics.Point(Math.round(event.getX()),
+                        Math.round(event.getY()));
+                // create a map point from screen point
+                Point mapPoint = mMapView.screenToLocation(screenPoint);
+                // convert to WGS84 for lat/lon format
+                Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+                whiteBlankPts.add(wgs84Point);
+                Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
+                if (!whiteBlankPtstr.isEmpty()) {
+                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH, Color.GREEN, 10);
+                    //Part firstPart = new Part(SpatialReferences.getWgs84());
+                    Geometry geometry = Geometry.fromJson(whiteBlankPtstr);
+                    Graphic fillGraphic = new Graphic(geometry, lineSymbol);
+                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                }
+                //PointF pt = new PointF(event.getRawX(), event.getRawY());
+
+                //Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
                 //pt_last = pt_current;
                 //pt_current = pt;
                 /*if (event.getRawY() >= height - 100 & event.getRawY() <= height & event.getRawX() >= 50 & event.getRawX() <= 150){
@@ -256,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        whiteBlankPts = new ArrayList<Point>();
         whiteBlank_fab = (FloatingActionButton) findViewById(R.id.whiteBlank);
         whiteBlank_fab.setImageResource(R.drawable.ic_brush_black_24dp);
         whiteBlank_fab.setOnClickListener(new View.OnClickListener() {
