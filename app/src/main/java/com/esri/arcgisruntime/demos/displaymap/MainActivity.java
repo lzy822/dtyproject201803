@@ -41,6 +41,8 @@ import com.esri.arcgisruntime.geometry.Geometry;
 import com.esri.arcgisruntime.geometry.GeometryEngine;
 import com.esri.arcgisruntime.geometry.Part;
 import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.geometry.PointCollection;
+import com.esri.arcgisruntime.geometry.Polyline;
 import com.esri.arcgisruntime.geometry.PolylineBuilder;
 import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
@@ -215,46 +217,37 @@ public class MainActivity extends AppCompatActivity {
         frameLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                String whiteBlankPtstr = "";
+                PointCollection points = new PointCollection(SpatialReferences.getWgs84());
                 switch (event.getAction()){
                     case MotionEvent.ACTION_DOWN:
                         //按下
                         break;
                     case MotionEvent.ACTION_UP:
                         //抬起
-                        int size = whiteBlankPts.size();
-                        whiteBlankPtstr = "{ \"type\": \"FeatureCollection\",\n" +
-                                "  \"features\": [\n" +
-                                "    { \"type\": \"Feature\",\n" +
-                                "      \"geometry\": {\n" +
-                                "        \"type\": \"LineString\",\n" +
-                                "        \"coordinates\": [";
-                        for (int i = 0; i < size; i++){
-                            if (i == 0) whiteBlankPtstr = whiteBlankPtstr + "[" + whiteBlankPts.get(i).getX() + ", " + whiteBlankPts.get(i).getY() + "]";
-                            else whiteBlankPtstr = whiteBlankPtstr + ", [" + whiteBlankPts.get(i).getX() + ", " + whiteBlankPts.get(i).getY() + "]";
-                        }
-                        whiteBlankPtstr = whiteBlankPtstr + "]\n" +
-                                "        }" + " ]\n" +
-                                "   }";
-                        Log.w(TAG, "JSON: " + whiteBlankPtstr);
+                        points.clear();
+                        whiteBlankPts.clear();
                         //Toast.makeText(MainInterface.this, "抬起", Toast.LENGTH_SHORT).show();
                         break;
                 }
 
                 android.graphics.Point screenPoint = new android.graphics.Point(Math.round(event.getX()),
-                        Math.round(event.getY()));
+                        Math.round(event.getY() - getStatusBarHeight(MainActivity.this) - getDaoHangHeight(MainActivity.this)));
+                //Log.w(TAG, "onTouch: " + event.getX() + " ; " + event.getY());
                 // create a map point from screen point
                 Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
                 Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
                 whiteBlankPts.add(wgs84Point);
-                Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
-                if (!whiteBlankPtstr.isEmpty()) {
+                int size = whiteBlankPts.size();
+                for (int i = 0; i < size; i++){
+                        points.add(whiteBlankPts.get(i));
+                }
+                //Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
+                if (!points.isEmpty()) {
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
                     SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH, Color.GREEN, 10);
-                    //Part firstPart = new Part(SpatialReferences.getWgs84());
-                    Geometry geometry = Geometry.fromJson(whiteBlankPtstr);
-                    Graphic fillGraphic = new Graphic(geometry, lineSymbol);
+                    Polyline polyline = new Polyline(points);
+                    Graphic fillGraphic = new Graphic(polyline, lineSymbol);
                     graphicsOverlay_1.getGraphics().add(fillGraphic);
                     mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                 }
@@ -286,6 +279,38 @@ public class MainActivity extends AppCompatActivity {
                 setTitle("DisplayMap");
             }
         });
+    }
+
+    /* 获取状态栏高度
+     * @param context
+     * @return
+             */
+    public static int getStatusBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen",
+                "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    /**
+     * 获取导航栏高度
+     * @param context
+     * @return
+     */
+    public static int getDaoHangHeight(Context context) {
+        int result = 0;
+        int resourceId=0;
+        int rid = context.getResources().getIdentifier("config_showNavigationBar", "bool", "android");
+        if (rid!=0){
+            resourceId = context.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+            //CMLog.show("高度："+resourceId);
+            //CMLog.show("高度："+context.getResources().getDimensionPixelSize(resourceId) +"");
+            return context.getResources().getDimensionPixelSize(resourceId);
+        }else
+            return 0;
     }
 
     //记录是否开启白板功能
