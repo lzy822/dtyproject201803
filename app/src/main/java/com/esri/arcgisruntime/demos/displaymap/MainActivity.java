@@ -87,7 +87,7 @@ import java.util.concurrent.ExecutionException;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/11.mmpk";
+    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/BigAppleCityTest.mmpk";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
     private layerAdapter adapter;
@@ -548,7 +548,7 @@ public class MainActivity extends AppCompatActivity {
         // create objects required to do a selection with a query
         QueryParameters query = new QueryParameters();
         //make search case insensitive
-        query.setWhereClause("upper(STATE_NAME) LIKE '%" + searchString.toUpperCase() + "%'");
+        query.setWhereClause("upper(STATE) LIKE '%" + searchString.toUpperCase() + "%'");
         Log.w(TAG, "searchForState: " );
         // call select features
         if (mMapView.getMap().getOperationalLayers().size() != 0) {
