@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
     public static final int PERMISSION_CODE = 42042;
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
-    List<Point> whiteBlankPts;
+
 
     //获取文件读取权限
     void pickFile() {
@@ -146,6 +146,8 @@ public class MainActivity extends AppCompatActivity {
 
     //记录是否处于白板画图状态
     private boolean isWhiteBlank = false;
+    List<List<Point>> mWhiteBlankPts = new ArrayList<>();
+    GraphicsOverlay graphicsOverlay_10;
     private void showPopueWindowForWhiteblank(){
         final View popView = View.inflate(this,R.layout.popupwindow_whiteblank,null);
         isWhiteBlank = true;
@@ -190,6 +192,19 @@ public class MainActivity extends AppCompatActivity {
         eraseContent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //try {
+                    //mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+                Log.w(TAG, "onClick: " + mMapView.getGraphicsOverlays().size());
+                //whiteBlankPts.clear();
+                while (mMapView.getGraphicsOverlays().size() != 0){
+                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                        mMapView.getGraphicsOverlays().remove(i);
+                    }
+                }
+                /*}catch (Exception e){
+                    Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
+                    Log.w(TAG, "onClick: " + e.toString());
+                }*/
             }
         });
 
@@ -225,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_UP:
                         //抬起
                         points.clear();
-                        whiteBlankPts.clear();
+                        //whiteBlankPts.clear();
                         //Toast.makeText(MainInterface.this, "抬起", Toast.LENGTH_SHORT).show();
                         break;
                 }
@@ -237,6 +252,7 @@ public class MainActivity extends AppCompatActivity {
                 Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
                 Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+                List<Point> whiteBlankPts = new ArrayList<>();
                 whiteBlankPts.add(wgs84Point);
                 int size = whiteBlankPts.size();
                 for (int i = 0; i < size; i++){
@@ -244,12 +260,12 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
                 if (!points.isEmpty()) {
-                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH, Color.GREEN, 10);
+                    graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 10);
                     Polyline polyline = new Polyline(points);
                     Graphic fillGraphic = new Graphic(polyline, lineSymbol);
-                    graphicsOverlay_1.getGraphics().add(fillGraphic);
-                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    graphicsOverlay_10.getGraphics().add(fillGraphic);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
                 }
                 //PointF pt = new PointF(event.getRawX(), event.getRawY());
 
@@ -319,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        whiteBlankPts = new ArrayList<Point>();
+        //whiteBlankPts = new ArrayList<Point>();
         whiteBlank_fab = (FloatingActionButton) findViewById(R.id.whiteBlank);
         whiteBlank_fab.setImageResource(R.drawable.ic_brush_black_24dp);
         whiteBlank_fab.setOnClickListener(new View.OnClickListener() {
