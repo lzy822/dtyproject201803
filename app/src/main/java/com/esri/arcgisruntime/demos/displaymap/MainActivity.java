@@ -78,6 +78,7 @@ import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.litepal.crud.DataSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
     public static final int PERMISSION_CODE = 42042;
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
+    //记录画笔颜色
+    private int color_Whiteblank;
 
 
     //获取文件读取权限
@@ -146,15 +149,33 @@ public class MainActivity extends AppCompatActivity {
 
     //记录是否处于白板画图状态
     private boolean isWhiteBlank = false;
+    List<Point> whiteBlankPts;
     List<List<Point>> mWhiteBlankPts = new ArrayList<>();
+    GraphicsOverlay graphicsOverlay_9;
     GraphicsOverlay graphicsOverlay_10;
+    PointCollection points = new PointCollection(SpatialReferences.getWgs84());;
+    List<Graphic> graphics = new ArrayList<>();
+    boolean isOk = false;
     private void showPopueWindowForWhiteblank(){
         final View popView = View.inflate(this,R.layout.popupwindow_whiteblank,null);
         isWhiteBlank = true;
+        whiteBlankPts = new ArrayList<>();
         FloatingActionButton back_pop = (FloatingActionButton) popView.findViewById(R.id.back_pop) ;
         back_pop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                for (int i = 0; i < graphics.size(); i++){
+                    graphicsOverlay_10.getGraphics().remove(graphics.get(i));
+                }
+                if (graphics.size() != 0) graphics.remove(graphics.size() - 1);
+                graphicsOverlay_10.getGraphics().clear();
+                for (int i = 0; i < graphics.size(); i++){
+                    graphicsOverlay_10.getGraphics().add(graphics.get(i));
+                }
+                mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+                mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+                List<whiteblank> whiteblanks = DataSupport.findAll(whiteblank.class);
+                DataSupport.delete(whiteblank.class, whiteblanks.size());
             }
         });
         FloatingActionButton fff = (FloatingActionButton) popView.findViewById(R.id.colorSeeker_pop);
@@ -176,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
                                 //changeBackgroundColor(selectedColor);
+                                color_Whiteblank = selectedColor;
                             }
                         })
                         .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -195,12 +217,21 @@ public class MainActivity extends AppCompatActivity {
                 //try {
                     //mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 Log.w(TAG, "onClick: " + mMapView.getGraphicsOverlays().size());
-                //whiteBlankPts.clear();
+                /*points.clear();
                 while (mMapView.getGraphicsOverlays().size() != 0){
                     for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
                         mMapView.getGraphicsOverlays().remove(i);
                     }
+                }*/
+
+                for (int i = 0; i < graphics.size(); i++){
+                    graphicsOverlay_10.getGraphics().remove(graphics.get(i));
                 }
+                graphics.clear();
+                graphicsOverlay_10.getGraphics().clear();
+                mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+                mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+                DataSupport.deleteAll(whiteblank.class);
                 /*}catch (Exception e){
                     Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
                     Log.w(TAG, "onClick: " + e.toString());
@@ -232,40 +263,76 @@ public class MainActivity extends AppCompatActivity {
         frameLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                PointCollection points = new PointCollection(SpatialReferences.getWgs84());
+                //PointCollection points = new PointCollection(SpatialReferences.getWgs84());
                 switch (event.getAction()){
                     case MotionEvent.ACTION_DOWN:
                         //按下
+                        points.clear();
+                        isOk = false;
                         break;
                     case MotionEvent.ACTION_UP:
                         //抬起
+                        //graphicsOverlay_9.setVisible(false);
+                        while (mMapView.getGraphicsOverlays().size() != 0){
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                mMapView.getGraphicsOverlays().remove(i);
+                            }
+                        }
+                        geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank();
+                        geometryWhiteBlank.setLineSymbol(color_Whiteblank);
+                        geometryWhiteBlank.setPolyline(points);
+                        graphics.add(geometryWhiteBlank.getFillGraphic());
+                        graphicsOverlay_10.getGraphics().add(graphics.get(graphics.size() - 1));
+                        if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+                        whiteblank wb = new whiteblank();
+                        String pts = "";
+                        for (int i = 0; i < points.size(); i++){
+                            if (i == 0) {
+                                pts = Double.toString(points.get(i).getX()) + "," + Double.toString(points.get(i).getY());
+                            }else {
+                                pts = pts + "lzy" + Double.toString(points.get(i).getX()) + "," + Double.toString(points.get(i).getY());
+                            }
+                        }
+                        wb.setPts(pts);
+                        wb.setColor(color_Whiteblank);
+                        wb.save();
                         points.clear();
                         //whiteBlankPts.clear();
-                        //Toast.makeText(MainInterface.this, "抬起", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(MainActivity.this, "抬起", Toast.LENGTH_SHORT).show();
+                        isOk = true;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        android.graphics.Point screenPoint = new android.graphics.Point(Math.round(event.getX()),
+                                Math.round(event.getY() - getStatusBarHeight(MainActivity.this) - getDaoHangHeight(MainActivity.this)));
+                        //Log.w(TAG, "onTouch: " + event.getX() + " ; " + event.getY());
+                        // create a map point from screen point
+                        Point mapPoint = mMapView.screenToLocation(screenPoint);
+                        // convert to WGS84 for lat/lon format
+                        Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+                        //whiteBlankPts.add(wgs84Point);
+                        //int size = whiteBlankPts.size();
+                        //for (int i = 0; i < size; i++){
+                        points.add(wgs84Point);
+                        //}
+                        //Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
+                        //Log.w(TAG, "size0: " + size);
+                        Log.w(TAG, "size1: " +
+                                points.get(0).toString());
+                        if (!points.isEmpty()) {
+                            graphicsOverlay_9 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, 10);
+                            Polyline polyline = new Polyline(points);
+                            Graphic fillGraphic = new Graphic(polyline, lineSymbol);
+                            graphicsOverlay_9.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().remove(graphicsOverlay_9);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_9);
+                        }
                         break;
                 }
 
-                android.graphics.Point screenPoint = new android.graphics.Point(Math.round(event.getX()),
-                        Math.round(event.getY() - getStatusBarHeight(MainActivity.this) - getDaoHangHeight(MainActivity.this)));
-                //Log.w(TAG, "onTouch: " + event.getX() + " ; " + event.getY());
-                // create a map point from screen point
-                Point mapPoint = mMapView.screenToLocation(screenPoint);
-                // convert to WGS84 for lat/lon format
-                Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
-                List<Point> whiteBlankPts = new ArrayList<>();
-                whiteBlankPts.add(wgs84Point);
-                int size = whiteBlankPts.size();
-                for (int i = 0; i < size; i++){
-                        points.add(whiteBlankPts.get(i));
-                }
-                //Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
-                if (!points.isEmpty()) {
-                    graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 10);
-                    Polyline polyline = new Polyline(points);
-                    Graphic fillGraphic = new Graphic(polyline, lineSymbol);
-                    graphicsOverlay_10.getGraphics().add(fillGraphic);
-                    mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+                if (!isOk) {
+
                 }
                 //PointF pt = new PointF(event.getRawX(), event.getRawY());
 
@@ -335,6 +402,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        color_Whiteblank = Color.RED;
+        //DataSupport.deleteAll(whiteblank.class);
         //whiteBlankPts = new ArrayList<Point>();
         whiteBlank_fab = (FloatingActionButton) findViewById(R.id.whiteBlank);
         whiteBlank_fab.setImageResource(R.drawable.ic_brush_black_24dp);
@@ -529,6 +598,35 @@ public class MainActivity extends AppCompatActivity {
         mMapView.setMap(map);
         setRecyclerView();
         Log.w(TAG, "onCreate: "  );*/
+
+        List<whiteblank> whiteblanks = DataSupport.findAll(whiteblank.class);
+        int size = whiteblanks.size();
+        Log.w(TAG, "onCreate: " + size);
+        if (size == 0) graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+        else {
+            graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+            for (int i = 0; i < size; i++){
+                points.clear();
+                //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
+                String[] strings = whiteblanks.get(i).getPts().split("lzy");
+                for (int kk = 0; kk < strings.length; kk++){
+                    String[] strings1 = strings[kk].split(",");
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReferences.getWgs84());
+                    points.add(wgs84Point);
+                }
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, whiteblanks.get(i).getColor(), 10);
+                Polyline polyline = new Polyline(points);
+                Graphic g = new Graphic(polyline, lineSymbol);
+                graphics.add(g);
+            }
+            if (graphics.size() > 0) {
+                for (int j = 0; j < graphics.size(); j++){
+                    graphicsOverlay_10.getGraphics().add(graphics.get(j));
+                }
+            }
+            if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+            mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+        }
     }
 
     private void initMap(){
