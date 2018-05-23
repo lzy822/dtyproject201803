@@ -21,26 +21,18 @@
         app:fab_elevationCompat="6dp"
         app:fab_shadowColor="#000"
         app:fab_size="mini" />
-    <ImageButton
-        android:id="@+id/openRecyclerView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:translationZ="10dp"
-        android:background="@drawable/ic_expand_more_black_24dp"/>
-    <ImageButton
-        android:id="@+id/openRecyclerView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="200dp"
-        android:translationZ="10dp"
-        android:background="@drawable/ic_expand_less_black_24dp"
-        android:visibility="gone"/>
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:translationZ="5dp"
         android:visibility="gone"/>
+    <ImageButton
+        android:id="@+id/openRecyclerView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:translationZ="10dp"
+        android:background="@drawable/ic_expand_more_black_24dp"/>
     <com.esri.arcgisruntime.mapping.view.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"

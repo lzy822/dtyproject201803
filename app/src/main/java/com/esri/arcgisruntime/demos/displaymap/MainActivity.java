@@ -95,12 +95,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private GridLayoutManager layoutManager;
     private ImageButton recyclerViewButton;
-    private ImageButton recyclerViewButton1;
-    ServiceFeatureTable mServiceFeatureTable;
     FeatureLayer mFeaturelayer;
     private boolean isClick = false;
-    ArcGISMapImageLayer tiledLayer;
-    ArcGISMapImageLayer censusLayer;
     ArcGISMap map;
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
     public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
@@ -150,7 +146,6 @@ public class MainActivity extends AppCompatActivity {
     //记录是否处于白板画图状态
     private boolean isWhiteBlank = false;
     List<Point> whiteBlankPts;
-    List<List<Point>> mWhiteBlankPts = new ArrayList<>();
     GraphicsOverlay graphicsOverlay_9;
     GraphicsOverlay graphicsOverlay_10;
     PointCollection points = new PointCollection(SpatialReferences.getWgs84());;
@@ -396,6 +391,8 @@ public class MainActivity extends AppCompatActivity {
             return 0;
     }
 
+    private int num;
+
     //记录是否开启白板功能
     private boolean isOpenWhiteBlank = false;
     @Override
@@ -425,19 +422,24 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (isClick == true){
                     recyclerView.setVisibility(View.GONE);
-                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_less_black_24dp);
-                    recyclerViewButton.setX(recyclerView.getX() + recyclerView.getWidth() + 50);
+                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_more_black_24dp);
+                    recyclerViewButton.setY(recyclerView.getY());
+                    isClick = false;
+                    //recyclerViewButton.setX(recyclerView.getX());
                 }else {
                     //setRecyclerView();
                     recyclerView.setVisibility(View.VISIBLE);
-                    recyclerViewButton1.setVisibility(View.VISIBLE);
-                    recyclerViewButton.setVisibility(View.GONE);
+                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_less_black_24dp);
+                    Log.w(TAG, "onCreate: " + num );
+                    recyclerViewButton.setY(recyclerView.getY() + num * 100);
+                    //recyclerViewButton1.setVisibility(View.VISIBLE);
+                    //recyclerViewButton.setVisibility(View.GONE);
                     isClick = true;
                 }
                 //Log.w(TAG, "onClick: " + recyclerViewButton.getBackground().toString() );
             }
         });
-        recyclerViewButton1 = (ImageButton) findViewById(R.id.openRecyclerView1);
+        /*recyclerViewButton1 = (ImageButton) findViewById(R.id.openRecyclerView1);
         recyclerViewButton1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -454,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //Log.w(TAG, "onClick: " + recyclerViewButton.getBackground().toString() );
             }
-        });
+        });*/
         mMapView = findViewById(R.id.mapView);// = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 34.056295, -117.195800, 16);
         map = new ArcGISMap();
         pickFile();
@@ -471,6 +473,7 @@ public class MainActivity extends AppCompatActivity {
                                                                 //ArcGISMap mainArcGISMapMMPK = mainArcGISMapL.get(0);
                                                                 map = mainArcGISMapL.get(0);
                                                                 int size = map.getOperationalLayers().size();
+                                                                num = size;
                                                                 for (int i = 0; i < size; i++){
                                                                     layers.add(map.getOperationalLayers().get(i));
                                                                     layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
@@ -485,14 +488,14 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onSingleTapConfirmed: " + v.toString());
 
                 // get the point that was clicked and convert it to a point in map coordinates
-                android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
+                final android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
                         Math.round(v.getY()));
                 // create a map point from screen point
-                Point mapPoint = mMapView.screenToLocation(screenPoint);
+                final Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
-                Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+                final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
                 // create a textview for the callout
-                TextView calloutContent = new TextView(getApplicationContext());
+                /*TextView calloutContent = new TextView(getApplicationContext());
                 calloutContent.setTextColor(Color.BLACK);
                 calloutContent.setSingleLine();
                 // format coordinates to 4 decimal places
@@ -503,7 +506,7 @@ public class MainActivity extends AppCompatActivity {
                 Callout mCallout = mMapView.getCallout();
                 mCallout.setLocation(mapPoint);
                 mCallout.setContent(calloutContent);
-                mCallout.show();
+                mCallout.show();*/
 
                 // center on tapped point
                 mMapView.setViewpointCenterAsync(mapPoint);
@@ -521,6 +524,11 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             try {
+                                while (mMapView.getGraphicsOverlays().size() != 0){
+                                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                        mMapView.getGraphicsOverlays().remove(i);
+                                    }
+                                }
                                 FeatureQueryResult featureResul = featureQueryResult.get();
                                 for (Object element : featureResul) {
                                     if (element instanceof Feature) {
@@ -528,16 +536,27 @@ public class MainActivity extends AppCompatActivity {
                                         Geometry geometry = mFeatureGrafic.getGeometry();
                                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                                         SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
-                                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH,Color.GREEN,10);
+                                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN,3);
                                         Graphic pointGraphic = new Graphic(clickPoint,pointSymbol);
                                         Graphic fillGraphic = new Graphic(geometry,lineSymbol);
                                         graphicsOverlay_1.getGraphics().add(pointGraphic);
                                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                                         Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                        TextView calloutContent = new TextView(getApplicationContext());
+                                        calloutContent.setTextColor(Color.BLACK);
+                                        //calloutContent.setSingleLine();
+                                        // format coordinates to 4 decimal places
+                                        String str = "";
                                         for(String key : mQuerryString.keySet()){
-                                            Log.i("==============="+key,String.valueOf(mQuerryString.get(key)));
+                                            str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
                                         }
+                                        calloutContent.setText(str);
+                                        // get callout, set content and show
+                                        Callout mCallout = mMapView.getCallout();
+                                        mCallout.setLocation(mapPoint);
+                                        mCallout.setContent(calloutContent);
+                                        mCallout.show();
                                     }
                                 }
                             }catch (Exception e){
