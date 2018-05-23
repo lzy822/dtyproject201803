@@ -1,5 +1,9 @@
 <resources>
-    <string name="app_name">DisplayMap</string>
-    <string name="action_search">Search</string>
-    <string name="search_hint">Search for USA states</string>
+    <string name="app_name">图层管控系统</string>
+    <string name="action_search">简单查询</string>
+    <string name="search_hint">请输入纽约地区名称</string>
+    <string name="WhiteBlankDrawing">正在进行白板绘图</string>
+    <string name="ChooseColor">选择颜色</string>
+    <string name="Confirm">确定</string>
+    <string name="Cancel">取消</string>
 </resources>

@@ -83,6 +83,8 @@ import org.litepal.crud.DataSupport;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
@@ -179,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 ColorPickerDialogBuilder
                         .with(MainActivity.this)
-                        .setTitle("选择颜色")
+                        .setTitle(R.string.ChooseColor)
                         .initialColor(Color.RED)
                         .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
                         .density(12)
@@ -188,14 +190,14 @@ public class MainActivity extends AppCompatActivity {
                             public void onColorSelected(int selectedColor) {
                             }
                         })
-                        .setPositiveButton("确定", new ColorPickerClickListener() {
+                        .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
                                 //changeBackgroundColor(selectedColor);
                                 color_Whiteblank = selectedColor;
                             }
                         })
-                        .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                             }
@@ -354,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
                 whiteBlank_fab.setVisibility(View.VISIBLE);
                 isOpenWhiteBlank = false;
                 whiteBlank_fab.setImageResource(R.drawable.ic_brush_black_24dp);
-                setTitle("DisplayMap");
+                setTitle(R.string.app_name);
             }
         });
     }
@@ -391,10 +393,10 @@ public class MainActivity extends AppCompatActivity {
             return 0;
     }
 
-    private int num;
-
     //记录是否开启白板功能
     private boolean isOpenWhiteBlank = false;
+    Callout mCallout;
+    boolean inMap;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -410,7 +412,7 @@ public class MainActivity extends AppCompatActivity {
                 if (!isOpenWhiteBlank){
                     isOpenWhiteBlank = true;
                     whiteBlank_fab.setImageResource(R.drawable.ic_cancel_black_24dp);
-                    setTitle("正在进行白板绘图");
+                    setTitle(R.string.WhiteBlankDrawing);
                     showPopueWindowForWhiteblank();
                     whiteBlank_fab.setVisibility(View.INVISIBLE);
                 }
@@ -429,9 +431,22 @@ public class MainActivity extends AppCompatActivity {
                 }else {
                     //setRecyclerView();
                     recyclerView.setVisibility(View.VISIBLE);
-                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_less_black_24dp);
-                    Log.w(TAG, "onCreate: " + num );
-                    recyclerViewButton.setY(recyclerView.getY() + num * 100);
+                    recyclerViewButton.setVisibility(View.GONE);
+                    TimerTask task = new TimerTask() {
+                        @Override
+                        public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    recyclerViewButton.setY(recyclerView.getY() + recyclerView.getHeight() + 20);
+                                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_less_black_24dp);
+                                    recyclerViewButton.setVisibility(View.VISIBLE);
+                                }
+                            });
+                        }
+                    };
+                    Timer timer = new Timer();
+                    timer.schedule(task, 1000);
                     //recyclerViewButton1.setVisibility(View.VISIBLE);
                     //recyclerViewButton.setVisibility(View.GONE);
                     isClick = true;
@@ -473,7 +488,6 @@ public class MainActivity extends AppCompatActivity {
                                                                 //ArcGISMap mainArcGISMapMMPK = mainArcGISMapL.get(0);
                                                                 map = mainArcGISMapL.get(0);
                                                                 int size = map.getOperationalLayers().size();
-                                                                num = size;
                                                                 for (int i = 0; i < size; i++){
                                                                     layers.add(map.getOperationalLayers().get(i));
                                                                     layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
@@ -486,7 +500,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean  onSingleTapConfirmed(MotionEvent v) {
                 Log.d(TAG, "onSingleTapConfirmed: " + v.toString());
-
                 // get the point that was clicked and convert it to a point in map coordinates
                 final android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
                         Math.round(v.getY()));
@@ -509,7 +522,8 @@ public class MainActivity extends AppCompatActivity {
                 mCallout.show();*/
 
                 // center on tapped point
-                mMapView.setViewpointCenterAsync(mapPoint);
+                mMapView.setViewpointCenterAsync(wgs84Point);
+                inMap = false;
                 Log.w(TAG, "onSingleTapConfirmed: " );
                 //final android.graphics.Point screenPoint=new android.graphics.Point(Math.round(v.getX()), Math.round(v.getY()));
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
@@ -553,10 +567,10 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                         calloutContent.setText(str);
                                         // get callout, set content and show
-                                        Callout mCallout = mMapView.getCallout();
                                         mCallout.setLocation(mapPoint);
                                         mCallout.setContent(calloutContent);
                                         mCallout.show();
+                                        inMap = true;
                                     }
                                 }
                             }catch (Exception e){
@@ -565,6 +579,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 }
+                if (!inMap) mCallout.dismiss();
                 //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                 return true;
             }
@@ -645,7 +660,9 @@ public class MainActivity extends AppCompatActivity {
             }
             if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
             mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
-        }
+            }
+
+        mCallout = mMapView.getCallout();
     }
 
     private void initMap(){
