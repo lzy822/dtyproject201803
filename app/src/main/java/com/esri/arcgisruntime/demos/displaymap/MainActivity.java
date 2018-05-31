@@ -90,7 +90,7 @@ import java.util.concurrent.ExecutionException;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/BigAppleCityTest.mmpk";
+    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/lctest.mmpk";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
     private layerAdapter adapter;
@@ -484,8 +484,8 @@ public class MainActivity extends AppCompatActivity {
                                                             LoadStatus mainLoadStatus = mainMobileMapPackage.getLoadStatus();
                                                             if (mainLoadStatus == LoadStatus.LOADED) {
                                                                 List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
-                                                                Log.w(TAG, "run: " + Integer.toString(mainArcGISMapL.size()) );
-                                                                //ArcGISMap mainArcGISMapMMPK = mainArcGISMapL.get(0);
+                                                                Log.w(TAG, "" + Integer.toString(mainArcGISMapL.size()) );
+                                                                //ArcGISMap mainArcrun: GISMapMMPK = mainArcGISMapL.get(0);
                                                                 map = mainArcGISMapL.get(0);
                                                                 int size = map.getOperationalLayers().size();
                                                                 for (int i = 0; i < size; i++){
@@ -530,7 +530,7 @@ public class MainActivity extends AppCompatActivity {
                 QueryParameters query = new QueryParameters();
                 query.setGeometry(clickPoint);// 设置空间几何对象
                 if (mMapView.getMap().getOperationalLayers().size() != 0){
-                    FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(0);
+                    FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(3);
                     FeatureTable mTable = featureLayer.getFeatureTable();//得到查询属性表
                     final ListenableFuture<FeatureQueryResult> featureQueryResult
                             = mTable.queryFeaturesAsync(query);
@@ -698,13 +698,14 @@ public class MainActivity extends AppCompatActivity {
         // create objects required to do a selection with a query
         QueryParameters query = new QueryParameters();
         //make search case insensitive
-        query.setWhereClause("upper(STATE) LIKE '%" + searchString.toUpperCase() + "%'");
+        query.setWhereClause("upper(BQMC) LIKE '%" + searchString.toUpperCase() + "%'");
         Log.w(TAG, "searchForState: " );
         // call select features
         if (mMapView.getMap().getOperationalLayers().size() != 0) {
 
-            Log.w(TAG, "searchForState: " );
-            mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(0);
+            Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
+            Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
+            mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(3);
             FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
             Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
             final ListenableFuture<FeatureQueryResult> featureQueryResult
@@ -809,6 +810,7 @@ public class MainActivity extends AppCompatActivity {
                     //layerList.get(position).setStatus(false);
                     //if (layerList.get(position).getName().equals("tiledLayer")) {
                         map.getOperationalLayers().remove(layers.get(position));
+                        //map.getOperationalLayers().get(position).setVisible(false);
                         Log.w(TAG, "取消选中后" + Integer.toString(map.getOperationalLayers().size()));
                     //}else if (layerList.get(position).getName().equals("censusLayer")) {
                         //map.getOperationalLayers().remove(layers.get(position));
@@ -822,6 +824,7 @@ public class MainActivity extends AppCompatActivity {
                     //if (layerList.get(position).getName().equals("tiledLayer")) {
                         //tiledLayer = new ArcGISMapImageLayer(layerList.get(position).getPath());
                         map.getOperationalLayers().add(layers.get(position));
+                    //map.getOperationalLayers().get(position).setVisible(true);
                         Log.w(TAG, "选中后" + Integer.toString(map.getOperationalLayers().size()));
                     //}else if (layerList.get(position).getName().equals("censusLayer")) {
                         //censusLayer = new ArcGISMapImageLayer(layerList.get(position).getPath());
