@@ -4,10 +4,16 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.os.Environment;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -90,7 +96,7 @@ import java.util.concurrent.ExecutionException;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/lctest.mmpk";
+    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/weizhi_test.mmpk";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
     private layerAdapter adapter;
@@ -106,8 +112,105 @@ public class MainActivity extends AppCompatActivity {
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
     //记录画笔颜色
     private int color_Whiteblank;
+    Location location;
 
+    private LocationManager locationManager;
+    GraphicsOverlay graphicsOverlay_66;
 
+    //获取当前坐标位置
+    private void getLocation() {
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        if (!(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
+            Toast.makeText(this, this.getResources().getText(R.string.LocError), Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivityForResult(intent, 0);
+            return;
+        }
+
+        try {
+
+            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if(location == null){
+                Log.d(TAG, "onCreate.location = null");
+                location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+            Log.d(TAG, "onCreate.location = " + location);
+            updateView(location);
+
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, locationListener);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 5, locationListener);
+        }catch (SecurityException  e){
+            e.printStackTrace();
+        }
+    }
+
+    //坐标监听器
+    protected final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            //Log.d(TAG, "Location changed to: " + getLocationInfo(location));
+            updateView(location);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            Log.d(TAG, "onStatusChanged() called with " + "provider = [" + provider + "], status = [" + status + "], extras = [" + extras + "]");
+            switch (status) {
+                case LocationProvider.AVAILABLE:
+                    Log.i(TAG, "AVAILABLE");
+                    break;
+                case LocationProvider.OUT_OF_SERVICE:
+                    Log.i(TAG, "OUT_OF_SERVICE");
+                    break;
+                case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                    Log.i(TAG, "TEMPORARILY_UNAVAILABLE");
+                    break;
+            }
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Log.d(TAG, "onProviderEnabled() called with " + "provider = [" + provider + "]");
+            try {
+                Location location = locationManager.getLastKnownLocation(provider);
+                Log.d(TAG, "onProviderDisabled.location = " + location);
+                updateView(location);
+            }catch (SecurityException e){
+
+            }
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Log.d(TAG, "onProviderDisabled() called with " + "provider = [" + provider + "]");
+        }
+    };
+    double m_lat = 0, m_long = 0;
+
+    //更新坐标信息
+    private void updateView(Location location) {
+        if (location != null){
+            m_lat = location.getLatitude();
+            m_long = location.getLongitude();
+            SharedPreferences.Editor editor = getSharedPreferences("latlong", MODE_PRIVATE).edit();
+            editor.clear().commit();
+            editor.putString("mlatlong", Double.toString(m_lat) + "," + Double.toString(m_long));
+            editor.apply();
+            if (isLoc) {
+                Point xpt = new Point(m_long, m_lat, SpatialReferences.getWgs84());
+                Log.w(TAG, "setRecyclerView: " + xpt.toString());
+                mMapView.setViewpointCenterAsync(xpt);
+                SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+                Graphic pointGraphic = new Graphic(xpt, pointSymbol);
+                graphicsOverlay_66 = new GraphicsOverlay();
+                graphicsOverlay_66.getGraphics().add(pointGraphic);
+                mMapView.getGraphicsOverlays().remove(graphicsOverlay_66);
+                mMapView.getGraphicsOverlays().add(graphicsOverlay_66);
+            }
+        }
+    }
     //获取文件读取权限
     void pickFile() {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
@@ -401,6 +504,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        graphicsOverlay_66 = new GraphicsOverlay();
+        //获取定位信息
+        getLocation();
         color_Whiteblank = Color.RED;
         //DataSupport.deleteAll(whiteblank.class);
         //whiteBlankPts = new ArrayList<Point>();
@@ -523,12 +629,15 @@ public class MainActivity extends AppCompatActivity {
 
                 // center on tapped point
                 mMapView.setViewpointCenterAsync(wgs84Point);
+                Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
                 inMap = false;
                 Log.w(TAG, "onSingleTapConfirmed: " );
                 //final android.graphics.Point screenPoint=new android.graphics.Point(Math.round(v.getX()), Math.round(v.getY()));
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
+                Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                 QueryParameters query = new QueryParameters();
                 query.setGeometry(clickPoint);// 设置空间几何对象
+                /*
                 if (mMapView.getMap().getOperationalLayers().size() != 0){
                     FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(3);
                     FeatureTable mTable = featureLayer.getFeatureTable();//得到查询属性表
@@ -579,6 +688,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 }
+                */
                 if (!inMap) mCallout.dismiss();
                 //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                 return true;
@@ -781,6 +891,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -839,8 +950,22 @@ public class MainActivity extends AppCompatActivity {
         });
         //adapter.getItemSelected();
         recyclerView.setAdapter(adapter);
+        Point xpt = new Point(m_long, m_lat, SpatialReferences.getWgs84());
+        Log.w(TAG, "setRecyclerView: " + xpt.toString());
+        mMapView.setViewpointCenterAsync(xpt);
+        SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+        Graphic pointGraphic = new Graphic(xpt, pointSymbol);
+        graphicsOverlay_66 = new GraphicsOverlay();
+        graphicsOverlay_66.getGraphics().add(pointGraphic);
+        try {
+            mMapView.getGraphicsOverlays().add(graphicsOverlay_66);
+        }catch (IllegalArgumentException e){
+            mMapView.getGraphicsOverlays().remove(graphicsOverlay_66);
+            mMapView.getGraphicsOverlays().add(graphicsOverlay_66);
+        }
+        isLoc = true;
     }
-
+boolean isLoc = false;
     @Override
     protected void onPause() {
         mMapView.pause();

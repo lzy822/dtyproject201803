@@ -6,4 +6,6 @@
     <string name="ChooseColor">选择颜色</string>
     <string name="Confirm">确定</string>
     <string name="Cancel">取消</string>
+    <string name="LocError_1">当前不在该地图中</string>
+    <string name="LocError">请打开定位功能!</string>
 </resources>
