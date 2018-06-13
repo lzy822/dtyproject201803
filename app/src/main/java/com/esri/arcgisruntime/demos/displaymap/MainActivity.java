@@ -36,6 +36,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
+import com.esri.arcgisruntime.ArcGISRuntimeException;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
 import com.esri.arcgisruntime.data.FeatureQueryResult;
@@ -96,7 +97,8 @@ import java.util.concurrent.ExecutionException;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/weizhi_test.mmpk";
+    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/weizhi_test4.mmpk";
+    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/weizhi_test1.mmpk";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
     private layerAdapter adapter;
@@ -201,10 +203,11 @@ public class MainActivity extends AppCompatActivity {
             if (isLoc) {
                 Point xpt = new Point(m_long, m_lat, SpatialReferences.getWgs84());
                 Log.w(TAG, "setRecyclerView: " + xpt.toString());
-                mMapView.setViewpointCenterAsync(xpt);
-                SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+                //mMapView.setViewpointCenterAsync(xpt);
+                SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 10);
                 Graphic pointGraphic = new Graphic(xpt, pointSymbol);
                 graphicsOverlay_66 = new GraphicsOverlay();
+                graphicsOverlay_66.getGraphics().clear();
                 graphicsOverlay_66.getGraphics().add(pointGraphic);
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_66);
                 mMapView.getGraphicsOverlays().add(graphicsOverlay_66);
@@ -478,6 +481,21 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
+    private void showMap(){
+        map = new ArcGISMap();
+        if (isOK1 & isOK2) {
+            map.getOperationalLayers().clear();
+            int size = layers.size();
+            Log.w(TAG, "showMap: " + map.getOperationalLayers().size());
+            for (int i = 0; i < size; i++){
+                Log.w(TAG, "showMap i : " + i);
+                //if (!map.getOperationalLayers().contains(layers.get(i)))
+                map.getOperationalLayers().add(layers.get(i));
+            }
+            mMapView.setMap(map);
+        }
+    }
+
     /**
      * 获取导航栏高度
      * @param context
@@ -495,6 +513,8 @@ public class MainActivity extends AppCompatActivity {
         }else
             return 0;
     }
+    boolean isOK1 = false;
+    boolean isOK2 = false;
 
     //记录是否开启白板功能
     private boolean isOpenWhiteBlank = false;
@@ -592,16 +612,53 @@ public class MainActivity extends AppCompatActivity {
                                                                 List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
                                                                 Log.w(TAG, "" + Integer.toString(mainArcGISMapL.size()) );
                                                                 //ArcGISMap mainArcrun: GISMapMMPK = mainArcGISMapL.get(0);
+                                                                Log.w(TAG, "mainArcGISMapL.size: " + mainArcGISMapL.size());
                                                                 map = mainArcGISMapL.get(0);
+                                                                //ArcGISMap map1 = mainArcGISMapL.get(0);
                                                                 int size = map.getOperationalLayers().size();
+                                                                Log.w(TAG, "size: " + size);
                                                                 for (int i = 0; i < size; i++){
                                                                     layers.add(map.getOperationalLayers().get(i));
                                                                     layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
                                                                 }
+                                                                isOK1 = true;
+
+                                                                //showMap();
                                                                 mMapView.setMap(map);
                                                             }
                                                         }
                                                     });
+        /*final MobileMapPackage mainMobileMapPackage1 = new MobileMapPackage(rootPath1);
+        mainMobileMapPackage1.loadAsync();
+        mainMobileMapPackage1.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                LoadStatus mainLoadStatus = mainMobileMapPackage1.getLoadStatus();
+                if (mainLoadStatus == LoadStatus.LOADED) {
+                    List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage1.getMaps();
+                    Log.w(TAG, "" + Integer.toString(mainArcGISMapL.size()) );
+                    //ArcGISMap mainArcrun: GISMapMMPK = mainArcGISMapL.get(0);
+                    Log.w(TAG, "mainArcGISMapL.size: " + mainArcGISMapL.size());
+                    ArcGISMap map1 = mainArcGISMapL.get(0);
+                    int size = map1.getOperationalLayers().size();
+                    Log.w(TAG, "size: " + size);
+                    for (int i = 0; i < size; i++){
+                        layers.add(map1.getOperationalLayers().get(i));
+                        layerList.add(new layer(map1.getOperationalLayers().get(i).getName()));
+                        //try {
+                        Log.w(TAG, "run: " + map.getOperationalLayers().size());
+                        //if (map.getOperationalLayers().size() <= 6)
+                        //map.getOperationalLayers().add(map1.getOperationalLayers().get(i));
+                        //}catch (ArcGISRuntimeException e){
+
+                        // }
+                    }
+                    isOK2 = true;
+                    showMap();
+                    //mMapView.setMap(map);
+                }
+            }
+        });*/
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
             public boolean  onSingleTapConfirmed(MotionEvent v) {
@@ -950,9 +1007,9 @@ public class MainActivity extends AppCompatActivity {
         });
         //adapter.getItemSelected();
         recyclerView.setAdapter(adapter);
-        Point xpt = new Point(m_long, m_lat, SpatialReferences.getWgs84());
+        /*Point xpt = new Point(m_long, m_lat, SpatialReferences.getWgs84());
         Log.w(TAG, "setRecyclerView: " + xpt.toString());
-        mMapView.setViewpointCenterAsync(xpt);
+        //mMapView.setViewpointCenterAsync(xpt);
         SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
         Graphic pointGraphic = new Graphic(xpt, pointSymbol);
         graphicsOverlay_66 = new GraphicsOverlay();
@@ -962,7 +1019,7 @@ public class MainActivity extends AppCompatActivity {
         }catch (IllegalArgumentException e){
             mMapView.getGraphicsOverlays().remove(graphicsOverlay_66);
             mMapView.getGraphicsOverlays().add(graphicsOverlay_66);
-        }
+        }*/
         isLoc = true;
     }
 boolean isLoc = false;
