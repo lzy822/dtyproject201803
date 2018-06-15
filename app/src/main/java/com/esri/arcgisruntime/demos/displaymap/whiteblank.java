@@ -3,9 +3,9 @@ package com.esri.arcgisruntime.demos.displaymap;
 import com.esri.arcgisruntime.geometry.Polyline;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 
-import org.litepal.crud.DataSupport;
+import org.litepal.crud.LitePalSupport;
 
-public class whiteblank extends DataSupport{
+public class whiteblank extends LitePalSupport{
     private String pts;
     private int color;
 

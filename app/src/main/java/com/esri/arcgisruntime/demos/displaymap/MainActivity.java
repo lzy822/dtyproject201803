@@ -85,7 +85,7 @@ import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.litepal.crud.DataSupport;
+import org.litepal.LitePal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -277,8 +277,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
-                List<whiteblank> whiteblanks = DataSupport.findAll(whiteblank.class);
-                DataSupport.delete(whiteblank.class, whiteblanks.size());
+                List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
+                LitePal.delete(whiteblank.class, whiteblanks.size());
             }
         });
         FloatingActionButton fff = (FloatingActionButton) popView.findViewById(R.id.colorSeeker_pop);
@@ -334,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
                 graphicsOverlay_10.getGraphics().clear();
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
-                DataSupport.deleteAll(whiteblank.class);
+                LitePal.deleteAll(whiteblank.class);
                 /*}catch (Exception e){
                     Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
                     Log.w(TAG, "onClick: " + e.toString());
@@ -528,7 +528,7 @@ public class MainActivity extends AppCompatActivity {
         //获取定位信息
         getLocation();
         color_Whiteblank = Color.RED;
-        //DataSupport.deleteAll(whiteblank.class);
+        //LitePal.deleteAll(whiteblank.class);
         //whiteBlankPts = new ArrayList<Point>();
         whiteBlank_fab = (FloatingActionButton) findViewById(R.id.whiteBlank);
         whiteBlank_fab.setImageResource(R.drawable.ic_brush_black_24dp);
@@ -800,7 +800,7 @@ public class MainActivity extends AppCompatActivity {
         setRecyclerView();
         Log.w(TAG, "onCreate: "  );*/
 
-        List<whiteblank> whiteblanks = DataSupport.findAll(whiteblank.class);
+        List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
         int size = whiteblanks.size();
         Log.w(TAG, "onCreate: " + size);
         if (size == 0) graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
