@@ -97,7 +97,7 @@ import java.util.concurrent.ExecutionException;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/weizhi_test4.mmpk";
+    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/weizhi_test.mmpk";
     private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/weizhi_test1.mmpk";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
@@ -694,9 +694,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                 QueryParameters query = new QueryParameters();
                 query.setGeometry(clickPoint);// 设置空间几何对象
-                /*
                 if (mMapView.getMap().getOperationalLayers().size() != 0){
-                    FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(3);
+                    FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                     FeatureTable mTable = featureLayer.getFeatureTable();//得到查询属性表
                     final ListenableFuture<FeatureQueryResult> featureQueryResult
                             = mTable.queryFeaturesAsync(query);
@@ -745,7 +744,6 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 }
-                */
                 if (!inMap) mCallout.dismiss();
                 //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                 return true;
@@ -865,16 +863,16 @@ public class MainActivity extends AppCompatActivity {
         // create objects required to do a selection with a query
         QueryParameters query = new QueryParameters();
         //make search case insensitive
-        query.setWhereClause("upper(BQMC) LIKE '%" + searchString.toUpperCase() + "%'");
+        query.setWhereClause("upper(图上名称) LIKE '%" + searchString.toUpperCase() + "%'");
         Log.w(TAG, "searchForState: " );
         // call select features
         if (mMapView.getMap().getOperationalLayers().size() != 0) {
 
-            Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
-            Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
-            mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(3);
+            //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
+            //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
+            mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
             FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
-            Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
+            //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
             final ListenableFuture<FeatureQueryResult> featureQueryResult
                     = mTable.queryFeaturesAsync(query);
             featureQueryResult.addDoneListener(new Runnable() {
