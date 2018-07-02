@@ -35,7 +35,6 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.alibaba.fastjson.JSON;
 import com.esri.arcgisruntime.ArcGISRuntimeException;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
@@ -60,6 +59,7 @@ import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.layers.Layer;
 import com.esri.arcgisruntime.layers.SublayerList;
 import com.esri.arcgisruntime.loadable.LoadStatus;
+import com.esri.arcgisruntime.location.LocationDataSource;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.MobileMapPackage;
@@ -71,6 +71,7 @@ import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.IdentifyLayerResult;
 import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedEvent;
 import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedListener;
+import com.esri.arcgisruntime.mapping.view.LocationDisplay;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
@@ -97,8 +98,8 @@ import java.util.concurrent.ExecutionException;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/weizhi_test.mmpk";
-    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/weizhi_test1.mmpk";
+    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市土地利用规划和基本农田数据.mmpk";
+    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/昆明.mmpk";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
     private layerAdapter adapter;
@@ -114,106 +115,13 @@ public class MainActivity extends AppCompatActivity {
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
     //记录画笔颜色
     private int color_Whiteblank;
-    Location location;
-
-    private LocationManager locationManager;
     GraphicsOverlay graphicsOverlay_66;
 
-    //获取当前坐标位置
-    private void getLocation() {
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        if (!(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
-            Toast.makeText(this, this.getResources().getText(R.string.LocError), Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivityForResult(intent, 0);
-            return;
-        }
 
-        try {
-
-            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if(location == null){
-                Log.d(TAG, "onCreate.location = null");
-                location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            }
-            Log.d(TAG, "onCreate.location = " + location);
-            updateView(location);
-
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, locationListener);
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 5, locationListener);
-        }catch (SecurityException  e){
-            e.printStackTrace();
-        }
-    }
-
-    //坐标监听器
-    protected final LocationListener locationListener = new LocationListener() {
-        @Override
-        public void onLocationChanged(Location location) {
-            //Log.d(TAG, "Location changed to: " + getLocationInfo(location));
-            updateView(location);
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.d(TAG, "onStatusChanged() called with " + "provider = [" + provider + "], status = [" + status + "], extras = [" + extras + "]");
-            switch (status) {
-                case LocationProvider.AVAILABLE:
-                    Log.i(TAG, "AVAILABLE");
-                    break;
-                case LocationProvider.OUT_OF_SERVICE:
-                    Log.i(TAG, "OUT_OF_SERVICE");
-                    break;
-                case LocationProvider.TEMPORARILY_UNAVAILABLE:
-                    Log.i(TAG, "TEMPORARILY_UNAVAILABLE");
-                    break;
-            }
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            Log.d(TAG, "onProviderEnabled() called with " + "provider = [" + provider + "]");
-            try {
-                Location location = locationManager.getLastKnownLocation(provider);
-                Log.d(TAG, "onProviderDisabled.location = " + location);
-                updateView(location);
-            }catch (SecurityException e){
-
-            }
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            Log.d(TAG, "onProviderDisabled() called with " + "provider = [" + provider + "]");
-        }
-    };
     double m_lat = 0, m_long = 0;
 
-    //更新坐标信息
-    private void updateView(Location location) {
-        if (location != null){
-            m_lat = location.getLatitude();
-            m_long = location.getLongitude();
-            SharedPreferences.Editor editor = getSharedPreferences("latlong", MODE_PRIVATE).edit();
-            editor.clear().commit();
-            editor.putString("mlatlong", Double.toString(m_lat) + "," + Double.toString(m_long));
-            editor.apply();
-            if (isLoc) {
-                Point xpt = new Point(m_long, m_lat, SpatialReferences.getWgs84());
-                Log.w(TAG, "setRecyclerView: " + xpt.toString());
-                //mMapView.setViewpointCenterAsync(xpt);
-                SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 10);
-                Graphic pointGraphic = new Graphic(xpt, pointSymbol);
-                graphicsOverlay_66 = new GraphicsOverlay();
-                graphicsOverlay_66.getGraphics().clear();
-                graphicsOverlay_66.getGraphics().add(pointGraphic);
-                mMapView.getGraphicsOverlays().remove(graphicsOverlay_66);
-                mMapView.getGraphicsOverlays().add(graphicsOverlay_66);
-            }
-        }
-    }
+
     //获取文件读取权限
     void pickFile() {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
@@ -525,8 +433,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         graphicsOverlay_66 = new GraphicsOverlay();
-        //获取定位信息
-        getLocation();
         color_Whiteblank = Color.RED;
         //LitePal.deleteAll(whiteblank.class);
         //whiteBlankPts = new ArrayList<Point>();
@@ -828,7 +734,24 @@ public class MainActivity extends AppCompatActivity {
             }
 
         mCallout = mMapView.getCallout();
+        locationDisplay = mMapView.getLocationDisplay();
+        locationDisplay.setShowLocation(true);
+        locationDisplay.setAutoPanMode(LocationDisplay.AutoPanMode.RECENTER );
+        locationDisplay.startAsync();
+        Point point=locationDisplay.getMapLocation();
+        LocationDataSource.Location location=locationDisplay.getLocation();
+        Point point2=location.getPosition();
+        locationDisplay.addLocationChangedListener(new LocationDisplay.LocationChangedListener() {
+            @Override
+            public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
+                LocationDataSource.Location location=locationChangedEvent.getLocation();
+                Point point=location.getPosition();
+            }
+        });
     }
+    LocationDisplay locationDisplay;
+
+
 
     private void initMap(){
         //tiledLayer = new ArcGISMapImageLayer("http://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer");
@@ -1038,6 +961,8 @@ boolean isLoc = false;
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        getCacheDir().delete();
+        getFilesDir().delete();
         mMapView.dispose();
     }
 }
