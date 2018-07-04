@@ -40,6 +40,8 @@ import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
 import com.esri.arcgisruntime.data.FeatureQueryResult;
 import com.esri.arcgisruntime.data.FeatureTable;
+import com.esri.arcgisruntime.data.Geodatabase;
+import com.esri.arcgisruntime.data.GeodatabaseFeatureTable;
 import com.esri.arcgisruntime.data.QueryParameters;
 import com.esri.arcgisruntime.data.ServiceFeatureTable;
 import com.esri.arcgisruntime.geometry.Envelope;
@@ -62,6 +64,7 @@ import com.esri.arcgisruntime.loadable.LoadStatus;
 import com.esri.arcgisruntime.location.LocationDataSource;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
+import com.esri.arcgisruntime.mapping.LayerList;
 import com.esri.arcgisruntime.mapping.MobileMapPackage;
 import com.esri.arcgisruntime.mapping.popup.Popup;
 import com.esri.arcgisruntime.mapping.view.Callout;
@@ -89,6 +92,7 @@ import org.json.JSONObject;
 import org.litepal.LitePal;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -99,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
     private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市土地利用规划和基本农田数据.mmpk";
-    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/昆明.mmpk";
+    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市5309省标准乡级土地利用总体规划及基本农田数据库2000.geodatabase";
     private List<layer> layerList = new ArrayList<>();
     private List<Layer> layers = new ArrayList<>();
     private layerAdapter adapter;
@@ -601,54 +605,58 @@ public class MainActivity extends AppCompatActivity {
                 QueryParameters query = new QueryParameters();
                 query.setGeometry(clickPoint);// 设置空间几何对象
                 if (mMapView.getMap().getOperationalLayers().size() != 0){
-                    FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
-                    FeatureTable mTable = featureLayer.getFeatureTable();//得到查询属性表
-                    final ListenableFuture<FeatureQueryResult> featureQueryResult
-                            = mTable.queryFeaturesAsync(query);
-                    featureQueryResult.addDoneListener(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                while (mMapView.getGraphicsOverlays().size() != 0){
-                                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
-                                        mMapView.getGraphicsOverlays().remove(i);
-                                    }
-                                }
-                                FeatureQueryResult featureResul = featureQueryResult.get();
-                                for (Object element : featureResul) {
-                                    if (element instanceof Feature) {
-                                        Feature mFeatureGrafic = (Feature) element;
-                                        Geometry geometry = mFeatureGrafic.getGeometry();
-                                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                                        SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
-                                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN,3);
-                                        Graphic pointGraphic = new Graphic(clickPoint,pointSymbol);
-                                        Graphic fillGraphic = new Graphic(geometry,lineSymbol);
-                                        graphicsOverlay_1.getGraphics().add(pointGraphic);
-                                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                                        Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                        TextView calloutContent = new TextView(getApplicationContext());
-                                        calloutContent.setTextColor(Color.BLACK);
-                                        //calloutContent.setSingleLine();
-                                        // format coordinates to 4 decimal places
-                                        String str = "";
-                                        for(String key : mQuerryString.keySet()){
-                                            str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                    //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                    try {
+                        FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                        final ListenableFuture<FeatureQueryResult> featureQueryResult
+                                = mTable.queryFeaturesAsync(query);
+                        featureQueryResult.addDoneListener(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    while (mMapView.getGraphicsOverlays().size() != 0){
+                                        for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                            mMapView.getGraphicsOverlays().remove(i);
                                         }
-                                        calloutContent.setText(str);
-                                        // get callout, set content and show
-                                        mCallout.setLocation(mapPoint);
-                                        mCallout.setContent(calloutContent);
-                                        mCallout.show();
-                                        inMap = true;
                                     }
+                                    FeatureQueryResult featureResul = featureQueryResult.get();
+                                    for (Object element : featureResul) {
+                                        if (element instanceof Feature) {
+                                            Feature mFeatureGrafic = (Feature) element;
+                                            Geometry geometry = mFeatureGrafic.getGeometry();
+                                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                            SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+                                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN,3);
+                                            Graphic pointGraphic = new Graphic(clickPoint,pointSymbol);
+                                            Graphic fillGraphic = new Graphic(geometry,lineSymbol);
+                                            graphicsOverlay_1.getGraphics().add(pointGraphic);
+                                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                            Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                            TextView calloutContent = new TextView(getApplicationContext());
+                                            calloutContent.setTextColor(Color.BLACK);
+                                            //calloutContent.setSingleLine();
+                                            // format coordinates to 4 decimal places
+                                            String str = "";
+                                            for(String key : mQuerryString.keySet()){
+                                                str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            }
+                                            calloutContent.setText(str);
+                                            // get callout, set content and show
+                                            mCallout.setLocation(mapPoint);
+                                            mCallout.setContent(calloutContent);
+                                            mCallout.show();
+                                            inMap = true;
+                                        }
+                                    }
+                                }catch (Exception e){
+                                    e.printStackTrace();
                                 }
-                            }catch (Exception e){
-                                e.printStackTrace();
                             }
-                        }
-                    });
+                        });
+                    }catch (ArcGISRuntimeException e){
+                        Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                    }
                 }
                 if (!inMap) mCallout.dismiss();
                 //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
@@ -748,8 +756,29 @@ public class MainActivity extends AppCompatActivity {
                 Point point=location.getPosition();
             }
         });
+
+
+        localGdb=new Geodatabase(rootPath1);
+        Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        Log.w(TAG, "run: " + localGdb.getPath());
+        localGdb.loadAsync();
+        localGdb.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                //LayerList mainLayerList = .getOperationalLayers();
+                /*for (GeodatabaseFeatureTable gdbFeatureTable : localGdb.getGeodatabaseFeatureTables()) {
+                    Log.w(TAG, "run: " + gdbFeatureTable.getTableName());
+                    //mainLayerList.add(dataFeatureLayer);
+                }*/
+                featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
+                mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
+            }
+        });
+        Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
     }
+    Geodatabase localGdb;
     LocationDisplay locationDisplay;
+    FeatureLayer featureLayer777 = null;
 
 
 
@@ -793,38 +822,47 @@ public class MainActivity extends AppCompatActivity {
 
             //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
             //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
-            mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
-            FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
-            //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
-            final ListenableFuture<FeatureQueryResult> featureQueryResult
-                    = mTable.queryFeaturesAsync(query);
-            featureQueryResult.addDoneListener(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        // call get on the future to get the result
-                        FeatureQueryResult result = featureQueryResult.get();
+            //mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            try {
+                FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
+                //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            while (mMapView.getGraphicsOverlays().size() != 0){
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                    mMapView.getGraphicsOverlays().remove(i);
+                                }
+                            }
+                            // call get on the future to get the result
+                            FeatureQueryResult result = featureQueryResult.get();
+                            // check there are some results
+                            if (result.iterator().hasNext()) {
+                            /*Iterator<Feature> features = result.iterator();
+                            features.*/
+                                // get the extend of the first feature in the result to zoom to
+                                Feature feature = result.iterator().next();
+                                Envelope envelope = feature.getGeometry().getExtent();
+                                mMapView.setViewpointGeometryAsync(envelope, 200);
 
-                        // check there are some results
-                        if (result.iterator().hasNext()) {
+                                //Select the feature
+                                mFeaturelayer.selectFeature(feature);
 
-                            // get the extend of the first feature in the result to zoom to
-                            Feature feature = result.iterator().next();
-                            Envelope envelope = feature.getGeometry().getExtent();
-                            mMapView.setViewpointGeometryAsync(envelope, 200);
-
-                            //Select the feature
-                            mFeaturelayer.selectFeature(feature);
-
-                        } else {
-                            Toast.makeText(MainActivity.this, "No states found with name: " + searchString, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, "No states found with name: " + searchString, Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Feature search failed for: " + searchString + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(getResources().getString(R.string.app_name), "Feature search failed for: " + searchString + ". Error=" + e.getMessage());
                         }
-                    } catch (Exception e) {
-                        Toast.makeText(MainActivity.this, "Feature search failed for: " + searchString + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        Log.e(getResources().getString(R.string.app_name), "Feature search failed for: " + searchString + ". Error=" + e.getMessage());
                     }
-                }
-            });
+                });
+            }catch (ArcGISRuntimeException e){
+                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+            }
         }
         // add done loading listener to fire when the selection returns
     }
