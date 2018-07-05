@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.location.Location;
@@ -19,6 +20,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.ListPopupWindow;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
@@ -28,6 +30,8 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -38,6 +42,8 @@ import android.widget.Toast;
 import com.esri.arcgisruntime.ArcGISRuntimeException;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
+import com.esri.arcgisruntime.data.FeatureCollection;
+import com.esri.arcgisruntime.data.FeatureCollectionTable;
 import com.esri.arcgisruntime.data.FeatureQueryResult;
 import com.esri.arcgisruntime.data.FeatureTable;
 import com.esri.arcgisruntime.data.Geodatabase;
@@ -57,6 +63,7 @@ import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.layers.ArcGISMapImageLayer;
 import com.esri.arcgisruntime.layers.ArcGISMapImageSublayer;
 import com.esri.arcgisruntime.layers.ArcGISTiledLayer;
+import com.esri.arcgisruntime.layers.FeatureCollectionLayer;
 import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.layers.Layer;
 import com.esri.arcgisruntime.layers.SublayerList;
@@ -527,10 +534,16 @@ public class MainActivity extends AppCompatActivity {
                                                                 //ArcGISMap map1 = mainArcGISMapL.get(0);
                                                                 int size = map.getOperationalLayers().size();
                                                                 Log.w(TAG, "size: " + size);
-                                                                for (int i = 0; i < size; i++){
-                                                                    layers.add(map.getOperationalLayers().get(i));
-                                                                    layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
+                                                                for (int i = size - 1; i > -1; i--){
+                                                                    if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
+                                                                        layers.add(map.getOperationalLayers().get(i));
+                                                                        layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
+                                                                    }else {
+                                                                        hasTPK = true;
+                                                                        TPKlayers.add(map.getOperationalLayers().get(i));
+                                                                    }
                                                                 }
+                                                                layerList.add(new layer("影像"));
                                                                 isOK1 = true;
 
                                                                 //showMap();
@@ -779,9 +792,7 @@ public class MainActivity extends AppCompatActivity {
     Geodatabase localGdb;
     LocationDisplay locationDisplay;
     FeatureLayer featureLayer777 = null;
-
-
-
+    boolean hasTPK = false;
     private void initMap(){
         //tiledLayer = new ArcGISMapImageLayer("http://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer");
         //censusLayer = new ArcGISMapImageLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer");
@@ -810,7 +821,7 @@ public class MainActivity extends AppCompatActivity {
 
         // clear any previous selections
 
-        //mFeaturelayer.clearSelection();
+        mFeaturelayer.clearSelection();
 
         // create objects required to do a selection with a query
         QueryParameters query = new QueryParameters();
@@ -850,6 +861,8 @@ public class MainActivity extends AppCompatActivity {
 
                                 //Select the feature
                                 mFeaturelayer.selectFeature(feature);
+                                Log.w(TAG, "run: " + mMapView.getMapScale());
+                                mMapView.setViewpointScaleAsync(3000);
 
                             } else {
                                 Toast.makeText(MainActivity.this, "No states found with name: " + searchString, Toast.LENGTH_SHORT).show();
@@ -887,7 +900,9 @@ public class MainActivity extends AppCompatActivity {
                 searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                     @Override
                     public boolean onQueryTextSubmit(String query) {
-                        searchForState(query);
+                        //searchForState(query);
+                        mCallout.dismiss();
+                        showListPopupWindow(searchView, query);
                         return true;
                     }
 
@@ -907,6 +922,156 @@ public class MainActivity extends AppCompatActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
+    String[] items;
+    public void showListPopupWindow(View view, String searchString) {
+        queryInfos.clear();
+        final ListPopupWindow listPopupWindow = new ListPopupWindow(this);
+        searchString = searchString.trim();
+        mFeaturelayer.clearSelection();
+
+        // create objects required to do a selection with a query
+        QueryParameters query = new QueryParameters();
+        //make search case insensitive
+        query.setWhereClause("upper(图上名称) LIKE '%" + searchString.toUpperCase() + "%'");
+        Log.w(TAG, "searchForState: " );
+        // call select features
+        if (mMapView.getMap().getOperationalLayers().size() != 0) {
+
+            //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
+            //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
+            //mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            try {
+                final String string = searchString;
+                FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
+                //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            /*while (mMapView.getGraphicsOverlays().size() != 0){
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                    mMapView.getGraphicsOverlays().remove(i);
+                                }
+                            }
+                            // call get on the future to get the result
+                            FeatureQueryResult result = featureQueryResult.get();
+                            // check there are some results
+                            int num = -1;
+                            if (result.iterator().hasNext() ) {
+                                num++;
+                                //Log.w(TAG, "run: " + features.next().getFeatureTable().getTableName().toString());
+                                // get the extend of the first feature in the result to zoom to
+                                Feature feature = result.iterator().next();
+                                Log.w(TAG, "run: " + feature.getAttributes().get("图上名称"));
+                                Envelope envelope = feature.getGeometry().getExtent();
+                                String name = feature.getAttributes().get("图上名称").toString();
+                                boolean hasSame = false;
+                                for (int i = 0; i < queryInfos.size(); i++){
+                                    if (name.equals(queryInfos.get(i).getName())) hasSame = true;
+                                }
+                                if (!hasSame) {
+                                    Log.w(TAG, "run: " + "hasSame");
+                                    QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                    queryInfos.add(queryInfo);
+                                }
+                            }
+                            Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
+                            items = new String[queryInfos.size()];
+                            for (int i = 0; i < queryInfos.size(); i++){
+                                items[i] = queryInfos.get(i).getName();
+                            }
+                            // ListView适配器
+                            listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));*/
+
+                            FeatureCollectionTable featureCollectionTable = new FeatureCollectionTable(featureQueryResult.get());
+                            Iterator<Feature> featureIterator = featureCollectionTable.iterator();
+                            while (featureIterator.hasNext()) {
+                                //Log.w(TAG, "run: " + featureIterator.next().getAttributes().get("图上名称"));
+                                Feature feature = featureIterator.next();
+                                Log.w(TAG, "run: " + feature.getAttributes().get("图上名称"));
+                                Envelope envelope = feature.getGeometry().getExtent();
+                                String name = feature.getAttributes().get("图上名称").toString();
+                                boolean hasSame = false;
+                                for (int i = 0; i < queryInfos.size(); i++){
+                                    if (name.equals(queryInfos.get(i).getName())) hasSame = true;
+                                }
+                                if (!hasSame) {
+                                    Log.w(TAG, "run: " + "hasSame");
+                                    QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                    queryInfos.add(queryInfo);
+                                }
+                            }
+                            Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
+                            items = new String[queryInfos.size()];
+                            for (int i = 0; i < queryInfos.size(); i++){
+                                items[i] = queryInfos.get(i).getName();
+                            }
+                            // ListView适配器
+                            listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));
+
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
+                            //create a feature collection from the above feature collection table
+                            /*FeatureCollection featureCollection = new FeatureCollection();
+                            featureCollection.getTables().add(featureCollectionTable);
+                            Log.w(TAG, "run: " + featureCollection.toString());
+                            Log.w(TAG, "run: " + featureCollection.getTables().size());
+                            //create a feature collection layer
+                            FeatureCollectionLayer featureCollectionLayer = new FeatureCollectionLayer(featureCollection);
+                            Log.w(TAG, "run: " + featureCollectionLayer.getAttribution());
+                            //add the layer to the operational layers array
+                            mMapView.getMap().getOperationalLayers().add(featureCollectionLayer);*/
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Feature search failed for: " + string + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(getResources().getString(R.string.app_name), "Feature search failed for: " + string + ". Error=" + e.getMessage());
+                        }
+                    }
+                });
+            }catch (ArcGISRuntimeException e){
+                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        //final List<QueryInfo> pois = new ArrayList<>();
+
+
+
+
+        // ListView适配器
+        //listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));
+
+        // 选择item的监听事件
+        listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
+
+                //Select the feature
+                mFeaturelayer.selectFeature(queryInfos.get(position).getFeature());
+                Log.w(TAG, "run: " + mMapView.getMapScale());
+                mMapView.setViewpointScaleAsync(3000);
+                listPopupWindow.dismiss();
+            }
+        });
+
+        // 对话框的宽高
+        listPopupWindow.setWidth(600);
+        listPopupWindow.setHeight(600);
+
+        // ListPopupWindow的锚,弹出框的位置是相对当前View的位置
+        listPopupWindow.setAnchorView(view);
+
+        // ListPopupWindow 距锚view的距离
+        listPopupWindow.setHorizontalOffset(50);
+        listPopupWindow.setVerticalOffset(100);
+
+        listPopupWindow.setModal(false);
+
+        listPopupWindow.show();
+    }
+    List<QueryInfo> queryInfos = new ArrayList<>();
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -936,7 +1101,12 @@ public class MainActivity extends AppCompatActivity {
                     holder.checkBox.setChecked(false);
                     //layerList.get(position).setStatus(false);
                     //if (layerList.get(position).getName().equals("tiledLayer")) {
-                        map.getOperationalLayers().remove(layers.get(position));
+                    if (!name.equals("影像")) map.getOperationalLayers().remove(layers.get(position));
+                    else {
+                        for (int kk = 0; kk < TPKlayers.size(); kk++){
+                            map.getOperationalLayers().remove(TPKlayers.get(kk));
+                        }
+                    }
                         //map.getOperationalLayers().get(position).setVisible(false);
                         Log.w(TAG, "取消选中后" + Integer.toString(map.getOperationalLayers().size()));
                     //}else if (layerList.get(position).getName().equals("censusLayer")) {
@@ -950,7 +1120,12 @@ public class MainActivity extends AppCompatActivity {
                     //layerList.get(position).setStatus(true);
                     //if (layerList.get(position).getName().equals("tiledLayer")) {
                         //tiledLayer = new ArcGISMapImageLayer(layerList.get(position).getPath());
-                        map.getOperationalLayers().add(layers.get(position));
+                    if (!name.equals("影像")) map.getOperationalLayers().add(layers.get(position));
+                    else {
+                        for (int kk = 0; kk < TPKlayers.size(); kk++){
+                            map.getOperationalLayers().add(TPKlayers.get(kk));
+                        }
+                    }
                     //map.getOperationalLayers().get(position).setVisible(true);
                         Log.w(TAG, "选中后" + Integer.toString(map.getOperationalLayers().size()));
                     //}else if (layerList.get(position).getName().equals("censusLayer")) {
@@ -981,7 +1156,8 @@ public class MainActivity extends AppCompatActivity {
         }*/
         isLoc = true;
     }
-boolean isLoc = false;
+    boolean isLoc = false;
+    List<Layer> TPKlayers = new ArrayList<>();
     @Override
     protected void onPause() {
         mMapView.pause();
