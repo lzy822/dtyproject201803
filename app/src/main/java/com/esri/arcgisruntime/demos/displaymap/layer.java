@@ -5,9 +5,15 @@ public class layer {
     private String path;
     private String name;
     private boolean status;
+    private int num;
 
     public layer(String name) {
         this.name = name;
+    }
+
+    public layer(String name, int num) {
+        this.name = name;
+        this.num = num;
     }
 
     public layer(String type, String path, String name) {

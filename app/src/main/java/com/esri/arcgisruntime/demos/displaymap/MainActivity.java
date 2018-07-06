@@ -82,6 +82,8 @@ import com.esri.arcgisruntime.mapping.view.IdentifyLayerResult;
 import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedEvent;
 import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedListener;
 import com.esri.arcgisruntime.mapping.view.LocationDisplay;
+import com.esri.arcgisruntime.mapping.view.MapScaleChangedEvent;
+import com.esri.arcgisruntime.mapping.view.MapScaleChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
@@ -98,6 +100,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.litepal.LitePal;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -110,9 +113,10 @@ public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
     private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市土地利用规划和基本农田数据.mmpk";
+    private static final String rootPath2 = Environment.getExternalStorageDirectory().toString() + "/昆明.mmpk";
     private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市5309省标准乡级土地利用总体规划及基本农田数据库2000.geodatabase";
     private List<layer> layerList = new ArrayList<>();
-    private List<Layer> layers = new ArrayList<>();
+    private List<layer1> layers = new ArrayList<>();
     private layerAdapter adapter;
     private RecyclerView recyclerView;
     private GridLayoutManager layoutManager;
@@ -409,7 +413,7 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < size; i++){
                 Log.w(TAG, "showMap i : " + i);
                 //if (!map.getOperationalLayers().contains(layers.get(i)))
-                map.getOperationalLayers().add(layers.get(i));
+                map.getOperationalLayers().add(layers.get(i).getLayer());
             }
             mMapView.setMap(map);
         }
@@ -443,6 +447,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FloatingActionButton MapQueryBT = (FloatingActionButton) findViewById(R.id.MapQuery);
+        MapQueryBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!MapQuery) {
+                    MapQuery = true;
+                    setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
+                    Toast.makeText(MainActivity.this, R.string.OpenMapQuery, Toast.LENGTH_LONG).show();
+                }
+                else {
+                    MapQuery = false;
+                    mCallout.dismiss();
+                    setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()));
+                    Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
         graphicsOverlay_66 = new GraphicsOverlay();
         color_Whiteblank = Color.RED;
         //LitePal.deleteAll(whiteblank.class);
@@ -536,11 +557,11 @@ public class MainActivity extends AppCompatActivity {
                                                                 Log.w(TAG, "size: " + size);
                                                                 for (int i = size - 1; i > -1; i--){
                                                                     if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
-                                                                        layers.add(map.getOperationalLayers().get(i));
+                                                                        layers.add(new layer1(map.getOperationalLayers().get(i), i));
                                                                         layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
                                                                     }else {
                                                                         hasTPK = true;
-                                                                        TPKlayers.add(map.getOperationalLayers().get(i));
+                                                                        TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
                                                                     }
                                                                 }
                                                                 layerList.add(new layer("影像"));
@@ -548,7 +569,8 @@ public class MainActivity extends AppCompatActivity {
 
                                                                 //showMap();
                                                                 mMapView.setMap(map);
-                                                            }
+                                                                mMapView.setViewpointScaleAsync(1300000);
+                                                            }else mainMobileMapPackage.loadAsync();
                                                         }
                                                     });
         /*final MobileMapPackage mainMobileMapPackage1 = new MobileMapPackage(rootPath1);
@@ -617,7 +639,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                 QueryParameters query = new QueryParameters();
                 query.setGeometry(clickPoint);// 设置空间几何对象
-                if (mMapView.getMap().getOperationalLayers().size() != 0){
+                File file = new File(rootPath);
+                if (file.exists() & MapQuery){
                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                     try {
                         FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
@@ -651,8 +674,19 @@ public class MainActivity extends AppCompatActivity {
                                             //calloutContent.setSingleLine();
                                             // format coordinates to 4 decimal places
                                             String str = "";
+                                            List<KeyAndValue> keyAndValues = new ArrayList<>();
                                             for(String key : mQuerryString.keySet()){
-                                                str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                                //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                                if (key.equals("GHDLMC")) keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                                else if (key.equals("GHDLBM")) keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                                else if (key.equals("GHDLMJ")) keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                                else if (key.equals("PDJB")) keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                                else if (key.equals("XZQMC")) keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                                else if (key.equals("XZQDM")) keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                            }
+                                            keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                            for (int i = 0; i < keyAndValues.size(); i++){
+                                                str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue() + "\n";
                                             }
                                             calloutContent.setText(str);
                                             // get callout, set content and show
@@ -670,7 +704,7 @@ public class MainActivity extends AppCompatActivity {
                     }catch (ArcGISRuntimeException e){
                         Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
                     }
-                }
+                } else Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                 if (!inMap) mCallout.dismiss();
                 //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                 return true;
@@ -770,52 +804,35 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        File file = new File(rootPath1);
+        if (file.exists()) {
+            localGdb = new Geodatabase(rootPath1);
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+            Log.w(TAG, "run: " + localGdb.getPath());
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
+                    mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
 
-        localGdb=new Geodatabase(rootPath1);
-        Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
-        Log.w(TAG, "run: " + localGdb.getPath());
-        localGdb.loadAsync();
-        localGdb.addDoneLoadingListener(new Runnable() {
+        mMapView.addMapScaleChangedListener(new MapScaleChangedListener() {
             @Override
-            public void run() {
-                //LayerList mainLayerList = .getOperationalLayers();
-                /*for (GeodatabaseFeatureTable gdbFeatureTable : localGdb.getGeodatabaseFeatureTables()) {
-                    Log.w(TAG, "run: " + gdbFeatureTable.getTableName());
-                    //mainLayerList.add(dataFeatureLayer);
-                }*/
-                featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
-                mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
+            public void mapScaleChanged(MapScaleChangedEvent mapScaleChangedEvent) {
+                if (!MapQuery) setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()));
+                else setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
             }
         });
-        Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
     }
     Geodatabase localGdb;
     LocationDisplay locationDisplay;
     FeatureLayer featureLayer777 = null;
     boolean hasTPK = false;
-    private void initMap(){
-        //tiledLayer = new ArcGISMapImageLayer("http://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer");
-        //censusLayer = new ArcGISMapImageLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer");
-        ArcGISMapImageLayer layer2 = new ArcGISMapImageLayer("http://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer");
-        //map.getOperationalLayers().add(tiledLayer);
-        layers.add(layer2);
-        layer layer1 = new layer("ArcGISMapImageLayer", "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer", "censusLayer", true);
-        layerList.add(layer1);
-        layer2 = new ArcGISMapImageLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer");
-        layers.add(layer2);
-        Log.w(TAG, "size: " + Integer.toString(layers.size()));
-        int size = layers.size();
-        for (int i = 0; i < size;i++){
-            map.getOperationalLayers().add(layers.get(i));
-        }
-        ServiceFeatureTable serviceFeatureTable = new ServiceFeatureTable("http://sampleserver6.arcgisonline.com/arcgis/rest/services/PoolPermits/FeatureServer/0");
-        FeatureLayer featureLayer = new FeatureLayer(serviceFeatureTable);
-        map.getOperationalLayers().add(featureLayer);
-
-        //map.getOperationalLayers().add(censusLayer);
-        layer1 = new layer("ArcGISMapImageLayer", "http://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer", "tiledLayer", true);
-        layerList.add(layer1);
-    }
+    boolean MapQuery = false;
 
     public void searchForState(final String searchString) {
 
@@ -902,7 +919,9 @@ public class MainActivity extends AppCompatActivity {
                     public boolean onQueryTextSubmit(String query) {
                         //searchForState(query);
                         mCallout.dismiss();
-                        showListPopupWindow(searchView, query);
+                        File file = new File(rootPath1);
+                        if (file.exists()) showListPopupWindow(searchView, query);
+                        else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
                         return true;
                     }
 
@@ -1101,10 +1120,14 @@ public class MainActivity extends AppCompatActivity {
                     holder.checkBox.setChecked(false);
                     //layerList.get(position).setStatus(false);
                     //if (layerList.get(position).getName().equals("tiledLayer")) {
-                    if (!name.equals("影像")) map.getOperationalLayers().remove(layers.get(position));
+                    if (!name.equals("影像")) {
+                        //map.getOperationalLayers().remove(layers.get(position).getLayer());
+                        map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
+                    }
                     else {
                         for (int kk = 0; kk < TPKlayers.size(); kk++){
-                            map.getOperationalLayers().remove(TPKlayers.get(kk));
+                            //map.getOperationalLayers().remove(TPKlayers.get(kk).getLayer());
+                            map.getOperationalLayers().get(TPKlayers.get(kk).getNum()).setVisible(false);
                         }
                     }
                         //map.getOperationalLayers().get(position).setVisible(false);
@@ -1120,10 +1143,14 @@ public class MainActivity extends AppCompatActivity {
                     //layerList.get(position).setStatus(true);
                     //if (layerList.get(position).getName().equals("tiledLayer")) {
                         //tiledLayer = new ArcGISMapImageLayer(layerList.get(position).getPath());
-                    if (!name.equals("影像")) map.getOperationalLayers().add(layers.get(position));
+                    if (!name.equals("影像")) {
+                        //map.getOperationalLayers().add(layers.get(position).getLayer());
+                        map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
+                    }
                     else {
                         for (int kk = 0; kk < TPKlayers.size(); kk++){
-                            map.getOperationalLayers().add(TPKlayers.get(kk));
+                            //map.getOperationalLayers().add(TPKlayers.get(kk).getLayer());
+                            map.getOperationalLayers().get(TPKlayers.get(kk).getNum()).setVisible(true);
                         }
                     }
                     //map.getOperationalLayers().get(position).setVisible(true);
@@ -1157,7 +1184,7 @@ public class MainActivity extends AppCompatActivity {
         isLoc = true;
     }
     boolean isLoc = false;
-    List<Layer> TPKlayers = new ArrayList<>();
+    List<layer1> TPKlayers = new ArrayList<>();
     @Override
     protected void onPause() {
         mMapView.pause();

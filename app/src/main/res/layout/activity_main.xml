@@ -21,6 +21,22 @@
         app:fab_elevationCompat="6dp"
         app:fab_shadowColor="#000"
         app:fab_size="mini" />
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/MapQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:adjustViewBounds="false"
+        android:scaleType="fitEnd"
+        android:src="@drawable/ic_search_black_24dp"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="wrap_content"
