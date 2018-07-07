@@ -123,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton recyclerViewButton;
     FeatureLayer mFeaturelayer;
     private boolean isClick = false;
+    private TextView ScaleShow;
     ArcGISMap map;
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
     public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
@@ -447,19 +448,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ScaleShow = (TextView) findViewById(R.id.scale);
         FloatingActionButton MapQueryBT = (FloatingActionButton) findViewById(R.id.MapQuery);
         MapQueryBT.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!MapQuery) {
                     MapQuery = true;
-                    setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
+                    ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
                     Toast.makeText(MainActivity.this, R.string.OpenMapQuery, Toast.LENGTH_LONG).show();
                 }
                 else {
                     MapQuery = false;
                     mCallout.dismiss();
-                    setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()));
+                    ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
                     Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
                 }
             }
@@ -569,7 +571,7 @@ public class MainActivity extends AppCompatActivity {
 
                                                                 //showMap();
                                                                 mMapView.setMap(map);
-                                                                mMapView.setViewpointScaleAsync(1300000);
+                                                                mMapView.setViewpointScaleAsync(2000000);
                                                             }else mainMobileMapPackage.loadAsync();
                                                         }
                                                     });
@@ -815,6 +817,7 @@ public class MainActivity extends AppCompatActivity {
                 public void run() {
                     featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
                     mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
+                    //mMapView.setViewpointCenterAsync();
                 }
             });
             Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
@@ -823,8 +826,8 @@ public class MainActivity extends AppCompatActivity {
         mMapView.addMapScaleChangedListener(new MapScaleChangedListener() {
             @Override
             public void mapScaleChanged(MapScaleChangedEvent mapScaleChangedEvent) {
-                if (!MapQuery) setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()));
-                else setTitle("比例尺  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
+                if (!MapQuery) ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
+                else ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
             }
         });
     }
