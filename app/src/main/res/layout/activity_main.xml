@@ -91,6 +91,7 @@
     </com.esri.arcgisruntime.mapping.view.MapView>
     <ImageView
         android:id="@+id/North"
+        android:layout_marginTop="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/ic_navigation_black_24dp"
@@ -109,7 +110,10 @@
             android:id="@+id/scale"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center"
+            android:textStyle="bold"
+            android:textColor="@color/Black"
+            android:background="@color/White"/>
     </LinearLayout>
 
 </RelativeLayout>

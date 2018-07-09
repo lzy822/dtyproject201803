@@ -33,8 +33,8 @@ public class geometry_WhiteBlank {
         this.polyline = polyline;
     }
 
-    public void setLineSymbol(int color_Whiteblank) {
-        this.lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, 10);
+    public void setLineSymbol(int color_Whiteblank, int width) {
+        this.lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, width);
     }
 
     public void setPolyline(PointCollection points) {

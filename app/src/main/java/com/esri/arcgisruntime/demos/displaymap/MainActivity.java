@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                         geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank();
-                        geometryWhiteBlank.setLineSymbol(color_Whiteblank);
+                        geometryWhiteBlank.setLineSymbol(color_Whiteblank, 3);
                         geometryWhiteBlank.setPolyline(points);
                         graphics.add(geometryWhiteBlank.getFillGraphic());
                         graphicsOverlay_10.getGraphics().add(graphics.get(graphics.size() - 1));
@@ -353,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
                                 points.get(0).toString());
                         if (!points.isEmpty()) {
                             graphicsOverlay_9 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, 5);
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, 3);
                             Polyline polyline = new Polyline(points);
                             Graphic fillGraphic = new Graphic(polyline, lineSymbol);
                             graphicsOverlay_9.getGraphics().add(fillGraphic);
@@ -455,11 +455,28 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         North = (ImageView) findViewById(R.id.North);
+        North.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                North.setRotation(0);
+                mMapView.setViewpointRotationAsync(0);
+            }
+        });
         ResetBT = (FloatingActionButton) findViewById(R.id.Reset);
         ResetBT.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mMapView.setViewpointCenterAsync(OriginLocation);
+                //Log.w(TAG, "onClick: " + OriginLocation.getX() + " ; " + OriginLocation.getY());
+                if (OriginLocation != null & numx != 0) {
+                    mMapView.setViewpointCenterAsync(OriginLocation);
+                    mMapView.setViewpointScaleAsync(1200000);
+                    North.setRotation(0);
+                    mMapView.setViewpointRotationAsync(0);
+                }else {
+                    mMapView.setViewpointScaleAsync(1200000);
+                    North.setRotation(0);
+                    mMapView.setViewpointRotationAsync(0);
+                }
             }
         });
         ScaleShow = (TextView) findViewById(R.id.scale);
@@ -475,6 +492,7 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     MapQuery = false;
                     mCallout.dismiss();
+                    mMapView.getGraphicsOverlays().clear();
                     drawWhiteBlank();
                     ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
                     Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
@@ -586,9 +604,11 @@ public class MainActivity extends AppCompatActivity {
 
                                                                 //showMap();
                                                                 mMapView.setMap(map);
+                                                                OriginScale = mMapView.getMapScale();
                                                                 mMapView.setViewpointScaleAsync(2000000);
                                                                 drawWhiteBlank();
-                                                                OriginLocation = mMapView.getLocationDisplay().getMapLocation();
+                                                                //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
+
                                                             }else mainMobileMapPackage.loadAsync();
                                                         }
                                                     });
@@ -634,6 +654,12 @@ public class MainActivity extends AppCompatActivity {
                 final Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
                 final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+                if (numx == 0) {
+                    Point pt = mMapView.screenToLocation(new android.graphics.Point(Math.round(mMapView.getWidth() / 2), Math.round(((mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this))) / 2)));
+                    //Log.w(TAG, "run: " + pt.getX() + "; " + pt.getY());
+                    OriginLocation = (Point) GeometryEngine.project(pt, SpatialReferences.getWgs84());
+                    numx++;
+                }
                 // create a textview for the callout
                 /*TextView calloutContent = new TextView(getApplicationContext());
                 calloutContent.setTextColor(Color.BLACK);
@@ -680,7 +706,7 @@ public class MainActivity extends AppCompatActivity {
                                             Feature mFeatureGrafic = (Feature) element;
                                             Geometry geometry = mFeatureGrafic.getGeometry();
                                             GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                                            SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+                                            SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 5);
                                             SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN,3);
                                             Graphic pointGraphic = new Graphic(clickPoint,pointSymbol);
                                             Graphic fillGraphic = new Graphic(geometry,lineSymbol);
@@ -730,6 +756,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mMapView.addMapRotationChangedListener(new MapRotationChangedListener() {
+            @Override
+            public void mapRotationChanged(MapRotationChangedEvent mapRotationChangedEvent) {
+                North.setRotation(360 - (float) mapRotationChangedEvent.getSource().getMapRotation());
+                Log.w(TAG, "mapRotationChanged: " + mapRotationChangedEvent.getSource().getMapRotation());
+            }
+        });
+
         /*initMap();
         Log.w(TAG, "初始化后" + Integer.toString(map.getOperationalLayers().size()));
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
@@ -754,7 +788,7 @@ public class MainActivity extends AppCompatActivity {
                                     Geometry geometry=mFeatureGrafic.getGeometry();
                                     GraphicsOverlay graphicsOverlay_1=new GraphicsOverlay();
                                     SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
-                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH,Color.GREEN,10);
+                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH,Color.GREEN,3);
                                     Graphic pointGraphic = new Graphic(clickPoint,pointSymbol);
                                     Graphic fillGraphic = new Graphic(geometry,lineSymbol);
                                     graphicsOverlay_1.getGraphics().add(pointGraphic);
@@ -781,20 +815,23 @@ public class MainActivity extends AppCompatActivity {
 
 
         mCallout = mMapView.getCallout();
+        //Log.w(TAG, "onCreate: " + mMapView.getMap().getOperationalLayers().get(10).getFullExtent().getCenter().getX() + "; " + mMapView.getMap().getOperationalLayers().get(10).getFullExtent().getCenter().getY());
         locationDisplay = mMapView.getLocationDisplay();
+        Log.w(TAG, "onCreate: " + locationDisplay.getLocation().getPosition());
         locationDisplay.setShowLocation(true);
-        locationDisplay.setAutoPanMode(LocationDisplay.AutoPanMode.RECENTER );
+        locationDisplay.setAutoPanMode(LocationDisplay.AutoPanMode.COMPASS_NAVIGATION);
         locationDisplay.startAsync();
-        Point point=locationDisplay.getMapLocation();
-        LocationDataSource.Location location=locationDisplay.getLocation();
-        Point point2=location.getPosition();
-        locationDisplay.addLocationChangedListener(new LocationDisplay.LocationChangedListener() {
-            @Override
-            public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
-                LocationDataSource.Location location=locationChangedEvent.getLocation();
-                mLocation = location.getPosition();
-            }
-        });
+        if (locationDisplay.isShowPingAnimation()) {
+            final LocationDataSource.Location location = locationDisplay.getLocation();
+            mLocation = location.getPosition();
+            locationDisplay.addLocationChangedListener(new LocationDisplay.LocationChangedListener() {
+                @Override
+                public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
+                    LocationDataSource.Location location = locationChangedEvent.getLocation();
+                    mLocation = location.getPosition();
+                }
+            });
+        }
 
         File file = new File(rootPath1);
         if (file.exists()) {
@@ -824,10 +861,18 @@ public class MainActivity extends AppCompatActivity {
         LocHereBT.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mLocation.getX() != 0) mMapView.setViewpointCenterAsync(mLocation, 3000);
+                if (mLocation != null) {
+                    if (mLocation.getX() != 0) mMapView.setViewpointCenterAsync(mLocation, 3000);
+                    locationDisplay.setAutoPanMode(LocationDisplay.AutoPanMode.COMPASS_NAVIGATION);
+                    locationDisplay.startAsync();
+                }else {
+                    Toast.makeText(MainActivity.this, R.string.LocError_1, Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
+
+    int numx = 0;
     Point mLocation;
     Geodatabase localGdb;
     LocationDisplay locationDisplay;
@@ -836,6 +881,7 @@ public class MainActivity extends AppCompatActivity {
     boolean MapQuery = false;
 
     public void drawWhiteBlank(){
+        graphics.clear();
         List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
         int size = whiteblanks.size();
         Log.w(TAG, "onCreate: " + size);
@@ -851,14 +897,18 @@ public class MainActivity extends AppCompatActivity {
                     Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReferences.getWgs84());
                     points.add(wgs84Point);
                 }
-                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, whiteblanks.get(i).getColor(), 5);
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, whiteblanks.get(i).getColor(), 3);
                 Polyline polyline = new Polyline(points);
                 Graphic g = new Graphic(polyline, lineSymbol);
                 graphics.add(g);
             }
             if (graphics.size() > 0) {
                 for (int j = 0; j < graphics.size(); j++){
-                    graphicsOverlay_10.getGraphics().add(graphics.get(j));
+                    try {
+                        graphicsOverlay_10.getGraphics().add(graphics.get(j));
+                    }catch (ArcGISRuntimeException e){
+
+                    }
                 }
             }
             if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
@@ -1240,13 +1290,8 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mMapView.resume();
         setRecyclerView();
-        mMapView.addMapRotationChangedListener(new MapRotationChangedListener() {
-            @Override
-            public void mapRotationChanged(MapRotationChangedEvent mapRotationChangedEvent) {
-                North.setRotation(mapRotationChangedEvent.getSource().getRotation());
-            }
-        });
     }
+    double OriginScale;
     @Override
     protected void onDestroy() {
         super.onDestroy();
