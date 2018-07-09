@@ -35,6 +35,7 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -82,6 +83,8 @@ import com.esri.arcgisruntime.mapping.view.IdentifyLayerResult;
 import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedEvent;
 import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedListener;
 import com.esri.arcgisruntime.mapping.view.LocationDisplay;
+import com.esri.arcgisruntime.mapping.view.MapRotationChangedEvent;
+import com.esri.arcgisruntime.mapping.view.MapRotationChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedEvent;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapView;
@@ -132,6 +135,8 @@ public class MainActivity extends AppCompatActivity {
     //记录画笔颜色
     private int color_Whiteblank;
     GraphicsOverlay graphicsOverlay_66;
+    ImageView North;
+    FloatingActionButton ResetBT;
 
 
 
@@ -348,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
                                 points.get(0).toString());
                         if (!points.isEmpty()) {
                             graphicsOverlay_9 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, 10);
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color_Whiteblank, 5);
                             Polyline polyline = new Polyline(points);
                             Graphic fillGraphic = new Graphic(polyline, lineSymbol);
                             graphicsOverlay_9.getGraphics().add(fillGraphic);
@@ -439,6 +444,7 @@ public class MainActivity extends AppCompatActivity {
     }
     boolean isOK1 = false;
     boolean isOK2 = false;
+    Point OriginLocation;
 
     //记录是否开启白板功能
     private boolean isOpenWhiteBlank = false;
@@ -448,6 +454,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        North = (ImageView) findViewById(R.id.North);
+        ResetBT = (FloatingActionButton) findViewById(R.id.Reset);
+        ResetBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mMapView.setViewpointCenterAsync(OriginLocation);
+            }
+        });
         ScaleShow = (TextView) findViewById(R.id.scale);
         FloatingActionButton MapQueryBT = (FloatingActionButton) findViewById(R.id.MapQuery);
         MapQueryBT.setOnClickListener(new View.OnClickListener() {
@@ -461,6 +475,7 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     MapQuery = false;
                     mCallout.dismiss();
+                    drawWhiteBlank();
                     ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
                     Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
                 }
@@ -560,18 +575,20 @@ public class MainActivity extends AppCompatActivity {
                                                                 for (int i = size - 1; i > -1; i--){
                                                                     if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
                                                                         layers.add(new layer1(map.getOperationalLayers().get(i), i));
-                                                                        layerList.add(new layer(map.getOperationalLayers().get(i).getName()));
+                                                                        layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
                                                                     }else {
                                                                         hasTPK = true;
                                                                         TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
                                                                     }
                                                                 }
-                                                                layerList.add(new layer("影像"));
+                                                                layerList.add(new layer("影像", true));
                                                                 isOK1 = true;
 
                                                                 //showMap();
                                                                 mMapView.setMap(map);
                                                                 mMapView.setViewpointScaleAsync(2000000);
+                                                                drawWhiteBlank();
+                                                                OriginLocation = mMapView.getLocationDisplay().getMapLocation();
                                                             }else mainMobileMapPackage.loadAsync();
                                                         }
                                                     });
@@ -761,34 +778,7 @@ public class MainActivity extends AppCompatActivity {
         setRecyclerView();
         Log.w(TAG, "onCreate: "  );*/
 
-        List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
-        int size = whiteblanks.size();
-        Log.w(TAG, "onCreate: " + size);
-        if (size == 0) graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-        else {
-            graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-            for (int i = 0; i < size; i++){
-                points.clear();
-                //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
-                String[] strings = whiteblanks.get(i).getPts().split("lzy");
-                for (int kk = 0; kk < strings.length; kk++){
-                    String[] strings1 = strings[kk].split(",");
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReferences.getWgs84());
-                    points.add(wgs84Point);
-                }
-                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, whiteblanks.get(i).getColor(), 10);
-                Polyline polyline = new Polyline(points);
-                Graphic g = new Graphic(polyline, lineSymbol);
-                graphics.add(g);
-            }
-            if (graphics.size() > 0) {
-                for (int j = 0; j < graphics.size(); j++){
-                    graphicsOverlay_10.getGraphics().add(graphics.get(j));
-                }
-            }
-            if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
-            mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
-            }
+
 
         mCallout = mMapView.getCallout();
         locationDisplay = mMapView.getLocationDisplay();
@@ -802,7 +792,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
                 LocationDataSource.Location location=locationChangedEvent.getLocation();
-                Point point=location.getPosition();
+                mLocation = location.getPosition();
             }
         });
 
@@ -830,12 +820,51 @@ public class MainActivity extends AppCompatActivity {
                 else ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
             }
         });
+        FloatingActionButton LocHereBT = (FloatingActionButton) findViewById(R.id.LocHere);
+        LocHereBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mLocation.getX() != 0) mMapView.setViewpointCenterAsync(mLocation, 3000);
+            }
+        });
     }
+    Point mLocation;
     Geodatabase localGdb;
     LocationDisplay locationDisplay;
     FeatureLayer featureLayer777 = null;
     boolean hasTPK = false;
     boolean MapQuery = false;
+
+    public void drawWhiteBlank(){
+        List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
+        int size = whiteblanks.size();
+        Log.w(TAG, "onCreate: " + size);
+        if (size == 0) graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+        else {
+            graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+            for (int i = 0; i < size; i++){
+                points.clear();
+                //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
+                String[] strings = whiteblanks.get(i).getPts().split("lzy");
+                for (int kk = 0; kk < strings.length; kk++){
+                    String[] strings1 = strings[kk].split(",");
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReferences.getWgs84());
+                    points.add(wgs84Point);
+                }
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, whiteblanks.get(i).getColor(), 5);
+                Polyline polyline = new Polyline(points);
+                Graphic g = new Graphic(polyline, lineSymbol);
+                graphics.add(g);
+            }
+            if (graphics.size() > 0) {
+                for (int j = 0; j < graphics.size(); j++){
+                    graphicsOverlay_10.getGraphics().add(graphics.get(j));
+                }
+            }
+            if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+            mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+        }
+    }
 
     public void searchForState(final String searchString) {
 
@@ -1126,11 +1155,17 @@ public class MainActivity extends AppCompatActivity {
                     if (!name.equals("影像")) {
                         //map.getOperationalLayers().remove(layers.get(position).getLayer());
                         map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
+                        for (int i = 0; i < layerList.size(); i++){
+                            if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
+                        }
                     }
                     else {
                         for (int kk = 0; kk < TPKlayers.size(); kk++){
                             //map.getOperationalLayers().remove(TPKlayers.get(kk).getLayer());
                             map.getOperationalLayers().get(TPKlayers.get(kk).getNum()).setVisible(false);
+                        }
+                        for (int i = 0; i < layerList.size(); i++){
+                            if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
                         }
                     }
                         //map.getOperationalLayers().get(position).setVisible(false);
@@ -1149,11 +1184,17 @@ public class MainActivity extends AppCompatActivity {
                     if (!name.equals("影像")) {
                         //map.getOperationalLayers().add(layers.get(position).getLayer());
                         map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
+                        for (int i = 0; i < layerList.size(); i++){
+                            if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(true);
+                        }
                     }
                     else {
                         for (int kk = 0; kk < TPKlayers.size(); kk++){
                             //map.getOperationalLayers().add(TPKlayers.get(kk).getLayer());
                             map.getOperationalLayers().get(TPKlayers.get(kk).getNum()).setVisible(true);
+                        }
+                        for (int i = 0; i < layerList.size(); i++){
+                            if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(true);
                         }
                     }
                     //map.getOperationalLayers().get(position).setVisible(true);
@@ -1198,10 +1239,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         mMapView.resume();
-
         setRecyclerView();
+        mMapView.addMapRotationChangedListener(new MapRotationChangedListener() {
+            @Override
+            public void mapRotationChanged(MapRotationChangedEvent mapRotationChangedEvent) {
+                North.setRotation(mapRotationChangedEvent.getSource().getRotation());
+            }
+        });
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -29,6 +29,19 @@ public class layer {
         this.status = status;
     }
 
+    public int getNum() {
+        return num;
+    }
+
+    public void setNum(int num) {
+        this.num = num;
+    }
+
+    public layer(String name, boolean status) {
+        this.name = name;
+        this.status = status;
+    }
+
     public boolean isStatus() {
         return status;
     }

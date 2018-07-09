@@ -64,7 +64,11 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
                 layer layer = layerList.get(position);
-                mOnItemClick.onItemClick(v, layer.getName(), position);
+                try {
+                    mOnItemClick.onItemClick(v, layer.getName(), position);
+                }catch (NullPointerException e){
+
+                }
             }
         });
         holder.cardView.setOnLongClickListener(new View.OnLongClickListener() {
@@ -85,7 +89,8 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
     @Override
     public void onBindViewHolder(final layerAdapter.ViewHolder holder, int position) {
         layer mlayer = layerList.get(position);
-        holder.checkBox.setChecked(true);
+        if (mlayer.isStatus()) holder.checkBox.setChecked(true);
+        else holder.checkBox.setChecked(false);
         holder.checkBox.setText(mlayer.getName());
         holder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
