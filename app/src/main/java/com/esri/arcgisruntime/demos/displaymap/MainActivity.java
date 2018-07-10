@@ -264,6 +264,7 @@ public class MainActivity extends AppCompatActivity {
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
                 LitePal.deleteAll(whiteblank.class);
+                Toast.makeText(MainActivity.this, R.string.EraseFinish, Toast.LENGTH_SHORT).show();
                 /*}catch (Exception e){
                     Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
                     Log.w(TAG, "onClick: " + e.toString());
@@ -458,7 +459,7 @@ public class MainActivity extends AppCompatActivity {
         North.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                North.setRotation(0);
+                //North.setRotation(0);
                 mMapView.setViewpointRotationAsync(0);
             }
         });
@@ -467,14 +468,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //Log.w(TAG, "onClick: " + OriginLocation.getX() + " ; " + OriginLocation.getY());
-                if (OriginLocation != null & numx != 0) {
-                    mMapView.setViewpointCenterAsync(OriginLocation);
-                    mMapView.setViewpointScaleAsync(1200000);
-                    North.setRotation(0);
+                if (OriginLocation != null) {
+                    mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+                    //mMapView.setViewpointScaleAsync(1200000);
+                    //North.setRotation(0);
                     mMapView.setViewpointRotationAsync(0);
                 }else {
-                    mMapView.setViewpointScaleAsync(1200000);
-                    North.setRotation(0);
+                    mMapView.setViewpointCenterAsync(new Point(102.715507, 25.038112, 0.000000, SpatialReference.create(4326)), 65000);
+                    //North.setRotation(0);
                     mMapView.setViewpointRotationAsync(0);
                 }
             }
@@ -575,7 +576,7 @@ public class MainActivity extends AppCompatActivity {
         map = new ArcGISMap();
         pickFile();
         Log.w(TAG, "onCreate: " + rootPath );
-        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(rootPath);
+        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(rootPath2);
         mainMobileMapPackage.loadAsync();
         mainMobileMapPackage.addDoneLoadingListener(new Runnable() {
                                                         @Override
@@ -605,7 +606,15 @@ public class MainActivity extends AppCompatActivity {
                                                                 //showMap();
                                                                 mMapView.setMap(map);
                                                                 OriginScale = mMapView.getMapScale();
-                                                                mMapView.setViewpointScaleAsync(2000000);
+                                                                //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
+                                                                //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
+                                                                if (mainMobileMapPackage.getPath().toString().contains("临沧")) {
+                                                                    Log.w(TAG, "run: " + mainMobileMapPackage.getPath().toString());
+                                                                    OriginLocation = new Point(99.626302, 23.928384, 0, SpatialReference.create(4326));
+                                                                    //mMapView.setViewpointCenterAsync(OriginLocation);
+                                                                    //mMapView.setViewpointScaleAsync(1200000);
+                                                                    mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+                                                                }else mMapView.setViewpointScaleAsync(100000);
                                                                 drawWhiteBlank();
                                                                 //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
 
@@ -654,12 +663,12 @@ public class MainActivity extends AppCompatActivity {
                 final Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
                 final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
-                if (numx == 0) {
+                /*if (numx == 0) {
                     Point pt = mMapView.screenToLocation(new android.graphics.Point(Math.round(mMapView.getWidth() / 2), Math.round(((mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this))) / 2)));
                     //Log.w(TAG, "run: " + pt.getX() + "; " + pt.getY());
                     OriginLocation = (Point) GeometryEngine.project(pt, SpatialReferences.getWgs84());
                     numx++;
-                }
+                }*/
                 // create a textview for the callout
                 /*TextView calloutContent = new TextView(getApplicationContext());
                 calloutContent.setTextColor(Color.BLACK);
@@ -892,10 +901,14 @@ public class MainActivity extends AppCompatActivity {
                 points.clear();
                 //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
                 String[] strings = whiteblanks.get(i).getPts().split("lzy");
+                Log.w(TAG, "drawWhiteBlank1: " + strings.length);
                 for (int kk = 0; kk < strings.length; kk++){
                     String[] strings1 = strings[kk].split(",");
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReferences.getWgs84());
-                    points.add(wgs84Point);
+                    if (strings1.length == 2) {
+                        Log.w(TAG, "drawWhiteBlank2: " + strings1.length);
+                        Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReferences.getWgs84());
+                        points.add(wgs84Point);
+                    }
                 }
                 SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, whiteblanks.get(i).getColor(), 3);
                 Polyline polyline = new Polyline(points);
@@ -1290,6 +1303,8 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mMapView.resume();
         setRecyclerView();
+        //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
+        //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
     }
     double OriginScale;
     @Override

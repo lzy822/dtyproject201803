@@ -12,4 +12,5 @@
     <string name="QueryError_2">手机中没有待查询图层或没有打开查询功能!</string>
     <string name="OpenMapQuery">已开启图查询功能!</string>
     <string name="CloseMapQuery">已关闭图查询功能!</string>
+    <string name="EraseFinish">已经清空白板!</string>
 </resources>
