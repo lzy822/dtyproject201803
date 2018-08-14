@@ -45,3 +45,12 @@
 -keep class * extends org.litepal.crud.LitePalSupport{
     *;
 }
+
+-keep class com.esri.** {
+    *;
+}
+
+
+-keep class com.github.** { *; }
+-keep class com.shockwave.** { *; }
+-keep class android.support.v7.** { *; }

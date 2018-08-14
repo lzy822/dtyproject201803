@@ -9,6 +9,10 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -162,6 +166,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+    private double degree;
+    private SensorEventListener listener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            degree = event.values[0];
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
+    };
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -455,12 +472,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //获取传感器管理器系统服务
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         North = (ImageView) findViewById(R.id.North);
         North.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //North.setRotation(0);
-                mMapView.setViewpointRotationAsync(0);
+                Log.w(TAG, "onClick: " + degree);
+                if (mMapView.getMapRotation() != 0)
+                    mMapView.setViewpointRotationAsync(0);
+                else mMapView.setViewpointRotationAsync(degree);
             }
         });
         ResetBT = (FloatingActionButton) findViewById(R.id.Reset);
@@ -1292,10 +1314,13 @@ public class MainActivity extends AppCompatActivity {
     }
     boolean isLoc = false;
     List<layer1> TPKlayers = new ArrayList<>();
+    //初始化传感器管理器
+    private SensorManager sensorManager;
     @Override
     protected void onPause() {
         mMapView.pause();
         super.onPause();
+        sensorManager.unregisterListener(listener);
     }
 
     @Override
@@ -1303,6 +1328,9 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mMapView.resume();
         setRecyclerView();
+        //注册传感器监听器
+        Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);
         //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
         //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
     }
