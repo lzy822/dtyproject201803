@@ -167,11 +167,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private double degree;
+
     private SensorEventListener listener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
-            degree = event.values[0];
+            if (isNorth) {
+                mMapView.setViewpointRotationAsync(event.values[0]);
+            }
         }
 
         @Override
@@ -468,10 +470,12 @@ public class MainActivity extends AppCompatActivity {
     private boolean isOpenWhiteBlank = false;
     Callout mCallout;
     boolean inMap;
+    boolean isNorth = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         //获取传感器管理器系统服务
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         North = (ImageView) findViewById(R.id.North);
@@ -479,10 +483,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //North.setRotation(0);
-                Log.w(TAG, "onClick: " + degree);
-                if (mMapView.getMapRotation() != 0)
+                if (mMapView.getMapRotation() != 0) {
+                    isNorth = false;
                     mMapView.setViewpointRotationAsync(0);
-                else mMapView.setViewpointRotationAsync(degree);
+                }
+                else isNorth = true;
             }
         });
         ResetBT = (FloatingActionButton) findViewById(R.id.Reset);
@@ -606,11 +611,7 @@ public class MainActivity extends AppCompatActivity {
                                                             LoadStatus mainLoadStatus = mainMobileMapPackage.getLoadStatus();
                                                             if (mainLoadStatus == LoadStatus.LOADED) {
                                                                 List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
-                                                                Log.w(TAG, "" + Integer.toString(mainArcGISMapL.size()) );
-                                                                //ArcGISMap mainArcrun: GISMapMMPK = mainArcGISMapL.get(0);
-                                                                Log.w(TAG, "mainArcGISMapL.size: " + mainArcGISMapL.size());
                                                                 map = mainArcGISMapL.get(0);
-                                                                //ArcGISMap map1 = mainArcGISMapL.get(0);
                                                                 int size = map.getOperationalLayers().size();
                                                                 Log.w(TAG, "size: " + size);
                                                                 for (int i = size - 1; i > -1; i--){
@@ -625,6 +626,10 @@ public class MainActivity extends AppCompatActivity {
                                                                 layerList.add(new layer("影像", true));
                                                                 isOK1 = true;
 
+                                                                /*Log.w(TAG, "getFullExtent: " + map.getOperationalLayers().size());
+                                                                for (int i = 0; i < size; i++){
+                                                                    Log.w(TAG, "getFullExtent: " + map.getOperationalLayers().get(i).getFullExtent());
+                                                                }*/
                                                                 //showMap();
                                                                 mMapView.setMap(map);
                                                                 OriginScale = mMapView.getMapScale();
