@@ -61,6 +61,7 @@ import com.esri.arcgisruntime.geometry.AreaUnitId;
 import com.esri.arcgisruntime.geometry.Envelope;
 import com.esri.arcgisruntime.geometry.GeodeticCurveType;
 import com.esri.arcgisruntime.geometry.Geometry;
+import com.esri.arcgisruntime.geometry.GeometryBuilder;
 import com.esri.arcgisruntime.geometry.GeometryEngine;
 import com.esri.arcgisruntime.geometry.LinearUnit;
 import com.esri.arcgisruntime.geometry.LinearUnitId;
@@ -116,6 +117,7 @@ import org.json.JSONObject;
 import org.litepal.LitePal;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -123,6 +125,10 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
+
+import lecho.lib.hellocharts.model.PieChartData;
+import lecho.lib.hellocharts.model.SliceValue;
+import lecho.lib.hellocharts.view.PieChartView;
 
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
@@ -218,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
     List<Point> whiteBlankPts;
     GraphicsOverlay graphicsOverlay_9;
     GraphicsOverlay graphicsOverlay_10;
-    PointCollection points = new PointCollection(SpatialReferences.getWgs84());;
+    PointCollection points = new PointCollection(SpatialReference.create(4521));;
     List<Graphic> graphics = new ArrayList<>();
     boolean isOk = false;
     private void showPopueWindowForWhiteblank(){
@@ -505,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 DrawType = DRAW_POLYGON;
-                pointCollection = new PointCollection(SpatialReferences.getWgs84());
+                pointCollection = new PointCollection(SpatialReference.create(4521));
                 popupWindow.dismiss();
             }
         });
@@ -513,7 +519,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 DrawType = DRAW_POLYLINE;
-                pointCollection = new PointCollection(SpatialReferences.getWgs84());
+                pointCollection = new PointCollection(SpatialReference.create(4521));
                 popupWindow.dismiss();
             }
         });
@@ -550,6 +556,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     PointCollection pointCollection;
+    PointCollection pointCollection1 = new PointCollection(SpatialReference.create(4521));
     int num = 0;
     Point ppp;
 
@@ -567,18 +574,162 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     if (DrawType == DRAW_POLYGON){
                         //pointCollection.add(ppp.getX(), ppp.getY());
-                        Polygon polygon = new Polygon(pointCollection);
-                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                        SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.GREEN, lineSymbol);
-                        Graphic fillGraphic = new Graphic(polygon, fillSymbol);
-                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                        //if (num == 0) {
+                            final Polygon polygon = new Polygon(pointCollection);
+                            /*GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                            SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.WHITE, lineSymbol);
+                            Graphic fillGraphic = new Graphic(polygon, fillSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            num++;*/
 
-                        Log.w(TAG, "onClick: " + pointCollection.size());
-                        Log.w(TAG, "onClick: " + GeometryEngine.area(polygon));
-                        Log.w(TAG, "onClick: " + GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC));
-                        Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polygon.toPolyline(), new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC));
+                            Log.w(TAG, "onClick: " + pointCollection.size());
+                            Log.w(TAG, "onClick: " + GeometryEngine.area(polygon));
+                            Log.w(TAG, "onClick: " + GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC));
+                            Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polygon.toPolyline(), new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC));
+
+                        //}
+                        /*else {
+                            final Polygon polygon = new Polygon(pointCollection1);
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                            SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.WHITE, lineSymbol);
+                            Graphic fillGraphic = new Graphic(polygon, fillSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            num++;
+
+                            Geometry geometry = GeometryEngine.intersection(polygon, new Polygon(pointCollection));
+                            GraphicsOverlay graphicsOverlay_11 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol1 = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+                            SimpleFillSymbol fillSymbol1 = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.WHITE, lineSymbol1);
+                            Graphic fillGraphic1 = new Graphic(geometry, fillSymbol1);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic1);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_11);
+                            Log.w(TAG, "onClick: " + pointCollection1.size());
+                            Log.w(TAG, "onClick: " + GeometryEngine.area(polygon));
+                            Log.w(TAG, "onClick: " + GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC));
+                            Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polygon.toPolyline(), new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC));
+                        }*/
+                        QueryParameters query = new QueryParameters();
+                        query.setGeometry(polygon);// 设置空间几何对象
+                        File file = new File(rootPath);
+                        if (file.exists() & MapQuery) {
+                            //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                            try {
+                                FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                                        = mTable.queryFeaturesAsync(query);
+                                featureQueryResult.addDoneListener(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            while (mMapView.getGraphicsOverlays().size() != 0) {
+                                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                                    mMapView.getGraphicsOverlays().remove(i);
+                                                }
+                                            }
+                                            FeatureQueryResult featureResul = featureQueryResult.get();
+                                            Geometry geometry1 = polygon;
+                                            List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
+                                            for (Object element : featureResul) {
+                                                if (element instanceof Feature) {
+                                                    Feature mFeatureGrafic = (Feature) element;
+                                                    Polygon geometry = (Polygon) mFeatureGrafic.getGeometry();
+                                                    //geometry1 = GeometryEngine.intersection(geometry1, GeometryEngine.project(geometry, SpatialReference.create(4521)));
+                                                    Geometry geometry2 = GeometryEngine.intersection(polygon, GeometryEngine.project(geometry, SpatialReference.create(4521)));
+                                                    QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry2, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC));
+                                                    //Log.w(TAG, "run: " + geometry.getSpatialReference().getWkid());
+                                                    //Log.w(TAG, "run: " + geometry1.getSpatialReference().getWkid());
+                                                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3);
+                                                    Graphic fillGraphic = new Graphic(geometry2, lineSymbol);
+                                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                                    Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                                    //calloutContent.setSingleLine();
+                                                    // format coordinates to 4 decimal places
+                                                    //String str = "";
+                                                    //List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                                    for (String key : mQuerryString.keySet()) {
+                                                        //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                                        if (key.equals("GHDLMC"))
+                                                            queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
+                                                        else if (key.equals("GHDLBM"))
+                                                            queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
+                                                        else if (key.equals("XZQMC"))
+                                                            queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                                        else if (key.equals("XZQDM"))
+                                                            queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                                    }
+                                                    queryTaskInfos.add(queryTaskInfo);
+
+                                                }
+                                            }
+                                            double wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC);
+                                            List<SliceValue> sliceValues = new ArrayList<>();
+                                            TextView calloutContent = new TextView(getApplicationContext());
+                                            calloutContent.setTextColor(Color.BLACK);
+                                            String str = "";
+                                            List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                            for (int i = 0; i < queryTaskInfos.size(); i++){
+                                                if (i == 0 && queryTaskInfos.get(i).getArea() != 0) keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                                else {
+                                                    boolean hasKey = false;
+                                                    for (int j = 0; j < keyAndValues.size(); j++){
+                                                        if (queryTaskInfos.get(i).getTypename().equals(keyAndValues.get(j).getName())) {
+                                                            hasKey = true;
+                                                            keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (!hasKey && queryTaskInfos.get(i).getArea() != 0){
+                                                        keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                                    }
+                                                }
+                                            }
+                                            DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                                            DecimalFormat decimalFormat1 = new DecimalFormat("0.0000");
+                                            for (int j = 0; j < keyAndValues.size(); j++){
+                                                if (j < keyAndValues.size() - 1) {
+                                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue())));
+                                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "平方公里" + "\n";
+                                                    str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea  * 100) + "%" + "\n";
+                                                }
+                                                else {
+                                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue())));
+                                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "平方公里" + "\n";
+                                                    str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea  * 100) + "%";
+                                                }
+                                            }
+                                            calloutContent.setText(str);
+                                            // get callout, set content and show
+                                            mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
+                                            mCallout.setContent(calloutContent);
+                                            mCallout.show();
+                                            inMap = true;
+                                            PieChartData pieChartData = new PieChartData(sliceValues);
+                                            PieChartView pieChartView = (PieChartView) findViewById(R.id.chart);
+                                            pieChartView.setPieChartData(pieChartData);
+                                            pieChartView.setVisibility(View.VISIBLE);
+                                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+                                            Graphic fillGraphic = new Graphic(geometry1, lineSymbol);
+                                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                });
+                            } catch (ArcGISRuntimeException e) {
+                                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                            }
+                        } else
+                            Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+                        if (!inMap) mCallout.dismiss();
+
                     }else if (DrawType == DRAW_POLYLINE){
                         Polyline polyline = new Polyline(pointCollection);
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
@@ -807,7 +958,7 @@ public class MainActivity extends AppCompatActivity {
                 // create a map point from screen point
                 final Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
-                final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+                final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4521));
                 /*if (numx == 0) {
                     Point pt = mMapView.screenToLocation(new android.graphics.Point(Math.round(mMapView.getWidth() / 2), Math.round(((mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this))) / 2)));
                     //Log.w(TAG, "run: " + pt.getX() + "; " + pt.getY());
@@ -916,11 +1067,45 @@ public class MainActivity extends AppCompatActivity {
                     if (!inMap) mCallout.dismiss();
                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                 }else if (DrawType == DRAW_POLYGON){
-                    if (num == 0) ppp = clickPoint;
+                    ppp = wgs84Point;
                     pointCollection.add(wgs84Point);
-                    num++;
+                    if (pointCollection.size() == 2){
+                        while (mMapView.getGraphicsOverlays().size() != 0) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                mMapView.getGraphicsOverlays().remove(i);
+                            }
+                        }
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    }else if (pointCollection.size() > 2){
+                        while (mMapView.getGraphicsOverlays().size() != 0) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                mMapView.getGraphicsOverlays().remove(i);
+                            }
+                        }
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    }
                 }else if (DrawType == DRAW_POLYLINE){
                     pointCollection.add(wgs84Point);
+                    if (pointCollection.size() >= 2){
+                        while (mMapView.getGraphicsOverlays().size() != 0) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                mMapView.getGraphicsOverlays().remove(i);
+                            }
+                        }
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    }
                 }else if (DrawType == DRAW_POINT){
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                     SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);

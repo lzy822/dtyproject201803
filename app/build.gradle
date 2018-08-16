@@ -19,6 +19,7 @@ android {
 }
 
 dependencies {
+    implementation 'com.github.lecho:hellocharts-android:v1.5.8'
     implementation 'com.esri.arcgisruntime:arcgis-android:100.3.0'
     implementation 'com.android.support:recyclerview-v7:27.1.1'
     implementation 'com.android.support:cardview-v7:27.1.1'

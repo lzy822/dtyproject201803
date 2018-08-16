@@ -54,3 +54,4 @@
 -keep class com.github.** { *; }
 -keep class com.shockwave.** { *; }
 -keep class android.support.v7.** { *; }
+-keep class lecho.lib.hellocharts.** { *; }
