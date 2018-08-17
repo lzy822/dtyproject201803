@@ -6,15 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <lecho.lib.hellocharts.view.PieChartView
-        android:id="@+id/chart"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="10dp"
-        android:layout_alignParentBottom="true"
-        android:adjustViewBounds="false"
-        android:scaleType="fitStart"
-        android:visibility="gone"/>
+
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/whiteBlank"
         android:layout_width="wrap_content"
@@ -125,6 +117,15 @@
         android:layout_alignParentEnd="true"
         android:layout_marginRight="10dp"
         android:visibility="visible"/>
+    <lecho.lib.hellocharts.view.PieChartView
+        android:id="@+id/chart"
+        android:layout_width="130dp"
+        android:layout_height="130dp"
+        android:scaleType="center"
+        android:layout_marginRight="50dp"
+        android:layout_marginBottom="50dp"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone"/>
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

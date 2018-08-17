@@ -126,8 +126,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
+import lecho.lib.hellocharts.listener.PieChartOnValueSelectListener;
 import lecho.lib.hellocharts.model.PieChartData;
 import lecho.lib.hellocharts.model.SliceValue;
+import lecho.lib.hellocharts.util.ChartUtils;
 import lecho.lib.hellocharts.view.PieChartView;
 
 public class MainActivity extends AppCompatActivity {
@@ -227,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
     PointCollection points = new PointCollection(SpatialReference.create(4521));;
     List<Graphic> graphics = new ArrayList<>();
     boolean isOk = false;
+
     private void showPopueWindowForWhiteblank(){
         final View popView = View.inflate(this,R.layout.popupwindow_whiteblank,null);
         isWhiteBlank = true;
@@ -560,17 +563,25 @@ public class MainActivity extends AppCompatActivity {
     int num = 0;
     Point ppp;
 
+    PieChartView pieChartView;
+    List<KeyAndValue> keyAndValues;
+    double wholeArea = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        pieChartView = (PieChartView) findViewById(R.id.chart);
         //按钮添加要素
         FloatingActionButton DrawFeature = (FloatingActionButton)findViewById(R.id.DrawFeature);
         DrawFeature.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (DrawType == DRAW_NONE)
+                if (DrawType == DRAW_NONE) {
+                    pieChartView.setVisibility(View.GONE);
                     showPopueWindowForMessure();
+                }
                 else {
                     if (DrawType == DRAW_POLYGON){
                         //pointCollection.add(ppp.getX(), ppp.getY());
@@ -667,12 +678,12 @@ public class MainActivity extends AppCompatActivity {
 
                                                 }
                                             }
-                                            double wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC);
+                                            wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC);
                                             List<SliceValue> sliceValues = new ArrayList<>();
                                             TextView calloutContent = new TextView(getApplicationContext());
                                             calloutContent.setTextColor(Color.BLACK);
                                             String str = "";
-                                            List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                            keyAndValues = new ArrayList<>();
                                             for (int i = 0; i < queryTaskInfos.size(); i++){
                                                 if (i == 0 && queryTaskInfos.get(i).getArea() != 0) keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
                                                 else {
@@ -693,12 +704,12 @@ public class MainActivity extends AppCompatActivity {
                                             DecimalFormat decimalFormat1 = new DecimalFormat("0.0000");
                                             for (int j = 0; j < keyAndValues.size(); j++){
                                                 if (j < keyAndValues.size() - 1) {
-                                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue())));
+                                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float)wholeArea, ChartUtils.pickColor()));
                                                     str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "平方公里" + "\n";
                                                     str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea  * 100) + "%" + "\n";
                                                 }
                                                 else {
-                                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue())));
+                                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float)wholeArea, ChartUtils.pickColor()));
                                                     str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "平方公里" + "\n";
                                                     str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea  * 100) + "%";
                                                 }
@@ -710,7 +721,7 @@ public class MainActivity extends AppCompatActivity {
                                             mCallout.show();
                                             inMap = true;
                                             PieChartData pieChartData = new PieChartData(sliceValues);
-                                            PieChartView pieChartView = (PieChartView) findViewById(R.id.chart);
+                                            pieChartView.setOnValueTouchListener(new ValueTouchListener());
                                             pieChartView.setPieChartData(pieChartData);
                                             pieChartView.setVisibility(View.VISIBLE);
                                             GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
@@ -739,6 +750,8 @@ public class MainActivity extends AppCompatActivity {
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                         Log.w(TAG, "onClick: " + pointCollection.size());
                         Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC));
+                        DecimalFormat format = new DecimalFormat("0.00");
+                        Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
                     }
                     DrawType = DRAW_NONE;
                 }
@@ -791,6 +804,7 @@ public class MainActivity extends AppCompatActivity {
                     mMapView.getGraphicsOverlays().clear();
                     drawWhiteBlank();
                     ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
+                    pieChartView.setVisibility(View.GONE);
                     Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
                 }
             }
@@ -805,6 +819,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (!isOpenWhiteBlank){
+                    pieChartView.setVisibility(View.GONE);
                     isOpenWhiteBlank = true;
                     whiteBlank_fab.setImageResource(R.drawable.ic_cancel_black_24dp);
                     setTitle(R.string.WhiteBlankDrawing);
@@ -981,6 +996,7 @@ public class MainActivity extends AppCompatActivity {
 
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
                 if (DrawType == DRAW_NONE) {
+                    pieChartView.setVisibility(View.GONE);
                     // center on tapped point
                     mMapView.setViewpointCenterAsync(wgs84Point);
                     Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
@@ -1105,6 +1121,8 @@ public class MainActivity extends AppCompatActivity {
                         Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                        DecimalFormat format = new DecimalFormat("0.00");
+                        Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
                     }
                 }else if (DrawType == DRAW_POINT){
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
@@ -1352,6 +1370,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         switch (isQurey){
             case QUREY:
+                pieChartView.setVisibility(View.GONE);
                 menu.findItem(R.id.search).setVisible(false);
                 menu.findItem(R.id.cancel).setVisible(true);
                 // Get the SearchView and set the searchable configuration
@@ -1365,6 +1384,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public boolean onQueryTextSubmit(String query) {
                         //searchForState(query);
+                        pieChartView.setVisibility(View.GONE);
                         mCallout.dismiss();
                         File file = new File(rootPath1);
                         if (file.exists()) showListPopupWindow(searchView, query);
@@ -1380,6 +1400,7 @@ public class MainActivity extends AppCompatActivity {
                 //menu.findItem(R.id.action_search).setVisible(true);
                 break;
             case NOQUREY:
+                pieChartView.setVisibility(View.GONE);
                 menu.findItem(R.id.search).setVisible(true);
                 menu.findItem(R.id.cancel).setVisible(false);
                 menu.findItem(R.id.action_search).setVisible(false);
@@ -1671,5 +1692,28 @@ public class MainActivity extends AppCompatActivity {
         getCacheDir().delete();
         getFilesDir().delete();
         mMapView.dispose();
+    }
+
+    private class ValueTouchListener implements PieChartOnValueSelectListener {
+
+        @Override
+        public void onValueSelected(int arcIndex, SliceValue value) {
+            DecimalFormat decimalFormat = new DecimalFormat("0.00");
+            DecimalFormat decimalFormat1 = new DecimalFormat("0.0000000");
+            for (int i = 0; i < keyAndValues.size(); i++){
+                Log.w(TAG, "onValueSelected: " + (float)(Float.valueOf(keyAndValues.get(i).getValue()) / wholeArea) + ": " + value.getValue() + ": " + arcIndex);
+                if (decimalFormat1.format((float)(Float.valueOf(keyAndValues.get(i).getValue()) / wholeArea)).equals(decimalFormat1.format(value.getValue()))) {
+                    Toast.makeText(MainActivity.this, keyAndValues.get(i).getName() + "占比: " + decimalFormat.format(value.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public void onValueDeselected() {
+            // TODO Auto-generated method stub
+
+        }
+
     }
 }
