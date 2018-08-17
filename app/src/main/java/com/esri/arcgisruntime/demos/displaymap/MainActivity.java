@@ -579,6 +579,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (DrawType == DRAW_NONE) {
+                    mCallout.dismiss();
                     pieChartView.setVisibility(View.GONE);
                     showPopueWindowForMessure();
                 }
