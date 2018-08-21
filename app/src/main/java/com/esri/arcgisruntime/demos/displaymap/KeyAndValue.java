@@ -26,7 +26,6 @@ public class KeyAndValue {
         else if (name.equals("PDJB")) nickname = "坡度级别";
         else if (name.equals("XZQMC")) nickname = "行政区名称";
         else if (name.equals("XZQDM")) nickname = "行政区代码";
-        else ;
 
     }
 
