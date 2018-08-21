@@ -7,6 +7,15 @@ public class xzq extends LitePalSupport {
     private String xzqmc;
     private String sjxzq;
     private String type;
+    private int grade;
+
+    public int getGrade() {
+        return grade;
+    }
+
+    public void setGrade(int grade) {
+        this.grade = grade;
+    }
 
     public String getXzqdm() {
         return xzqdm;

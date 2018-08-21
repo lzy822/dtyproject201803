@@ -15,7 +15,7 @@
             android:id="@+id/btn_pop_drawpolygon"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:text="绘制多边形"
+            android:text="按需查询"
             android:background="#ffff"
             android:textSize="18sp" />
 
@@ -23,10 +23,11 @@
             android:id="@+id/btn_pop_drawpolyline"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:text="绘制线段"
+            android:text="行政区查询"
             android:background="#ffff"
             android:textSize="18sp" />
 
+        <!--
         <Button
             android:id="@+id/btn_pop_drawpoint"
             android:layout_width="match_parent"
@@ -34,6 +35,7 @@
             android:text="绘制点位"
             android:background="#ffff"
             android:textSize="18sp" />
+            -->
 
         <Button
             android:id="@+id/btn_pop_cancel"

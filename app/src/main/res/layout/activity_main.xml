@@ -82,7 +82,7 @@
         android:layout_alignParentBottom="true"
         android:adjustViewBounds="false"
         android:scaleType="fitEnd"
-        android:src="@drawable/ic_add_location_black_24dp"
+        android:src="@drawable/ic_business_center_black_24dp"
         app:fab_colorNormal="#F50057"
         app:fab_colorPressed="#E8004A"
         app:fab_colorRipple="#C20024"

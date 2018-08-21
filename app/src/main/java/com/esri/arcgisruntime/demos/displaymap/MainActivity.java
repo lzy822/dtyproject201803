@@ -505,7 +505,7 @@ public class MainActivity extends AppCompatActivity {
         View popView = View.inflate(this,R.layout.popupwindow_drawfeature,null);
         Button bt_polygon = (Button) popView.findViewById(R.id.btn_pop_drawpolygon);
         final Button bt_polyline = (Button) popView.findViewById(R.id.btn_pop_drawpolyline);
-        final Button bt_point = (Button) popView.findViewById(R.id.btn_pop_drawpoint);
+        //final Button bt_point = (Button) popView.findViewById(R.id.btn_pop_drawpoint);
         Button bt_cancle = (Button) popView.findViewById(R.id.btn_pop_cancel);
         //获取屏幕宽高
         int weight = getResources().getDisplayMetrics().widthPixels;
@@ -519,6 +519,8 @@ public class MainActivity extends AppCompatActivity {
         bt_polygon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!MapQuery)
+                    mapQueryBtEvent();
                 DrawType = DRAW_POLYGON;
                 pointCollection = new PointCollection(SpatialReference.create(4521));
                 popupWindow.dismiss();
@@ -527,18 +529,19 @@ public class MainActivity extends AppCompatActivity {
         bt_polyline.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DrawType = DRAW_POLYLINE;
-                pointCollection = new PointCollection(SpatialReference.create(4521));
+                Intent intent = new Intent(MainActivity.this, chartshow.class);
+                startActivity(intent);
                 popupWindow.dismiss();
             }
         });
-        bt_point.setOnClickListener(new View.OnClickListener() {
+
+        /*bt_point.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 DrawType = DRAW_POINT;
                 popupWindow.dismiss();
             }
-        });
+        });*/
 
         bt_cancle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -583,181 +586,180 @@ public class MainActivity extends AppCompatActivity {
                 mTable = featureLayer777.getFeatureTable();//得到查询属性表
             else
                 mTable = featureLayer778.getFeatureTable();//得到查询属性表
-            final ListenableFuture<FeatureQueryResult> featureQueryResult
-                    = mTable.queryFeaturesAsync(query);
-            featureQueryResult.addDoneListener(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
-                                mMapView.getGraphicsOverlays().remove(i);
+            if (pointCollection.size() >= 3) {
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            while (mMapView.getGraphicsOverlays().size() != 0) {
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                    mMapView.getGraphicsOverlays().remove(i);
+                                }
                             }
-                        }
-                        FeatureQueryResult featureResul = featureQueryResult.get();
-                        Geometry geometry1 = polygon;
-                        List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
-                        for (Object element : featureResul) {
-                            if (element instanceof Feature) {
-                                Feature mFeatureGrafic = (Feature) element;
-                                Geometry geometry = null;
-                                if (QueriedFeature == XZQ_FEATURE) {
+                            FeatureQueryResult featureResul = featureQueryResult.get();
+                            Geometry geometry1 = polygon;
+                            List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
+                            for (Object element : featureResul) {
+                                if (element instanceof Feature) {
+                                    Feature mFeatureGrafic = (Feature) element;
+                                    Geometry geometry = null;
+                                    if (QueriedFeature == XZQ_FEATURE) {
                                     /*Polyline geometry2 = (Polyline) mFeatureGrafic.getGeometry();
                                     Polygon polygon1 = new Polygon(new PointCollection(geometry2.getParts().getPartsAsPoints()));
                                     //Polygon geometry = (Polygon) mFeatureGrafic.getGeometry();
                                     //geometry1 = GeometryEngine.intersection(geometry1, GeometryEngine.project(geometry, SpatialReference.create(4521)));
                                     geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);*/
 
-                                    Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                    geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
-                                    Log.w(TAG, "geometry2type: " + geometry.getGeometryType().toString());
-                                }else {
-                                    Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                    geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
-                                }
-                                boolean isOK = false;
-                                QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
-                                Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
-                                //Log.w(TAG, "run: " + geometry1.getSpatialReference().getWkid());
-                                GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3);
-                                Graphic fillGraphic = new Graphic(geometry, lineSymbol);
-                                graphicsOverlay_1.getGraphics().add(fillGraphic);
-                                mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                                Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                //calloutContent.setSingleLine();
-                                // format coordinates to 4 decimal places
-                                //String str = "";
-                                //List<KeyAndValue> keyAndValues = new ArrayList<>();
-                                if (QueriedFeature == TDGHDL_FEATURE) {
-                                    for (String key : mQuerryString.keySet()) {
-                                        //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
-                                        if (key.equals("GHDLMC"))
-                                            queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
-                                        else if (key.equals("GHDLBM"))
-                                            queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
-                                        else if (key.equals("XZQMC"))
-                                            queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
-                                        else if (key.equals("XZQDM"))
-                                            queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
-                                        isOK = true;
+                                        Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
+                                        geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                        Log.w(TAG, "geometry2type: " + geometry.getGeometryType().toString());
+                                    } else {
+                                        Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
+                                        geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
                                     }
-                                }else {
-                                    for (String key : mQuerryString.keySet()) {
-                                        //Log.w(TAG, "行政区: " + key);
-                                        //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
-                                        if (key.equals("XZQDM")) {
-                                            //Log.w(TAG, "行政区界线: " + String.valueOf(mQuerryString.get(key)));
-                                            //Log.w(TAG, "行政区界线 面积: " + queryTaskInfo.getArea());
-                                            String str = String.valueOf(mQuerryString.get(key));
-                                            if (str.length() >= 9)
-                                            {
-                                                queryTaskInfo.setXzqdm(str);
-                                                isOK = true;
+                                    boolean isOK = false;
+                                    QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
+                                    Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
+                                    //Log.w(TAG, "run: " + geometry1.getSpatialReference().getWkid());
+                                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3);
+                                    Graphic fillGraphic = new Graphic(geometry, lineSymbol);
+                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                    Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                    //calloutContent.setSingleLine();
+                                    // format coordinates to 4 decimal places
+                                    //String str = "";
+                                    //List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                    if (QueriedFeature == TDGHDL_FEATURE) {
+                                        for (String key : mQuerryString.keySet()) {
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            if (key.equals("GHDLMC"))
+                                                queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
+                                            else if (key.equals("GHDLBM"))
+                                                queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
+                                            else if (key.equals("XZQMC"))
+                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                            else if (key.equals("XZQDM"))
+                                                queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                            isOK = true;
+                                        }
+                                    } else {
+                                        for (String key : mQuerryString.keySet()) {
+                                            //Log.w(TAG, "行政区: " + key);
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            if (key.equals("XZQDM")) {
+                                                //Log.w(TAG, "行政区界线: " + String.valueOf(mQuerryString.get(key)));
+                                                //Log.w(TAG, "行政区界线 面积: " + queryTaskInfo.getArea());
+                                                String str = String.valueOf(mQuerryString.get(key));
+                                                if (str.length() >= 9) {
+                                                    queryTaskInfo.setXzqdm(str);
+                                                    isOK = true;
+                                                } else
+                                                    break;
+                                            } else if (key.equals("XZQMC")) {
+                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
                                             }
-                                            else
-                                                break;
-                                        }else if (key.equals("XZQMC")) {
-                                            queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
                                         }
                                     }
-                                }
-                                if (isOK)
-                                    queryTaskInfos.add(queryTaskInfo);
+                                    if (isOK)
+                                        queryTaskInfos.add(queryTaskInfo);
 
+                                }
                             }
-                        }
-                        wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
-                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
-                        Graphic fillGraphic = new Graphic(geometry1, lineSymbol);
-                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                        List<SliceValue> sliceValues = new ArrayList<>();
-                        TextView calloutContent = new TextView(getApplicationContext());
-                        calloutContent.setTextColor(Color.BLACK);
-                        String str = "";
-                        keyAndValues = new ArrayList<>();
-                        if (QueriedFeature != XZQ_FEATURE) {
-                            for (int i = 0; i < queryTaskInfos.size(); i++) {
-                                if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
-                                    keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
-                                else {
-                                    boolean hasKey = false;
-                                    for (int j = 0; j < keyAndValues.size(); j++) {
-                                        if (queryTaskInfos.get(i).getTypename().equals(keyAndValues.get(j).getName())) {
-                                            hasKey = true;
-                                            keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
-                                            break;
-                                        }
-                                    }
-                                    if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
+                            wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+                            Graphic fillGraphic = new Graphic(geometry1, lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            List<SliceValue> sliceValues = new ArrayList<>();
+                            TextView calloutContent = new TextView(getApplicationContext());
+                            calloutContent.setTextColor(Color.BLACK);
+                            String str = "";
+                            keyAndValues = new ArrayList<>();
+                            if (QueriedFeature != XZQ_FEATURE) {
+                                for (int i = 0; i < queryTaskInfos.size(); i++) {
+                                    if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                         keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
-                                    }
-                                }
-                            }
-                        }else {
-                            for (int i = 0; i < queryTaskInfos.size(); i++) {
-                                if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
-                                    keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
-                                else {
-                                    boolean hasKey = false;
-                                    for (int j = 0; j < keyAndValues.size(); j++) {
-                                        if (queryTaskInfos.get(i).getXzq().equals(keyAndValues.get(j).getName())) {
-                                            hasKey = true;
-                                            keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
-                                            break;
+                                    else {
+                                        boolean hasKey = false;
+                                        for (int j = 0; j < keyAndValues.size(); j++) {
+                                            if (queryTaskInfos.get(i).getTypename().equals(keyAndValues.get(j).getName())) {
+                                                hasKey = true;
+                                                keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
+                                                break;
+                                            }
+                                        }
+                                        if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
+                                            keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
                                         }
                                     }
-                                    if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
+                                }
+                            } else {
+                                for (int i = 0; i < queryTaskInfos.size(); i++) {
+                                    if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                         keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                    else {
+                                        boolean hasKey = false;
+                                        for (int j = 0; j < keyAndValues.size(); j++) {
+                                            if (queryTaskInfos.get(i).getXzq().equals(keyAndValues.get(j).getName())) {
+                                                hasKey = true;
+                                                keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
+                                                break;
+                                            }
+                                        }
+                                        if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
+                                            keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                        }
                                     }
                                 }
                             }
+                            DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                            DecimalFormat decimalFormat1 = new DecimalFormat("0.0");
+                            for (int j = 0; j < keyAndValues.size(); j++) {
+                                if (j < keyAndValues.size() - 1) {
+                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
+                                    str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%" + "\n";
+                                } else {
+                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
+                                    str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%";
+                                }
+                            }
+                            calloutContent.setText(str);
+                            // get callout, set content and show
+                            mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
+                            mCallout.setContent(calloutContent);
+                            mCallout.show();
+                            inMap = true;
+                            PieChartData pieChartData = new PieChartData(sliceValues);
+                            pieChartView.setOnValueTouchListener(new ValueTouchListener());
+                            pieChartView.setPieChartData(pieChartData);
+                            pieChartView.setVisibility(View.VISIBLE);
+                            pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
+                                @Override
+                                public boolean onLongClick(View v) {
+                                    if (QueriedFeature == TDGHDL_FEATURE)
+                                        QueriedFeature = XZQ_FEATURE;
+                                    else
+                                        QueriedFeature = TDGHDL_FEATURE;
+                                    keyAndValues.clear();
+                                    mCallout.dismiss();
+                                    pieChartView.setVisibility(View.GONE);
+                                    queryTask(query, polygon);
+                                    return true;
+                                }
+                            });
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                        DecimalFormat decimalFormat = new DecimalFormat("0.00");
-                        DecimalFormat decimalFormat1 = new DecimalFormat("0.0");
-                        for (int j = 0; j < keyAndValues.size(); j++){
-                            if (j < keyAndValues.size() - 1) {
-                                sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float)wholeArea, ChartUtils.pickColor()));
-                                str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
-                                str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea  * 100) + "%" + "\n";
-                            }
-                            else {
-                                sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float)wholeArea, ChartUtils.pickColor()));
-                                str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
-                                str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea  * 100) + "%";
-                            }
-                        }
-                        calloutContent.setText(str);
-                        // get callout, set content and show
-                        mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
-                        mCallout.setContent(calloutContent);
-                        mCallout.show();
-                        inMap = true;
-                        PieChartData pieChartData = new PieChartData(sliceValues);
-                        pieChartView.setOnValueTouchListener(new ValueTouchListener());
-                        pieChartView.setPieChartData(pieChartData);
-                        pieChartView.setVisibility(View.VISIBLE);
-                        pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
-                            @Override
-                            public boolean onLongClick(View v) {
-                                if (QueriedFeature == TDGHDL_FEATURE)
-                                    QueriedFeature = XZQ_FEATURE;
-                                else
-                                    QueriedFeature = TDGHDL_FEATURE;
-                                keyAndValues.clear();
-                                mCallout.dismiss();
-                                pieChartView.setVisibility(View.GONE);
-                                queryTask(query, polygon);
-                                return true;
-                            }
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
-                }
-            });
+                });
+            }else Toast.makeText(MainActivity.this, "三个点以上才可进行多边形查询，请重试！", Toast.LENGTH_SHORT).show();
         } catch (ArcGISRuntimeException e) {
             Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
         }
@@ -791,6 +793,23 @@ public class MainActivity extends AppCompatActivity {
         List<xzq> xzqs = LitePal.findAll(xzq.class);
         Log.w(TAG, "onCreate: " + xzqs.get(0).getXzqmc());
         Log.w(TAG, "onCreate: " + xzqs.get(xzqs.size() - 1).getXzqmc());
+    }
+
+    private void mapQueryBtEvent(){
+        if (!MapQuery) {
+            MapQuery = true;
+            ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
+            Toast.makeText(MainActivity.this, R.string.OpenMapQuery, Toast.LENGTH_LONG).show();
+        }
+        else {
+            MapQuery = false;
+            mCallout.dismiss();
+            mMapView.getGraphicsOverlays().clear();
+            drawWhiteBlank();
+            ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
+            pieChartView.setVisibility(View.GONE);
+            Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
@@ -863,7 +882,7 @@ public class MainActivity extends AppCompatActivity {
                             Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                         if (!inMap) mCallout.dismiss();
 
-                    }else if (DrawType == DRAW_POLYLINE){
+                    }else if (DrawType == DRAW_POLYLINE && pointCollection.size() >= 2){
                         Polyline polyline = new Polyline(pointCollection);
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
@@ -915,20 +934,7 @@ public class MainActivity extends AppCompatActivity {
         MapQueryBT.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!MapQuery) {
-                    MapQuery = true;
-                    ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
-                    Toast.makeText(MainActivity.this, R.string.OpenMapQuery, Toast.LENGTH_LONG).show();
-                }
-                else {
-                    MapQuery = false;
-                    mCallout.dismiss();
-                    mMapView.getGraphicsOverlays().clear();
-                    drawWhiteBlank();
-                    ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
-                    pieChartView.setVisibility(View.GONE);
-                    Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
-                }
+                mapQueryBtEvent();
             }
         });
         graphicsOverlay_66 = new GraphicsOverlay();
