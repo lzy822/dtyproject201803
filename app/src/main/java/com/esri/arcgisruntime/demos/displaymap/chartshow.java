@@ -1,5 +1,6 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -18,6 +19,10 @@ public class chartshow extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chartshow);
+        Intent intent = getIntent();
+        String xzqdm = intent.getStringExtra("xzqdm");
+        List<xzq> xzqs = LitePal.where("xzqdm = ?", xzqdm).find(xzq.class);
+        Log.w(TAG, "onCreate: " + xzqs.size() + "; " + xzqs.get(0).getXzqmc());
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         //LitePal.deleteAll(xzq.class, "xzqmc = ? and type = ?", "凤庆县", "乡级");

@@ -174,6 +174,66 @@ public class MainActivity extends AppCompatActivity {
 
     double m_lat = 0, m_long = 0;
 
+    private void showPopueWindowForxzqTree(){
+        final View popView = View.inflate(this, R.layout.popupwindow_xzqtree,null);
+        RecyclerView recyclerView1 = (RecyclerView) popView.findViewById(R.id.xzqtree_recycler_view);
+        GridLayoutManager layoutManager1 = new GridLayoutManager(popView.getContext(),1);
+        recyclerView1.setLayoutManager(layoutManager1);
+        xzqTreeAdapter adapter1 = new xzqTreeAdapter(LitePal.findAll(xzq.class));
+        adapter1.setOnItemClickListener(new xzqTreeAdapter.OnRecyclerItemClickListener() {
+            @Override
+            public void onItemClick(View view, String xzqdm, int position) {
+                Intent intent = new Intent(MainActivity.this, chartshow.class);
+                intent.putExtra("xzqdm", xzqdm);
+                startActivity(intent);
+            }
+        });
+        adapter1.setOnItemLongClickListener(new xzqTreeAdapter.OnRecyclerItemLongListener() {
+            @Override
+            public void onItemLongClick(View view, String xzqdm, int position) {
+
+            }
+        });
+        recyclerView1.setAdapter(adapter1);
+        //获取屏幕宽高
+        final int weight = getResources().getDisplayMetrics().widthPixels;
+        final int height = getResources().getDisplayMetrics().heightPixels - 60;
+
+        final PopupWindow popupWindow = new PopupWindow(popView, weight ,height);
+        //popupWindow.setAnimationStyle(R.style.anim_popup_dir);
+        popupWindow.setFocusable(true);
+        //点击外部popueWindow消失
+        popupWindow.setOutsideTouchable(true);
+        //popupWindow消失屏幕变为不透明
+        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.alpha = 1.0f;
+                getWindow().setAttributes(lp);
+            }
+        });
+
+        FloatingActionButton button = (FloatingActionButton) popView.findViewById(R.id.xzqtree_back_pop);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+            }
+        });
+        //popupWindow OnTouchListener
+
+        //popupWindow出现屏幕变为半透明
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.alpha = 1f;
+        getWindow().setAttributes(lp);
+        popupWindow.showAtLocation(popView, Gravity.NO_GRAVITY,0,0);
+    }
+
+    //重新刷新Recycler
+    public void refreshRecycler(){
+    }
+
 
     //获取文件读取权限
     void pickFile() {
@@ -529,8 +589,9 @@ public class MainActivity extends AppCompatActivity {
         bt_polyline.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, chartshow.class);
-                startActivity(intent);
+                /*Intent intent = new Intent(MainActivity.this, chartshow.class);
+                startActivity(intent);*/
+                showPopueWindowForxzqTree();
                 popupWindow.dismiss();
             }
         });
