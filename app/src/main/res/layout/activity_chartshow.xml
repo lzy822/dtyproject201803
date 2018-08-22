@@ -4,24 +4,51 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".chartshow">
-
-    <android.support.design.widget.AppBarLayout
+    tools:context=".chartshow"
+    android:scrollbarFadeDuration="1000"
+    android:scrollbars="vertical"
+    android:scrollbarStyle="outsideOverlay"
+    android:isScrollContainer="true">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:scrollbars="vertical"
+        android:scrollbarStyle="insideOverlay"
+        android:scrollbarFadeDuration="1000"
+        android:isScrollContainer="true"
+        android:layout_gravity="center">
+    <TextView
+        android:id="@+id/chartdata"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/chartshow"/>
+    </LinearLayout>
+    <ProgressBar
+        android:id="@+id/progressBarLarge"
+        style="?android:attr/progressBarStyleLarge"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
+        android:layout_gravity="center"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
+        <lecho.lib.hellocharts.view.PieChartView
+            android:id="@+id/pie"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="gone" />
 
-    </android.support.design.widget.AppBarLayout>
-
-    <include layout="@layout/content_chartshow" />
-
+        <lecho.lib.hellocharts.view.ColumnChartView
+            android:id="@+id/column"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="gone" />
+    </LinearLayout>
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
@@ -31,5 +58,4 @@
         android:src="@drawable/ic_arrow_back"
         />
         <!--app:srcCompat="@android:drawable/ic_dialog_email"-->
-
 </android.support.design.widget.CoordinatorLayout>

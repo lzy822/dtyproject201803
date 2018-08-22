@@ -30,8 +30,7 @@
         </activity>
         <activity
             android:name=".chartshow"
-            android:label="@string/title_activity_chartshow"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:label="@string/title_activity_chartshow"></activity>
     </application>
 
 </manifest>
