@@ -795,6 +795,7 @@ public class MainActivity extends AppCompatActivity {
                             // get callout, set content and show
                             mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
                             mCallout.setContent(calloutContent);
+                            Log.w(TAG, "run: callout" + mCallout.isShowing());
                             mCallout.show();
                             inMap = true;
                             PieChartData pieChartData = new PieChartData(sliceValues);
@@ -851,9 +852,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        List<xzq> xzqs = LitePal.findAll(xzq.class);
-        Log.w(TAG, "onCreate: " + xzqs.get(0).getXzqmc());
-        Log.w(TAG, "onCreate: " + xzqs.get(xzqs.size() - 1).getXzqmc());
+        //List<xzq> xzqs = LitePal.findAll(xzq.class);
+        DataUtil.xzqClassify(LitePal.findAll(xzq.class));
     }
 
     private void mapQueryBtEvent(){
@@ -1256,6 +1256,7 @@ public class MainActivity extends AppCompatActivity {
                                                 mCallout.setLocation(mapPoint);
                                                 mCallout.setContent(calloutContent);
                                                 mCallout.show();
+                                                Log.w(TAG, "run: callout" + mCallout.isShowing());
                                                 inMap = true;
                                             }
                                         }
@@ -1583,6 +1584,12 @@ public class MainActivity extends AppCompatActivity {
                         File file = new File(rootPath1);
                         if (file.exists()) showListPopupWindow(searchView, query);
                         else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+                        File file1 = new File(Environment.getExternalStorageDirectory().toString() + "/临沧市行政区.txt");
+                        if (query.equals("kqlcsxzq") && file1.exists()){
+                            //行政区数据入库
+                            LitePal.deleteAll(xzq.class);
+                            readXZQ();
+                        }
                         return true;
                     }
 
@@ -1690,9 +1697,10 @@ public class MainActivity extends AppCompatActivity {
                                 items[i] = queryInfos.get(i).getName();
                             }
                             // ListView适配器
-                            listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));
+                            ArrayAdapter arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items);
+                            listPopupWindow.setAdapter(arrayAdapter);
 
-                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttribut es().get("图上名称").toString());
                             //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
                             //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
                             //create a feature collection from the above feature collection table

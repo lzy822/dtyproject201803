@@ -9,11 +9,14 @@ import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -46,6 +49,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import lecho.lib.hellocharts.listener.ColumnChartOnValueSelectListener;
+import lecho.lib.hellocharts.listener.PieChartOnValueSelectListener;
 import lecho.lib.hellocharts.model.Column;
 import lecho.lib.hellocharts.model.ColumnChartData;
 import lecho.lib.hellocharts.model.PieChartData;
@@ -83,9 +88,19 @@ public class chartshow extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.search).setVisible(false);
-        menu.findItem(R.id.cancel).setVisible(false);
+        menu.findItem(R.id.cancel).setVisible(true);
         menu.findItem(R.id.action_search).setVisible(false);
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.cancel) {
+            this.finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -95,13 +110,13 @@ public class chartshow extends AppCompatActivity {
         pieChartView = (PieChartView) findViewById(R.id.pie);
         columnChartView = (ColumnChartView) findViewById(R.id.column);
         progressBar = (ProgressBar) findViewById(R.id.progressBarLarge);
-        chartdata = (TextView) findViewById(R.id.chartdata);
+        //chartdata = (TextView) findViewById(R.id.chartdata);
         Intent intent = getIntent();
         String xzqdm = intent.getStringExtra("xzqdm");
         queryFunction(xzqdm);
         List<xzq> xzqs = LitePal.where("xzqdm = ?", xzqdm).find(xzq.class);
         Log.w(TAG, "onCreate: " + xzqs.size() + "; " + xzqs.get(0).getXzqmc());
-        setTitle(xzqs.get(0).getXzqmc() + "土地规划地类查询");
+        setTitle(xzqs.get(0).getXzqmc());
         //LitePal.deleteAll(xzq.class, "xzqmc = ? and type = ?", "凤庆县", "乡级");
         //Log.w(TAG, "onCreate: " + DataUtil.xzqClassify(LitePal.findAll(xzq.class)));
         /*long[] nums = DataUtil.xzqCalGrade(LitePal.findAll(xzq.class));
@@ -110,7 +125,7 @@ public class chartshow extends AppCompatActivity {
         for (xzq xzq: xzqs){
             Log.w(TAG, "onCreate: " + xzq.getType() + "; " + xzq.getGrade());
         }*/
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        /*FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -122,9 +137,9 @@ public class chartshow extends AppCompatActivity {
                             }
                         }).show();
             }
-        });
+        });*/
     }
-
+    double wholeArea;
     Geodatabase localGdb;
     FeatureLayer featureLayer777;
     FeatureLayer featureLayer778;
@@ -162,7 +177,8 @@ public class chartshow extends AppCompatActivity {
                                             Geometry geometry = mFeatureGrafic.getGeometry();
                                             QueryParameters query1 = new QueryParameters();
                                             query1.setGeometry(geometry);
-                                            final double wholeArea = GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
+                                            wholeArea = 0;
+                                            //final double wholeArea = GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                                             FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
                                             final ListenableFuture<FeatureQueryResult> featureQueryResult1
                                                     = mTable.queryFeaturesAsync(query1);
@@ -177,7 +193,8 @@ public class chartshow extends AppCompatActivity {
                                                             if (element instanceof Feature) {
                                                                 Feature mFeatureGrafic = (Feature) element;
                                                                 Geometry geometry = mFeatureGrafic.getGeometry();
-                                                                Log.w(TAG, "run: " + GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500 + "亩");
+                                                                //Log.w(TAG, "run: " + GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500 + "亩");
+                                                                wholeArea = wholeArea + GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                                                                 Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
                                                                 //calloutContent.setSingleLine();
                                                                 // format coordinates to 4 decimal places
@@ -223,20 +240,66 @@ public class chartshow extends AppCompatActivity {
                                                             Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
                                                             data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
                                                             List<SubcolumnValue> values = new ArrayList<>();
-                                                            values.add(new SubcolumnValue((float) Math.random() * 50f + 5, ChartUtils.pickColor()));
+                                                            values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
                                                             Column column = new Column(values);
                                                             column.setHasLabels(true);
                                                             column.setHasLabelsOnlyForSelected(true);
                                                             columns.add(column);
                                                         }
-                                                        chartdata.setGravity(Gravity.TOP);
-                                                        chartdata.setText(data);
+                                                        //chartdata.setGravity(Gravity.TOP);
+                                                        //chartdata.setText(data);
                                                         //List<Column> columns = new
+                                                        TextView textView = (TextView) findViewById(R.id.chart_textshow);
+                                                        textView.setVisibility(View.GONE);
+                                                        RecyclerView recyclerView1 = (RecyclerView) findViewById(R.id.chart_recycler_view);
+                                                        GridLayoutManager layoutManager1 = new GridLayoutManager(chartshow.this,1);
+                                                        recyclerView1.setLayoutManager(layoutManager1);
+                                                        KVAdapter adapter1 = new KVAdapter(keyAndValues);
+                                                        recyclerView1.setAdapter(adapter1);
                                                         columnChartView.setColumnChartData(new ColumnChartData(columns));
-                                                        columnChartView.setY(chartdata.getBottom());
+                                                        final List<KeyAndValue> kv = keyAndValues;
+                                                        columnChartView.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
+                                                            @Override
+                                                            public void onValueSelected(int i, int i1, SubcolumnValue subcolumnValue) {
+                                                                Log.w(TAG, "onValueSelected: " + subcolumnValue.getValue());
+                                                                DecimalFormat decimalFormat = new DecimalFormat("0.0");
+                                                                DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
+                                                                for (int j = 0; j < kv.size(); j++){
+                                                                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()) / wholeArea)).equals(decimalFormat1.format(subcolumnValue.getValue()))) {
+                                                                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占地: " + decimalFormat.format(subcolumnValue.getValue() * wholeArea) + "亩", Toast.LENGTH_SHORT).show();
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public void onValueDeselected() {
+
+                                                            }
+                                                        });
+                                                        //columnChartView.setY(chartdata.getBottom());
                                                         columnChartView.setVisibility(View.VISIBLE);
                                                         pieChartView.setPieChartData(new PieChartData(sliceValues));
-                                                        pieChartView.setY(chartdata.getBottom());
+                                                        pieChartView.setOnValueTouchListener(new PieChartOnValueSelectListener() {
+                                                            @Override
+                                                            public void onValueSelected(int i, SliceValue sliceValue) {
+                                                                Log.w(TAG, "onValueSelected: " + sliceValue.getValue());
+                                                                DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                                                                DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
+                                                                for (int j = 0; j < kv.size(); j++){
+                                                                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()) / wholeArea)).equals(decimalFormat1.format(sliceValue.getValue()))) {
+                                                                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占比: " + decimalFormat.format(sliceValue.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public void onValueDeselected() {
+
+                                                            }
+                                                        });
+                                                        //pieChartView.setY(chartdata.getBottom());
                                                         pieChartView.setVisibility(View.VISIBLE);
                                                     } catch (Exception e) {
                                                         e.printStackTrace();

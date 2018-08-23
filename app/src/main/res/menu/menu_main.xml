@@ -11,11 +11,11 @@
         android:id="@+id/cancel"
         android:title="@string/Cancel"
         app:showAsAction="always"
-        android:icon="@drawable/ic_arrow_back" />
+        android:icon="@drawable/ic_arrow_back_black1_24dp" />
     <item
         android:id="@+id/search"
         android:title="@string/action_search"
         app:showAsAction="always"
-        android:icon="@drawable/ic_search_black_24dp"/>
+        android:icon="@drawable/ic_search_black1_24dp"/>
 
 </menu>
