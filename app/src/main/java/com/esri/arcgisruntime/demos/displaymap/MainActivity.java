@@ -24,6 +24,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.ListPopupWindow;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -41,6 +42,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -186,12 +188,6 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, chartshow.class);
                 intent.putExtra("xzqdm", xzqdm);
                 startActivity(intent);
-            }
-        });
-        adapter1.setOnItemLongClickListener(new xzqTreeAdapter.OnRecyclerItemLongListener() {
-            @Override
-            public void onItemLongClick(View view, String xzqdm, int position) {
-
             }
         });
         recyclerView1.setAdapter(adapter1);
@@ -1582,7 +1578,10 @@ public class MainActivity extends AppCompatActivity {
                         pieChartView.setVisibility(View.GONE);
                         mCallout.dismiss();
                         File file = new File(rootPath1);
-                        if (file.exists()) showListPopupWindow(searchView, query);
+                        if (file.exists()) {
+                            //showListPopupWindow(searchView, query);
+                            showListPopupWindowforListView(searchView, query);
+                        }
                         else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
                         File file1 = new File(Environment.getExternalStorageDirectory().toString() + "/临沧市行政区.txt");
                         if (query.equals("kqlcsxzq") && file1.exists()){
@@ -1759,6 +1758,188 @@ public class MainActivity extends AppCompatActivity {
         listPopupWindow.setModal(false);
 
         listPopupWindow.show();
+    }
+
+    public void showListPopupWindowforListView(View view, String searchString) {
+        queryInfos.clear();
+        final View popView = View.inflate(this, R.layout.popupwindow_listview,null);
+        searchString = searchString.trim();
+        mFeaturelayer.clearSelection();
+        popView.setX(view.getX());
+        popView.setY(view.getY() + view.getHeight());
+        final PopupWindow popupWindow = new PopupWindow(popView, view.getWidth(), 800);
+
+        //popupWindow.setAnimationStyle(R.style.anim_popup_dir);
+        popupWindow.setFocusable(true);
+        //点击外部popueWindow消失
+        popupWindow.setOutsideTouchable(true);
+        // create objects required to do a selection with a query
+        QueryParameters query = new QueryParameters();
+        //make search case insensitive
+        query.setWhereClause("upper(图上名称) LIKE '%" + searchString.toUpperCase() + "%'");
+        Log.w(TAG, "searchForState: " );
+        // call select features
+        if (mMapView.getMap().getOperationalLayers().size() != 0) {
+
+            //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
+            //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
+            //mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            try {
+                final String string = searchString;
+                FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
+                //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            /*while (mMapView.getGraphicsOverlays().size() != 0){
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                    mMapView.getGraphicsOverlays().remove(i);
+                                }
+                            }
+                            // call get on the future to get the result
+                            FeatureQueryResult result = featureQueryResult.get();
+                            // check there are some results
+                            int num = -1;
+                            if (result.iterator().hasNext() ) {
+                                num++;
+                                //Log.w(TAG, "run: " + features.next().getFeatureTable().getTableName().toString());
+                                // get the extend of the first feature in the result to zoom to
+                                Feature feature = result.iterator().next();
+                                Log.w(TAG, "run: " + feature.getAttributes().get("图上名称"));
+                                Envelope envelope = feature.getGeometry().getExtent();
+                                String name = feature.getAttributes().get("图上名称").toString();
+                                boolean hasSame = false;
+                                for (int i = 0; i < queryInfos.size(); i++){
+                                    if (name.equals(queryInfos.get(i).getName())) hasSame = true;
+                                }
+                                if (!hasSame) {
+                                    Log.w(TAG, "run: " + "hasSame");
+                                    QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                    queryInfos.add(queryInfo);
+                                }
+                            }
+                            Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
+                            items = new String[queryInfos.size()];
+                            for (int i = 0; i < queryInfos.size(); i++){
+                                items[i] = queryInfos.get(i).getName();
+                            }
+                            // ListView适配器
+                            listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));*/
+
+                            FeatureCollectionTable featureCollectionTable = new FeatureCollectionTable(featureQueryResult.get());
+                            Iterator<Feature> featureIterator = featureCollectionTable.iterator();
+                            while (featureIterator.hasNext()) {
+                                //Log.w(TAG, "run: " + featureIterator.next().getAttributes().get("图上名称"));
+                                Feature feature = featureIterator.next();
+                                Log.w(TAG, "run: " + feature.getAttributes().get("图上名称"));
+                                Envelope envelope = feature.getGeometry().getExtent();
+                                String name = feature.getAttributes().get("图上名称").toString();
+                                boolean hasSame = false;
+                                for (int i = 0; i < queryInfos.size(); i++){
+                                    if (name.equals(queryInfos.get(i).getName())) hasSame = true;
+                                }
+                                if (!hasSame) {
+                                    Log.w(TAG, "run: " + "hasSame");
+                                    QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                    queryInfos.add(queryInfo);
+                                }
+                            }
+                            Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
+                            items = new String[queryInfos.size()];
+                            for (int i = 0; i < queryInfos.size(); i++){
+                                items[i] = queryInfos.get(i).getName();
+                            }
+
+                            RecyclerView recyclerView1 = (RecyclerView) popView.findViewById(R.id.listview_recycler_view);
+                            //GridLayoutManager layoutManager1 = new GridLayoutManager(popView.getContext(),1);
+                            LinearLayoutManager layoutManager1 = new LinearLayoutManager(popView.getContext());
+                            recyclerView1.setLayoutManager(layoutManager1);
+                            listviewAdapter adapter1 = new listviewAdapter(queryInfos);
+                            adapter1.setOnItemClickListener(new listviewAdapter.OnRecyclerItemClickListener() {
+                                @Override
+                                public void onItemClick(View view, String xzqdm, int position) {
+                                    mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
+
+                                    //Select the feature
+                                    mFeaturelayer.selectFeature(queryInfos.get(position).getFeature());
+                                    Log.w(TAG, "run: " + mMapView.getMapScale());
+                                    mMapView.setViewpointScaleAsync(3000);
+                                    popupWindow.dismiss();
+                                }
+                            });
+                            recyclerView1.setAdapter(adapter1);
+                            // ListView适配器
+                            /*ArrayAdapter arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items);
+                            listPopupWindow.setAdapter(arrayAdapter);*/
+
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttribut es().get("图上名称").toString());
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
+                            //Log.w(TAG, "run: " + featureCollectionTable.iterator().next().getAttributes().get("图上名称").toString());
+                            //create a feature collection from the above feature collection table
+                            /*FeatureCollection featureCollection = new FeatureCollection();
+                            featureCollection.getTables().add(featureCollectionTable);
+                            Log.w(TAG, "run: " + featureCollection.toString());
+                            Log.w(TAG, "run: " + featureCollection.getTables().size());
+                            //create a feature collection layer
+                            FeatureCollectionLayer featureCollectionLayer = new FeatureCollectionLayer(featureCollection);
+                            Log.w(TAG, "run: " + featureCollectionLayer.getAttribution());
+                            //add the layer to the operational layers array
+                            mMapView.getMap().getOperationalLayers().add(featureCollectionLayer);*/
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Feature search failed for: " + string + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(getResources().getString(R.string.app_name), "Feature search failed for: " + string + ". Error=" + e.getMessage());
+                        }
+                    }
+                });
+            }catch (ArcGISRuntimeException e){
+                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        //final List<QueryInfo> pois = new ArrayList<>();
+
+
+
+        /*listviewAdapter adapter1 = new listviewAdapter(queryInfos);
+        adapter1.setOnItemClickListener(new listviewAdapter.OnRecyclerItemClickListener() {
+            @Override
+            public void onItemClick(View view, String xzqdm, int position) {
+                mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
+
+                //Select the feature
+                mFeaturelayer.selectFeature(queryInfos.get(position).getFeature());
+                Log.w(TAG, "run: " + mMapView.getMapScale());
+                mMapView.setViewpointScaleAsync(3000);
+                popupWindow.dismiss();
+            }
+        });
+        recyclerView1.setAdapter(adapter1);*/
+
+        // ListView适配器
+        //listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));
+
+        // 选择item的监听事件
+
+        // 对话框的宽高
+
+        // ListPopupWindow的锚,弹出框的位置是相对当前View的位置
+
+        //popupWindow消失屏幕变为不透明
+        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.alpha = 1.0f;
+                getWindow().setAttributes(lp);
+            }
+        });
+        //popupWindow出现屏幕变为半透明
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.alpha = 0.5f;
+        getWindow().setAttributes(lp);
+        popupWindow.showAtLocation(popView, Gravity.TOP, 0, 50);
     }
     List<QueryInfo> queryInfos = new ArrayList<>();
 

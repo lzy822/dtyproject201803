@@ -24,7 +24,9 @@
         <android.support.v7.widget.RecyclerView
             android:id="@+id/chart_recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="400dp"/>
+            android:layout_height="400dp"
+            android:background="@drawable/boder"
+            android:visibility="gone"/>
     </LinearLayout>
         <TextView
             android:id="@+id/chart_textshow"
@@ -48,14 +50,16 @@
             android:layout_width="0dp"
             android:layout_height="400dp"
             android:layout_weight="1"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:background="@drawable/boder" />
 
         <lecho.lib.hellocharts.view.ColumnChartView
             android:id="@+id/column"
             android:layout_width="0dp"
             android:layout_height="400dp"
             android:layout_weight="1"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:background="@drawable/boder" />
     </LinearLayout>
     <!--<android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"

@@ -51,6 +51,7 @@ import java.util.Map;
 
 import lecho.lib.hellocharts.listener.ColumnChartOnValueSelectListener;
 import lecho.lib.hellocharts.listener.PieChartOnValueSelectListener;
+import lecho.lib.hellocharts.model.Axis;
 import lecho.lib.hellocharts.model.Column;
 import lecho.lib.hellocharts.model.ColumnChartData;
 import lecho.lib.hellocharts.model.PieChartData;
@@ -240,7 +241,8 @@ public class chartshow extends AppCompatActivity {
                                                             Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
                                                             data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
                                                             List<SubcolumnValue> values = new ArrayList<>();
-                                                            values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+                                                            //values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+                                                            values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.pickColor()));
                                                             Column column = new Column(values);
                                                             column.setHasLabels(true);
                                                             column.setHasLabelsOnlyForSelected(true);
@@ -252,11 +254,19 @@ public class chartshow extends AppCompatActivity {
                                                         TextView textView = (TextView) findViewById(R.id.chart_textshow);
                                                         textView.setVisibility(View.GONE);
                                                         RecyclerView recyclerView1 = (RecyclerView) findViewById(R.id.chart_recycler_view);
+                                                        recyclerView1.setVisibility(View.VISIBLE);
                                                         GridLayoutManager layoutManager1 = new GridLayoutManager(chartshow.this,1);
                                                         recyclerView1.setLayoutManager(layoutManager1);
                                                         KVAdapter adapter1 = new KVAdapter(keyAndValues);
                                                         recyclerView1.setAdapter(adapter1);
-                                                        columnChartView.setColumnChartData(new ColumnChartData(columns));
+                                                        ColumnChartData columnChartData = new ColumnChartData(columns);
+                                                        Axis axisX = new Axis();
+                                                        Axis axisY = new Axis().setHasLines(true);
+                                                        axisX.setName("土地规划地类");
+                                                        axisY.setName("面积");
+                                                        columnChartData.setAxisXBottom(axisX);
+                                                        columnChartData.setAxisYLeft(axisY);
+                                                        columnChartView.setColumnChartData(columnChartData);
                                                         final List<KeyAndValue> kv = keyAndValues;
                                                         columnChartView.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
                                                             @Override
@@ -265,8 +275,8 @@ public class chartshow extends AppCompatActivity {
                                                                 DecimalFormat decimalFormat = new DecimalFormat("0.0");
                                                                 DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
                                                                 for (int j = 0; j < kv.size(); j++){
-                                                                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()) / wholeArea)).equals(decimalFormat1.format(subcolumnValue.getValue()))) {
-                                                                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占地: " + decimalFormat.format(subcolumnValue.getValue() * wholeArea) + "亩", Toast.LENGTH_SHORT).show();
+                                                                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()))).equals(decimalFormat1.format(subcolumnValue.getValue()))) {
+                                                                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占地: " + decimalFormat.format(subcolumnValue.getValue()) + "亩", Toast.LENGTH_SHORT).show();
                                                                         break;
                                                                     }
                                                                 }
@@ -279,7 +289,10 @@ public class chartshow extends AppCompatActivity {
                                                         });
                                                         //columnChartView.setY(chartdata.getBottom());
                                                         columnChartView.setVisibility(View.VISIBLE);
-                                                        pieChartView.setPieChartData(new PieChartData(sliceValues));
+                                                        PieChartData pieChartData = new PieChartData(sliceValues);
+                                                        pieChartData.setCenterText1("占比");
+                                                        pieChartData.setHasCenterCircle(true);
+                                                        pieChartView.setPieChartData(pieChartData);
                                                         pieChartView.setOnValueTouchListener(new PieChartOnValueSelectListener() {
                                                             @Override
                                                             public void onValueSelected(int i, SliceValue sliceValue) {
