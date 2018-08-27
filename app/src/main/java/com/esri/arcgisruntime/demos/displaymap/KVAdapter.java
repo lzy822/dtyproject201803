@@ -1,6 +1,7 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -14,6 +15,7 @@ import java.text.DecimalFormat;
 import java.util.List;
 
 import static android.content.ContentValues.TAG;
+import static android.content.Context.MODE_PRIVATE;
 
 
 /**
@@ -61,12 +63,16 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
         }
         View view = LayoutInflater.from(mContext).inflate(R.layout.kv_item, parent, false);
         final ViewHolder holder = new ViewHolder(view);
+
         holder.cardView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int position = holder.getAdapterPosition();
-                KeyAndValue keyAndValue = keyAndValues.get(position);
-                //mOnItemClick.onItemClick(v, keyAndValue.getValue(), position);
+                if (mOnItemClick != null) {
+                    int position = holder.getAdapterPosition();
+                    KeyAndValue keyAndValue = keyAndValues.get(position);
+                    holder.cardView.setCardBackgroundColor(Color.RED);
+                    mOnItemClick.onItemClick(v, keyAndValue.getName(), position);
+                }
                 /*
                 Intent intent = new Intent(mContext, MainInterface.class);
                 intent.putExtra("num", keyAndValue.getM_num());
@@ -102,9 +108,12 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+        SharedPreferences prf1 = mContext.getSharedPreferences("queryType", MODE_PRIVATE);
+        String string = prf1.getString("tdghdl", "");
         KeyAndValue keyAndValue = keyAndValues.get(position);
-        holder.kvnum.setText(Integer.toString(position));
+        holder.kvnum.setText(Integer.toString(position + 1));
         holder.kvname.setText(keyAndValue.getName());
+        if (!string.isEmpty() && keyAndValue.getName().equals(string)) holder.cardView.setCardBackgroundColor(Color.RED);
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
         DecimalFormat decimalFormat1 = new DecimalFormat("0.00");
         holder.kvvalue.setText(decimalFormat.format(Double.valueOf(keyAndValue.getValue())) + "亩");
@@ -126,7 +135,7 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
     }
 
     public interface OnRecyclerItemClickListener{
-        void onItemClick(View view, String value, int position);
+        void onItemClick(View view, String name, int position);
     }
     public void setOnItemClickListener(OnRecyclerItemClickListener listener){
         this.mOnItemClick =  listener;

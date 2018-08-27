@@ -3,6 +3,7 @@ package com.esri.arcgisruntime.demos.displaymap;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
@@ -70,6 +71,8 @@ public class chartshow extends AppCompatActivity {
     TextView chartdata;
     PieChartView pieChartView;
     ColumnChartView columnChartView;
+    private String selectedItem = "";
+    List<KeyAndValue> mkeyAndValueList;
 
 
     @Override
@@ -105,41 +108,90 @@ public class chartshow extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    int mposition = -1;
+    private void refreshRecycler(final List<KeyAndValue> keyAndValues){
+        RecyclerView recyclerView1 = (RecyclerView) findViewById(R.id.chart_recycler_view);
+        recyclerView1.setVisibility(View.VISIBLE);
+        GridLayoutManager layoutManager1 = new GridLayoutManager(chartshow.this,2);
+        recyclerView1.setLayoutManager(layoutManager1);
+        final KVAdapter adapter1 = new KVAdapter(keyAndValues);
+        adapter1.setOnItemClickListener(new KVAdapter.OnRecyclerItemClickListener() {
+            @Override
+            public void onItemClick(View view, String name, int position) {
+                selectedItem = name;
+                SharedPreferences.Editor editor = getSharedPreferences("queryType", MODE_PRIVATE).edit();
+                editor.putString("tdghdl", name);
+                editor.apply();
+                refreshRecycler(keyAndValues);
+                /*if (mposition != -1) {
+                    adapter1.notifyItemChanged(mposition);
+                }*/
+                showKV(keyAndValues);
+                mposition = position;
+            }
+        });
+        recyclerView1.setAdapter(adapter1);
+    }
+
+    private void refreshRecyclerAndChart(){
+            selectedItem = "";
+            refreshRecycler(mkeyAndValueList);
+            showKV(mkeyAndValueList);
+    }
+
     private void showKV(final List<KeyAndValue> keyAndValues){
+        mkeyAndValueList = keyAndValues;
         List<SliceValue> sliceValues = new ArrayList<>();
         String data = "";
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
         List<Column> columns = new ArrayList<Column>();
-        for (int i = 0; i < keyAndValues.size(); i++){
-            sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
-            Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
-            data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
-            List<SubcolumnValue> values = new ArrayList<>();
-            //values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
-            values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.pickColor()));
-            Column column = new Column(values);
-            column.setHasLabels(true);
-            column.setHasLabelsOnlyForSelected(true);
-            columns.add(column);
+        if (selectedItem.isEmpty()) {
+            Log.w(TAG, "showKV: " + "empty");
+            for (int i = 0; i < keyAndValues.size(); i++) {
+                int color = ChartUtils.pickColor();
+                sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, color));
+                Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
+                data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
+                List<SubcolumnValue> values = new ArrayList<>();
+                //values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+                values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), color));
+                Column column = new Column(values);
+                column.setHasLabels(true);
+                column.setHasLabelsOnlyForSelected(true);
+                columns.add(column);
+            }
+        }else {
+            Log.w(TAG, "showKV: " + "full");
+            for (int i = 0; i < keyAndValues.size(); i++) {
+                data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
+                List<SubcolumnValue> values = new ArrayList<>();
+                Column column = new Column(values);
+                column.setHasLabels(true);
+                if (keyAndValues.get(i).getName().equals(selectedItem)) {
+                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.COLOR_RED));
+                    values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.COLOR_RED));
+                    column.setHasLabelsOnlyForSelected(false);
+                }else {
+                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.COLOR_GREEN));
+                    values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.COLOR_GREEN));
+                    column.setHasLabelsOnlyForSelected(true);
+                }
+                columns.add(column);
+
+            }
         }
         //chartdata.setGravity(Gravity.TOP);
         //chartdata.setText(data);
         //List<Column> columns = new
         TextView textView = (TextView) findViewById(R.id.chart_textshow);
         textView.setVisibility(View.GONE);
-        RecyclerView recyclerView1 = (RecyclerView) findViewById(R.id.chart_recycler_view);
-        recyclerView1.setVisibility(View.VISIBLE);
-        GridLayoutManager layoutManager1 = new GridLayoutManager(chartshow.this,2);
-        recyclerView1.setLayoutManager(layoutManager1);
-        KVAdapter adapter1 = new KVAdapter(keyAndValues);
-        recyclerView1.setAdapter(adapter1);
         ColumnChartData columnChartData = new ColumnChartData(columns);
         Axis axisX = new Axis();
-                                                        /*List<AxisValue> xAxisValues = new ArrayList<>();
-                                                        for (int i = 0; i < keyAndValues.size(); i++){
-                                                            xAxisValues.add(new AxisValue(i, keyAndValues.get(i).getName().toCharArray()));
-                                                        }
-                                                        axisX.setValues(xAxisValues);*/
+        List<AxisValue> xAxisValues = new ArrayList<>();
+        for (int i = 0; i < keyAndValues.size(); i++){
+            xAxisValues.add(new AxisValue(i, Integer.toString(i + 1).toCharArray()));
+        }
+        axisX.setValues(xAxisValues);
         axisX.setName("土地规划地类");
         Axis axisY = new Axis().setHasLines(true);
         axisY.setName("面积");
@@ -150,6 +202,12 @@ public class chartshow extends AppCompatActivity {
         columnChartView.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
             @Override
             public void onValueSelected(int i, int i1, SubcolumnValue subcolumnValue) {
+                if (!selectedItem.isEmpty()) {
+                    SharedPreferences.Editor editor = getSharedPreferences("queryType", MODE_PRIVATE).edit();
+                    editor.putString("tdghdl", "");
+                    editor.apply();
+                    refreshRecyclerAndChart();
+                }
                 Log.w(TAG, "onValueSelected: " + subcolumnValue.getValue());
                 DecimalFormat decimalFormat = new DecimalFormat("0.0");
                 DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
@@ -170,12 +228,28 @@ public class chartshow extends AppCompatActivity {
         //columnChartView.setY(chartdata.getBottom());
         columnChartView.setVisibility(View.VISIBLE);
         PieChartData pieChartData = new PieChartData(sliceValues);
-        pieChartData.setCenterText1("占比");
+        if (!selectedItem.isEmpty()){
+            for (int i = 0; i < keyAndValues.size(); i++){
+                if (keyAndValues.get(i).getName().equals(selectedItem)) {
+                    pieChartData.setCenterText1(selectedItem);
+                    DecimalFormat decimalFormat1 = new DecimalFormat("0.00");
+                    pieChartData.setCenterText2(decimalFormat1.format(Double.valueOf(keyAndValues.get(i).getValue()) / wholeArea * 100) + "%");
+                    pieChartData.setCenterText2Color(ChartUtils.COLOR_RED);
+                    break;
+                }
+            }
+        }else pieChartData.setCenterText1("占比");
         pieChartData.setHasCenterCircle(true);
         pieChartView.setPieChartData(pieChartData);
         pieChartView.setOnValueTouchListener(new PieChartOnValueSelectListener() {
             @Override
             public void onValueSelected(int i, SliceValue sliceValue) {
+                if (!selectedItem.isEmpty()) {
+                    SharedPreferences.Editor editor = getSharedPreferences("queryType", MODE_PRIVATE).edit();
+                    editor.putString("tdghdl", "");
+                    editor.apply();
+                    refreshRecyclerAndChart();
+                }
                 Log.w(TAG, "onValueSelected: " + sliceValue.getValue());
                 DecimalFormat decimalFormat = new DecimalFormat("0.00");
                 DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
@@ -189,7 +263,6 @@ public class chartshow extends AppCompatActivity {
 
             @Override
             public void onValueDeselected() {
-
             }
         });
 
@@ -237,7 +310,9 @@ public class chartshow extends AppCompatActivity {
             queryFunction(xzqdm);
         else{
             progressBar.setVisibility(View.GONE);
-            showKV(parseKV(memoryxzqinfoList.get(0).getKeyAndValues()));
+            List<KeyAndValue> keyAndValues = parseKV(memoryxzqinfoList.get(0).getKeyAndValues());
+            refreshRecycler(keyAndValues);
+            showKV(keyAndValues);
         }
         //LitePal.deleteAll(xzq.class, "xzqmc = ? and type = ?", "凤庆县", "乡级");
         //Log.w(TAG, "onCreate: " + DataUtil.xzqClassify(LitePal.findAll(xzq.class)));
@@ -357,6 +432,7 @@ public class chartshow extends AppCompatActivity {
                                                         memoryxzqinfo.setName(xzqdm);
                                                         memoryxzqinfo.setKeyAndValues(classifyKV(keyAndValues));
                                                         memoryxzqinfo.save();
+                                                        refreshRecycler(keyAndValues);
                                                         showKV(keyAndValues);
 
 
@@ -383,4 +459,11 @@ public class chartshow extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onDestroy() {
+        SharedPreferences.Editor editor = getSharedPreferences("queryType", MODE_PRIVATE).edit();
+        editor.putString("tdghdl", "");
+        editor.apply();
+        super.onDestroy();
+    }
 }

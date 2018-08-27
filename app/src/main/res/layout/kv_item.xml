@@ -22,7 +22,7 @@
             android:id="@+id/kv_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="3"
             android:layout_gravity="center"
             android:layout_margin="5dp"
             android:textSize="16sp"/>
@@ -30,7 +30,7 @@
             android:id="@+id/kv_value"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="5"
             android:layout_gravity="center"
             android:layout_margin="5dp"
             android:textSize="16sp"/>
@@ -38,7 +38,7 @@
             android:id="@+id/kv_zb"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="3"
             android:layout_gravity="center"
             android:layout_margin="5dp"
             android:textSize="16sp"/>
