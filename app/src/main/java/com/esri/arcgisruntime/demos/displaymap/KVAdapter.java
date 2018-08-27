@@ -34,12 +34,16 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
         CardView cardView;
         TextView kvname;
         TextView kvvalue;
+        TextView kvnum;
+        TextView kvzb;
 
         public ViewHolder(View view) {
             super(view);
             cardView = (CardView) view;
             kvname = (TextView) view.findViewById(R.id.kv_name);
             kvvalue = (TextView) view.findViewById(R.id.kv_value);
+            kvnum = (TextView) view.findViewById(R.id.kv_num);
+            kvzb = (TextView) view.findViewById(R.id.kv_zb);
 
 
 
@@ -62,7 +66,7 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
                 KeyAndValue keyAndValue = keyAndValues.get(position);
-                mOnItemClick.onItemClick(v, keyAndValue.getValue(), position);
+                //mOnItemClick.onItemClick(v, keyAndValue.getValue(), position);
                 /*
                 Intent intent = new Intent(mContext, MainInterface.class);
                 intent.putExtra("num", keyAndValue.getM_num());
@@ -99,9 +103,12 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         KeyAndValue keyAndValue = keyAndValues.get(position);
+        holder.kvnum.setText(Integer.toString(position));
         holder.kvname.setText(keyAndValue.getName());
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        DecimalFormat decimalFormat1 = new DecimalFormat("0.00");
         holder.kvvalue.setText(decimalFormat.format(Double.valueOf(keyAndValue.getValue())) + "亩");
+        holder.kvzb.setText(decimalFormat1.format(Double.valueOf(keyAndValue.getValue()) / Double.valueOf(keyAndValue.getNickname()) * 100) + "%");
     }
 
     @Override

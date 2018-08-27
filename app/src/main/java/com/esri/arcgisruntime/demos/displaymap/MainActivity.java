@@ -873,6 +873,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //LitePal.deleteAll(memoryxzqinfo.class);
         //行政区数据入库
         //LitePal.deleteAll(xzq.class);
         //readXZQ();

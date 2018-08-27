@@ -52,6 +52,7 @@ import java.util.Map;
 import lecho.lib.hellocharts.listener.ColumnChartOnValueSelectListener;
 import lecho.lib.hellocharts.listener.PieChartOnValueSelectListener;
 import lecho.lib.hellocharts.model.Axis;
+import lecho.lib.hellocharts.model.AxisValue;
 import lecho.lib.hellocharts.model.Column;
 import lecho.lib.hellocharts.model.ColumnChartData;
 import lecho.lib.hellocharts.model.PieChartData;
@@ -104,6 +105,120 @@ public class chartshow extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void showKV(final List<KeyAndValue> keyAndValues){
+        List<SliceValue> sliceValues = new ArrayList<>();
+        String data = "";
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        List<Column> columns = new ArrayList<Column>();
+        for (int i = 0; i < keyAndValues.size(); i++){
+            sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+            Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
+            data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
+            List<SubcolumnValue> values = new ArrayList<>();
+            //values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
+            values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.pickColor()));
+            Column column = new Column(values);
+            column.setHasLabels(true);
+            column.setHasLabelsOnlyForSelected(true);
+            columns.add(column);
+        }
+        //chartdata.setGravity(Gravity.TOP);
+        //chartdata.setText(data);
+        //List<Column> columns = new
+        TextView textView = (TextView) findViewById(R.id.chart_textshow);
+        textView.setVisibility(View.GONE);
+        RecyclerView recyclerView1 = (RecyclerView) findViewById(R.id.chart_recycler_view);
+        recyclerView1.setVisibility(View.VISIBLE);
+        GridLayoutManager layoutManager1 = new GridLayoutManager(chartshow.this,2);
+        recyclerView1.setLayoutManager(layoutManager1);
+        KVAdapter adapter1 = new KVAdapter(keyAndValues);
+        recyclerView1.setAdapter(adapter1);
+        ColumnChartData columnChartData = new ColumnChartData(columns);
+        Axis axisX = new Axis();
+                                                        /*List<AxisValue> xAxisValues = new ArrayList<>();
+                                                        for (int i = 0; i < keyAndValues.size(); i++){
+                                                            xAxisValues.add(new AxisValue(i, keyAndValues.get(i).getName().toCharArray()));
+                                                        }
+                                                        axisX.setValues(xAxisValues);*/
+        axisX.setName("土地规划地类");
+        Axis axisY = new Axis().setHasLines(true);
+        axisY.setName("面积");
+        columnChartData.setAxisXBottom(axisX);
+        columnChartData.setAxisYLeft(axisY);
+        columnChartView.setColumnChartData(columnChartData);
+        final List<KeyAndValue> kv = keyAndValues;
+        columnChartView.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
+            @Override
+            public void onValueSelected(int i, int i1, SubcolumnValue subcolumnValue) {
+                Log.w(TAG, "onValueSelected: " + subcolumnValue.getValue());
+                DecimalFormat decimalFormat = new DecimalFormat("0.0");
+                DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
+                for (int j = 0; j < kv.size(); j++){
+                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()))).equals(decimalFormat1.format(subcolumnValue.getValue()))) {
+                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占地: " + decimalFormat.format(subcolumnValue.getValue()) + "亩", Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void onValueDeselected() {
+
+            }
+        });
+
+        //columnChartView.setY(chartdata.getBottom());
+        columnChartView.setVisibility(View.VISIBLE);
+        PieChartData pieChartData = new PieChartData(sliceValues);
+        pieChartData.setCenterText1("占比");
+        pieChartData.setHasCenterCircle(true);
+        pieChartView.setPieChartData(pieChartData);
+        pieChartView.setOnValueTouchListener(new PieChartOnValueSelectListener() {
+            @Override
+            public void onValueSelected(int i, SliceValue sliceValue) {
+                Log.w(TAG, "onValueSelected: " + sliceValue.getValue());
+                DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
+                for (int j = 0; j < kv.size(); j++){
+                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()) / wholeArea)).equals(decimalFormat1.format(sliceValue.getValue()))) {
+                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占比: " + decimalFormat.format(sliceValue.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void onValueDeselected() {
+
+            }
+        });
+
+        //pieChartView.setY(chartdata.getBottom());
+        pieChartView.setVisibility(View.VISIBLE);
+    }
+
+    private String classifyKV(final List<KeyAndValue> keyAndValues){
+        String kvString = "";
+        for (int i = 0; i < keyAndValues.size(); i++){
+            if (i != keyAndValues.size() - 1)
+                kvString = kvString + keyAndValues.get(i).getName() + ":" + keyAndValues.get(i).getValue() + ",";
+            else kvString = kvString + keyAndValues.get(i).getNickname();
+        }
+        return kvString;
+    }
+
+    private List<KeyAndValue> parseKV(final String keyAndValues){
+        List<KeyAndValue> keyAndValues1 = new ArrayList<>();
+        String[] strings1 = keyAndValues.split(",");
+        for (int i = 0; i < strings1.length; i++){
+            if (strings1.length - 1 != i) {
+                String[] strings = strings1[i].split(":");
+                keyAndValues1.add(new KeyAndValue(strings1[strings1.length - 1], strings[0], strings[1]));
+            }else wholeArea = Double.valueOf(strings1[i]);
+        }
+        return keyAndValues1;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,10 +229,16 @@ public class chartshow extends AppCompatActivity {
         //chartdata = (TextView) findViewById(R.id.chartdata);
         Intent intent = getIntent();
         String xzqdm = intent.getStringExtra("xzqdm");
-        queryFunction(xzqdm);
         List<xzq> xzqs = LitePal.where("xzqdm = ?", xzqdm).find(xzq.class);
         Log.w(TAG, "onCreate: " + xzqs.size() + "; " + xzqs.get(0).getXzqmc());
         setTitle(xzqs.get(0).getXzqmc());
+        List<memoryxzqinfo> memoryxzqinfoList = LitePal.where("name = ?", xzqdm).find(memoryxzqinfo.class);
+        if (memoryxzqinfoList.size() == 0)
+            queryFunction(xzqdm);
+        else{
+            progressBar.setVisibility(View.GONE);
+            showKV(parseKV(memoryxzqinfoList.get(0).getKeyAndValues()));
+        }
         //LitePal.deleteAll(xzq.class, "xzqmc = ? and type = ?", "凤庆县", "乡级");
         //Log.w(TAG, "onCreate: " + DataUtil.xzqClassify(LitePal.findAll(xzq.class)));
         /*long[] nums = DataUtil.xzqCalGrade(LitePal.findAll(xzq.class));
@@ -214,10 +335,9 @@ public class chartshow extends AppCompatActivity {
                                                                 queryTaskInfos.add(queryTaskInfo);
                                                             }
                                                         }
-                                                        List<SliceValue> sliceValues = new ArrayList<>();
                                                         for (int i = 0; i < queryTaskInfos.size(); i++) {
                                                             if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
-                                                                keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                                                keyAndValues.add(new KeyAndValue(Double.toString(wholeArea), queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
                                                             else {
                                                                 boolean hasKey = false;
                                                                 for (int j = 0; j < keyAndValues.size(); j++) {
@@ -228,92 +348,18 @@ public class chartshow extends AppCompatActivity {
                                                                     }
                                                                 }
                                                                 if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
-                                                                    keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                                                    keyAndValues.add(new KeyAndValue(Double.toString(wholeArea), queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
                                                                 }
                                                             }
                                                         }
                                                         progressBar.setVisibility(View.GONE);
-                                                        String data = "";
-                                                        DecimalFormat decimalFormat = new DecimalFormat("0.0");
-                                                        List<Column> columns = new ArrayList<Column>();
-                                                        for (int i = 0; i < keyAndValues.size(); i++){
-                                                            sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
-                                                            Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
-                                                            data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
-                                                            List<SubcolumnValue> values = new ArrayList<>();
-                                                            //values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
-                                                            values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.pickColor()));
-                                                            Column column = new Column(values);
-                                                            column.setHasLabels(true);
-                                                            column.setHasLabelsOnlyForSelected(true);
-                                                            columns.add(column);
-                                                        }
-                                                        //chartdata.setGravity(Gravity.TOP);
-                                                        //chartdata.setText(data);
-                                                        //List<Column> columns = new
-                                                        TextView textView = (TextView) findViewById(R.id.chart_textshow);
-                                                        textView.setVisibility(View.GONE);
-                                                        RecyclerView recyclerView1 = (RecyclerView) findViewById(R.id.chart_recycler_view);
-                                                        recyclerView1.setVisibility(View.VISIBLE);
-                                                        GridLayoutManager layoutManager1 = new GridLayoutManager(chartshow.this,1);
-                                                        recyclerView1.setLayoutManager(layoutManager1);
-                                                        KVAdapter adapter1 = new KVAdapter(keyAndValues);
-                                                        recyclerView1.setAdapter(adapter1);
-                                                        ColumnChartData columnChartData = new ColumnChartData(columns);
-                                                        Axis axisX = new Axis();
-                                                        Axis axisY = new Axis().setHasLines(true);
-                                                        axisX.setName("土地规划地类");
-                                                        axisY.setName("面积");
-                                                        columnChartData.setAxisXBottom(axisX);
-                                                        columnChartData.setAxisYLeft(axisY);
-                                                        columnChartView.setColumnChartData(columnChartData);
-                                                        final List<KeyAndValue> kv = keyAndValues;
-                                                        columnChartView.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
-                                                            @Override
-                                                            public void onValueSelected(int i, int i1, SubcolumnValue subcolumnValue) {
-                                                                Log.w(TAG, "onValueSelected: " + subcolumnValue.getValue());
-                                                                DecimalFormat decimalFormat = new DecimalFormat("0.0");
-                                                                DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
-                                                                for (int j = 0; j < kv.size(); j++){
-                                                                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()))).equals(decimalFormat1.format(subcolumnValue.getValue()))) {
-                                                                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占地: " + decimalFormat.format(subcolumnValue.getValue()) + "亩", Toast.LENGTH_SHORT).show();
-                                                                        break;
-                                                                    }
-                                                                }
-                                                            }
+                                                        memoryxzqinfo memoryxzqinfo = new memoryxzqinfo();
+                                                        memoryxzqinfo.setName(xzqdm);
+                                                        memoryxzqinfo.setKeyAndValues(classifyKV(keyAndValues));
+                                                        memoryxzqinfo.save();
+                                                        showKV(keyAndValues);
 
-                                                            @Override
-                                                            public void onValueDeselected() {
 
-                                                            }
-                                                        });
-                                                        //columnChartView.setY(chartdata.getBottom());
-                                                        columnChartView.setVisibility(View.VISIBLE);
-                                                        PieChartData pieChartData = new PieChartData(sliceValues);
-                                                        pieChartData.setCenterText1("占比");
-                                                        pieChartData.setHasCenterCircle(true);
-                                                        pieChartView.setPieChartData(pieChartData);
-                                                        pieChartView.setOnValueTouchListener(new PieChartOnValueSelectListener() {
-                                                            @Override
-                                                            public void onValueSelected(int i, SliceValue sliceValue) {
-                                                                Log.w(TAG, "onValueSelected: " + sliceValue.getValue());
-                                                                DecimalFormat decimalFormat = new DecimalFormat("0.00");
-                                                                DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
-                                                                for (int j = 0; j < kv.size(); j++){
-                                                                    if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()) / wholeArea)).equals(decimalFormat1.format(sliceValue.getValue()))) {
-                                                                        Toast.makeText(chartshow.this, kv.get(j).getName() + "占比: " + decimalFormat.format(sliceValue.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
-                                                                        break;
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            @Override
-                                                            public void onValueDeselected() {
-
-                                                            }
-                                                        });
-                                                        //pieChartView.setY(chartdata.getBottom());
-                                                        pieChartView.setVisibility(View.VISIBLE);
                                                     } catch (Exception e) {
                                                         e.printStackTrace();
                                                     }
