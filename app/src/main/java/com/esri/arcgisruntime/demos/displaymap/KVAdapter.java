@@ -114,6 +114,7 @@ public class KVAdapter extends RecyclerView.Adapter<KVAdapter.ViewHolder> {
         holder.kvnum.setText(Integer.toString(position + 1));
         holder.kvname.setText(keyAndValue.getName());
         if (!string.isEmpty() && keyAndValue.getName().equals(string)) holder.cardView.setCardBackgroundColor(Color.RED);
+        else holder.cardView.setCardBackgroundColor(Color.WHITE);
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
         DecimalFormat decimalFormat1 = new DecimalFormat("0.00");
         holder.kvvalue.setText(decimalFormat.format(Double.valueOf(keyAndValue.getValue())) + "亩");

@@ -777,12 +777,14 @@ public class MainActivity extends AppCompatActivity {
                             DecimalFormat decimalFormat = new DecimalFormat("0.00");
                             DecimalFormat decimalFormat1 = new DecimalFormat("0.0");
                             for (int j = 0; j < keyAndValues.size(); j++) {
+                                float value = Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea;
+                                SliceValue sliceValue = new SliceValue(value, ChartUtils.pickColor());
+                                sliceValue.setLabel(keyAndValues.get(j).getName() + ":" + decimalFormat1.format(value * 100) + "%");
+                                sliceValues.add(sliceValue);
                                 if (j < keyAndValues.size() - 1) {
-                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
                                     str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
                                     str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%" + "\n";
                                 } else {
-                                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea, ChartUtils.pickColor()));
                                     str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
                                     str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%";
                                 }
@@ -795,8 +797,12 @@ public class MainActivity extends AppCompatActivity {
                             mCallout.show();
                             inMap = true;
                             PieChartData pieChartData = new PieChartData(sliceValues);
+                            pieChartData.setHasLabels(true);
+                            pieChartData.setHasLabelsOutside(false);
+                            pieChartData.setHasLabelsOnlyForSelected(true);
                             pieChartView.setOnValueTouchListener(new ValueTouchListener());
                             pieChartView.setPieChartData(pieChartData);
+                            pieChartView.setValueSelectionEnabled(true);
                             pieChartView.setVisibility(View.VISIBLE);
                             pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
                                 @Override

@@ -119,13 +119,13 @@ public class chartshow extends AppCompatActivity {
             @Override
             public void onItemClick(View view, String name, int position) {
                 selectedItem = name;
-                SharedPreferences.Editor editor = getSharedPreferences("queryType", MODE_PRIVATE).edit();
+                /*SharedPreferences.Editor editor = getSharedPreferences("queryType", MODE_PRIVATE).edit();
                 editor.putString("tdghdl", name);
                 editor.apply();
-                refreshRecycler(keyAndValues);
-                /*if (mposition != -1) {
+                refreshRecycler(keyAndValues);*/
+                if (mposition != -1) {
                     adapter1.notifyItemChanged(mposition);
-                }*/
+                }
                 showKV(keyAndValues);
                 mposition = position;
             }
@@ -144,12 +144,16 @@ public class chartshow extends AppCompatActivity {
         List<SliceValue> sliceValues = new ArrayList<>();
         String data = "";
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        DecimalFormat decimalFormat1 = new DecimalFormat("0.00");
         List<Column> columns = new ArrayList<Column>();
         if (selectedItem.isEmpty()) {
             Log.w(TAG, "showKV: " + "empty");
             for (int i = 0; i < keyAndValues.size(); i++) {
                 int color = ChartUtils.pickColor();
-                sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, color));
+                float value = Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea;
+                SliceValue sliceValue = new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, color);
+                sliceValue.setLabel(keyAndValues.get(i).getName() + "占比:" + decimalFormat1.format(value * 100) + "%");
+                sliceValues.add(sliceValue);
                 Log.w(TAG, "run: " + keyAndValues.get(i).getName() + ": " + keyAndValues.get(i).getValue());
                 data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
                 List<SubcolumnValue> values = new ArrayList<>();
@@ -167,12 +171,13 @@ public class chartshow extends AppCompatActivity {
                 List<SubcolumnValue> values = new ArrayList<>();
                 Column column = new Column(values);
                 column.setHasLabels(true);
+                //column.setHasLabelsOnlyForSelected(true);
                 if (keyAndValues.get(i).getName().equals(selectedItem)) {
-                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.COLOR_RED));
+                    sliceValues.add( new SliceValue( Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.COLOR_RED));
                     values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.COLOR_RED));
                     column.setHasLabelsOnlyForSelected(false);
                 }else {
-                    sliceValues.add(new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.COLOR_GREEN));
+                    sliceValues.add( new SliceValue( Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, ChartUtils.COLOR_GREEN));
                     values.add(new SubcolumnValue(Float.valueOf(keyAndValues.get(i).getValue()), ChartUtils.COLOR_GREEN));
                     column.setHasLabelsOnlyForSelected(true);
                 }
@@ -198,6 +203,7 @@ public class chartshow extends AppCompatActivity {
         columnChartData.setAxisXBottom(axisX);
         columnChartData.setAxisYLeft(axisY);
         columnChartView.setColumnChartData(columnChartData);
+        columnChartView.setValueSelectionEnabled(true);
         final List<KeyAndValue> kv = keyAndValues;
         columnChartView.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
             @Override
@@ -232,14 +238,18 @@ public class chartshow extends AppCompatActivity {
             for (int i = 0; i < keyAndValues.size(); i++){
                 if (keyAndValues.get(i).getName().equals(selectedItem)) {
                     pieChartData.setCenterText1(selectedItem);
-                    DecimalFormat decimalFormat1 = new DecimalFormat("0.00");
+                    pieChartData.setCenterText1FontSize(21);
                     pieChartData.setCenterText2(decimalFormat1.format(Double.valueOf(keyAndValues.get(i).getValue()) / wholeArea * 100) + "%");
                     pieChartData.setCenterText2Color(ChartUtils.COLOR_RED);
                     break;
                 }
             }
-        }else pieChartData.setCenterText1("占比");
+        }else pieChartData.setCenterText1("各类占比");
         pieChartData.setHasCenterCircle(true);
+        pieChartData.setHasLabels(true);
+        pieChartData.setHasLabelsOutside(false);
+        pieChartData.setHasLabelsOnlyForSelected(true);
+        pieChartView.setValueSelectionEnabled(true);
         pieChartView.setPieChartData(pieChartData);
         pieChartView.setOnValueTouchListener(new PieChartOnValueSelectListener() {
             @Override
