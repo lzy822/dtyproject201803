@@ -19,6 +19,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.litepal.LitePal;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -43,11 +45,13 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
         //private OnRecyclerItemLongListener mOnItemLong = null;
         CardView cardView;
         TextView MapName;
+        ImageView xzqIcon;
 
         public ViewHolder(View view) {
             super(view);
             cardView = (CardView) view;
             MapName = (TextView) view.findViewById(R.id.xzq_name);
+            xzqIcon = (ImageView) view.findViewById(R.id.xzq_icon);
 
 
 
@@ -69,12 +73,36 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-                xzq map = xzqs.get(position);
-                mOnItemClick.onItemClick(v, map.getXzqdm(), position);
+                xzq xzq = xzqs.get(position);
+                mOnItemClick.onItemClick(v, xzq.getXzqdm(), position);
                 /*
                 Intent intent = new Intent(mContext, MainInterface.class);
                 intent.putExtra("num", map.getM_num());
                 mContext.startActivity(intent);*/
+            }
+        });
+        holder.xzqIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position = holder.getAdapterPosition();
+                xzq xzq = xzqs.get(position);
+                Log.w(TAG, "onClick: " + xzq.getXzqmc());
+                SharedPreferences pref1 = mContext.getSharedPreferences("xzq", MODE_PRIVATE);
+                xzqs = DataUtil.bubbleSort(LitePal.where("grade = ?", Integer.toString(1)).find(xzq.class));
+                if (pref1.getString("name", "").equals(xzq.getXzqmc())){
+                    SharedPreferences.Editor editor = mContext.getSharedPreferences("xzq", MODE_PRIVATE).edit();
+                    editor.putString("name", "");
+                    editor.apply();
+                }else {
+                    SharedPreferences.Editor editor = mContext.getSharedPreferences("xzq", MODE_PRIVATE).edit();
+                    editor.putString("name", xzq.getXzqmc());
+                    editor.apply();
+                    xzqs.addAll(LitePal.where("sjxzq = ? and grade = ?", xzq.getXzqmc(), Integer.toString(2)).find(xzq.class));
+                    xzqs = DataUtil.bubbleSort(xzqs);
+                }
+                //notifyItemChanged(position);
+                //notifyItemRangeChanged(0, xzqs.size());
+                notifyDataSetChanged();
             }
         });
         return holder;
@@ -96,10 +124,18 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
     public void onBindViewHolder(ViewHolder holder, int position) {
         xzq xzq = xzqs.get(position);
         if (xzq.getGrade() == 1){
+            SharedPreferences pref1 = mContext.getSharedPreferences("xzq", MODE_PRIVATE);
+            if (xzq.getXzqmc().equals(pref1.getString("name", ""))) {
+                holder.xzqIcon.setImageResource(R.drawable.ic_remove_circle_outline_black_24dp);
+            }
+            else
+                holder.xzqIcon.setImageResource(R.drawable.ic_add_circle_outline_black_24dp);
+            holder.xzqIcon.setVisibility(View.VISIBLE);
             holder.MapName.setTextColor(Color.RED);
             holder.MapName.setText(xzq.getXzqmc());
         }
         else if (xzq.getGrade() == 2) {
+            holder.xzqIcon.setVisibility(View.INVISIBLE);
             holder.MapName.setTextColor(Color.BLACK);
             holder.MapName.setText("\t" + "-" + xzq.getXzqmc());
         }
@@ -117,7 +153,7 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
     }
 
     public interface OnRecyclerItemClickListener{
-        void onItemClick(View view, String xzqdm, int position);
+        void onItemClick(View view, String xzqdm, final int position);
     }
     public void setOnItemClickListener(OnRecyclerItemClickListener listener){
         this.mOnItemClick =  listener;

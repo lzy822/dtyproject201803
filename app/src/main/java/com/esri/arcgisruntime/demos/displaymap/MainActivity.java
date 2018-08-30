@@ -176,15 +176,26 @@ public class MainActivity extends AppCompatActivity {
 
     double m_lat = 0, m_long = 0;
 
+    @Override
+    public void onBackPressed() {
+        SharedPreferences.Editor editor = getSharedPreferences("xzq", MODE_PRIVATE).edit();
+        editor.putString("name", "");
+        editor.apply();
+        super.onBackPressed();
+    }
+
+    List<xzq> xzqs;
     private void showPopueWindowForxzqTree(){
         final View popView = View.inflate(this, R.layout.popupwindow_xzqtree,null);
         RecyclerView recyclerView1 = (RecyclerView) popView.findViewById(R.id.xzqtree_recycler_view);
         GridLayoutManager layoutManager1 = new GridLayoutManager(popView.getContext(),1);
         recyclerView1.setLayoutManager(layoutManager1);
-        xzqTreeAdapter adapter1 = new xzqTreeAdapter(LitePal.findAll(xzq.class));
+        //xzqTreeAdapter adapter1 = new xzqTreeAdapter(DataUtil.bubbleSort(LitePal.findAll(xzq.class)));
+        xzqs = DataUtil.bubbleSort(LitePal.where("grade = ?", Integer.toString(1)).find(xzq.class));
+        final xzqTreeAdapter adapter1 = new xzqTreeAdapter(xzqs);
         adapter1.setOnItemClickListener(new xzqTreeAdapter.OnRecyclerItemClickListener() {
             @Override
-            public void onItemClick(View view, String xzqdm, int position) {
+            public void onItemClick(View view, String xzqdm, final int position) {
                 Intent intent = new Intent(MainActivity.this, chartshow.class);
                 intent.putExtra("xzqdm", xzqdm);
                 startActivity(intent);
@@ -214,6 +225,10 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                SharedPreferences.Editor editor = getSharedPreferences("xzq", MODE_PRIVATE).edit();
+                editor.putString("name", "");
+                editor.apply();
                 popupWindow.dismiss();
             }
         });
@@ -897,7 +912,7 @@ public class MainActivity extends AppCompatActivity {
                     showPopueWindowForMessure();
                 }
                 else {
-                    if (DrawType == DRAW_POLYGON){
+                    if (DrawType == DRAW_POLYGON && pointCollection.size() >= 3){
                         //pointCollection.add(ppp.getX(), ppp.getY());
                         //if (num == 0) {
                             final Polygon polygon = new Polygon(pointCollection);
@@ -958,8 +973,11 @@ public class MainActivity extends AppCompatActivity {
                         Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC));
                         DecimalFormat format = new DecimalFormat("0.00");
                         Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
+                    }else {
+                        Toast.makeText(MainActivity.this, "请构建面(至少三个点)后进行查询", Toast.LENGTH_SHORT).show();
                     }
                     DrawType = DRAW_NONE;
+                    mapQueryBtEvent();
                 }
             }
         });
@@ -2061,8 +2079,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         mMapView.pause();
-        super.onPause();
         sensorManager.unregisterListener(listener);
+        super.onPause();
     }
 
     @Override
@@ -2079,6 +2097,9 @@ public class MainActivity extends AppCompatActivity {
     double OriginScale;
     @Override
     protected void onDestroy() {
+        SharedPreferences.Editor editor = getSharedPreferences("xzq", MODE_PRIVATE).edit();
+        editor.putString("name", "");
+        editor.apply();
         super.onDestroy();
         getCacheDir().delete();
         getFilesDir().delete();

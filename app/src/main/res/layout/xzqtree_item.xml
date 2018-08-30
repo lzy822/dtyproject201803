@@ -10,6 +10,13 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+        <ImageButton
+            android:id="@+id/xzq_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_add_circle_outline_black_24dp"
+            android:background="@color/White"/>
         <TextView
             android:id="@+id/xzq_name"
             android:layout_width="wrap_content"
