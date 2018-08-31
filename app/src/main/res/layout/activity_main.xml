@@ -14,7 +14,6 @@
         android:layout_marginLeft="10dp"
         android:layout_alignParentBottom="true"
         android:adjustViewBounds="false"
-        android:scaleType="fitStart"
         android:src="@drawable/ic_brush_black_24dp"
         app:fab_colorNormal="#F50057"
         app:fab_colorPressed="#E8004A"
@@ -23,21 +22,88 @@
         app:fab_shadowColor="#000"
         app:fab_size="mini" />
     <com.github.clans.fab.FloatingActionButton
-    android:id="@+id/MapQuery"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginRight="10dp"
-    android:layout_alignParentEnd="true"
-    android:layout_alignParentBottom="true"
-    android:adjustViewBounds="false"
-    android:scaleType="fitEnd"
-    android:src="@drawable/ic_search_black_24dp"
-    app:fab_colorNormal="#F50057"
-    app:fab_colorPressed="#E8004A"
-    app:fab_colorRipple="#C20024"
-    app:fab_elevationCompat="6dp"
-    app:fab_shadowColor="#000"
-    app:fab_size="mini" />
+        android:id="@+id/MapQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:adjustViewBounds="false"
+        android:scaleType="fitEnd"
+        android:src="@drawable/ic_search_black_24dp"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini"/>
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/CancelQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="81dp"
+        android:adjustViewBounds="false"
+        android:src="@drawable/ic_clear_black_24dp"
+        android:visibility="gone"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/ClearQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/CancelQuery"
+        android:adjustViewBounds="false"
+        android:src="@drawable/ic_crop_5_4_black_24dp"
+        android:visibility="gone"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/BackQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toStartOf="@+id/FinishQuery"
+        android:adjustViewBounds="false"
+        android:src="@drawable/ic_arrow_back"
+        android:visibility="gone"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/FinishQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="81dp"
+        android:adjustViewBounds="false"
+        android:src="@drawable/ic_check_black_24dp"
+        android:visibility="gone"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/LocHere"
         android:layout_width="wrap_content"
@@ -101,12 +167,14 @@
         android:layout_height="wrap_content"
         android:translationZ="10dp"
         android:background="@drawable/ic_expand_more_black_24dp"/>
+
     <com.esri.arcgisruntime.mapping.view.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:translationZ="0dp">
-    </com.esri.arcgisruntime.mapping.view.MapView>
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:translationZ="0dp"></com.esri.arcgisruntime.mapping.view.MapView>
     <ImageView
         android:id="@+id/North"
         android:layout_marginTop="10dp"

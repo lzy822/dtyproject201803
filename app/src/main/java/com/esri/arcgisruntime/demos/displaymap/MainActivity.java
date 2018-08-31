@@ -44,6 +44,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -594,6 +595,9 @@ public class MainActivity extends AppCompatActivity {
                     mapQueryBtEvent();
                 DrawType = DRAW_POLYGON;
                 pointCollection = new PointCollection(SpatialReference.create(4521));
+                showQueryWidget();
+                removeStandardWidget();
+                QueryProcessType = INQUERY;
                 popupWindow.dismiss();
             }
         });
@@ -638,12 +642,12 @@ public class MainActivity extends AppCompatActivity {
         popupWindow.showAtLocation(popView, Gravity.BOTTOM,0,50);
 
     }
-
+    FloatingActionButton DrawFeature;
     PointCollection pointCollection;
     PointCollection pointCollection1 = new PointCollection(SpatialReference.create(4521));
     int num = 0;
     Point ppp;
-
+    FloatingActionButton MapQueryBT;
     PieChartView pieChartView;
     List<KeyAndValue> keyAndValues;
     double wholeArea = 0;
@@ -902,7 +906,7 @@ public class MainActivity extends AppCompatActivity {
         //
         pieChartView = (PieChartView) findViewById(R.id.chart);
         //按钮添加要素
-        FloatingActionButton DrawFeature = (FloatingActionButton)findViewById(R.id.DrawFeature);
+        DrawFeature = (FloatingActionButton)findViewById(R.id.DrawFeature);
         DrawFeature.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1013,7 +1017,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         ScaleShow = (TextView) findViewById(R.id.scale);
-        FloatingActionButton MapQueryBT = (FloatingActionButton) findViewById(R.id.MapQuery);
+        MapQueryBT = (FloatingActionButton) findViewById(R.id.MapQuery);
         MapQueryBT.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1297,7 +1301,18 @@ public class MainActivity extends AppCompatActivity {
                 }else if (DrawType == DRAW_POLYGON){
                     ppp = wgs84Point;
                     pointCollection.add(wgs84Point);
-                    if (pointCollection.size() == 2){
+                    if (pointCollection.size() == 1){
+                        while (mMapView.getGraphicsOverlays().size() != 0) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                mMapView.getGraphicsOverlays().remove(i);
+                            }
+                        }
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    }else if (pointCollection.size() == 2){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
                             for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
                                 mMapView.getGraphicsOverlays().remove(i);
@@ -1452,7 +1467,7 @@ public class MainActivity extends AppCompatActivity {
                 else ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
             }
         });
-        FloatingActionButton LocHereBT = (FloatingActionButton) findViewById(R.id.LocHere);
+        LocHereBT = (FloatingActionButton) findViewById(R.id.LocHere);
         LocHereBT.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1466,7 +1481,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
+    FloatingActionButton LocHereBT;
     int numx = 0;
     Point mLocation;
     Geodatabase localGdb;
@@ -1475,6 +1490,146 @@ public class MainActivity extends AppCompatActivity {
     FeatureLayer featureLayer778 = null;
     boolean hasTPK = false;
     boolean MapQuery = false;
+
+    private void showStandardWidget(){
+        whiteBlank_fab.setVisibility(View.VISIBLE);
+        MapQueryBT.setVisibility(View.VISIBLE);
+        DrawFeature.setVisibility(View.VISIBLE);
+        LocHereBT.setVisibility(View.VISIBLE);
+        ResetBT.setVisibility(View.VISIBLE);
+    }
+
+    private void removeStandardWidget(){
+        whiteBlank_fab.setVisibility(View.GONE);
+        MapQueryBT.setVisibility(View.GONE);
+        DrawFeature.setVisibility(View.GONE);
+        LocHereBT.setVisibility(View.GONE);
+        ResetBT.setVisibility(View.GONE);
+    }
+    private int QueryProcessType = NOQUERY;
+    private static final int INQUERY = -1;
+    private static final int FINISHQUERY = -2;
+    private static final int NOQUERY = -3;
+
+    private void showQueryWidget(){
+        FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
+        cancel.setVisibility(View.VISIBLE);
+        FloatingActionButton clear = (FloatingActionButton) findViewById(R.id.ClearQuery);
+        clear.setVisibility(View.VISIBLE);
+        FloatingActionButton back = (FloatingActionButton) findViewById(R.id.BackQuery);
+        back.setVisibility(View.VISIBLE);
+        final FloatingActionButton finish = (FloatingActionButton) findViewById(R.id.FinishQuery);
+        finish.setVisibility(View.VISIBLE);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                QueryProcessType = NOQUERY;
+                removeQueryWidget();
+                showStandardWidget();
+                DrawType = DRAW_NONE;
+                mapQueryBtEvent();
+            }
+        });
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                while (mMapView.getGraphicsOverlays().size() != 0) {
+                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                        mMapView.getGraphicsOverlays().remove(i);
+                    }
+                }
+                if (pointCollection.size() >= 1)
+                    pointCollection.remove(pointCollection.size() - 1);
+                if (pointCollection.size() == 1){
+                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                    SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
+                    Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                }else if (pointCollection.size() == 2){
+                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                    Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                }else if (pointCollection.size() > 2){
+                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                    Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                }
+            }
+        });
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "已清空", Toast.LENGTH_SHORT).show();
+                pointCollection.clear();
+                while (mMapView.getGraphicsOverlays().size() != 0) {
+                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                        mMapView.getGraphicsOverlays().remove(i);
+                    }
+                }
+            }
+        });
+        finish.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (QueryProcessType == INQUERY){
+                    if (DrawType == DRAW_POLYGON && pointCollection.size() >= 3){
+                    final Polygon polygon = new Polygon(pointCollection);
+                    QueryParameters query = new QueryParameters();
+                    query.setGeometry(polygon);// 设置空间几何对象
+                    File file = new File(rootPath);
+                    if (file.exists() & MapQuery) {
+                        //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                        queryTask(query, polygon);
+                    } else
+                        Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+                    if (!inMap) mCallout.dismiss();
+                        QueryProcessType = FINISHQUERY;
+                        removeQueryWidgetFinish();
+                        /*RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) finish.getLayoutParams();
+                        lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                        lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                        finish.setLayoutParams(lp);*/
+                }else Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
+                }else if (QueryProcessType == FINISHQUERY){
+                    QueryProcessType = NOQUERY;
+                    removeQueryWidgetFinishLater();
+                    showStandardWidget();
+                    DrawType = DRAW_NONE;
+                    mapQueryBtEvent();
+                }
+            }
+        });
+    }
+
+    private void removeQueryWidgetFinishLater(){
+        FloatingActionButton finish = (FloatingActionButton) findViewById(R.id.FinishQuery);
+        finish.setVisibility(View.GONE);
+    }
+
+    private void removeQueryWidgetFinish(){
+        FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
+        cancel.setVisibility(View.GONE);
+        FloatingActionButton clear = (FloatingActionButton) findViewById(R.id.ClearQuery);
+        clear.setVisibility(View.GONE);
+        FloatingActionButton back = (FloatingActionButton) findViewById(R.id.BackQuery);
+        back.setVisibility(View.GONE);
+    }
+
+    private void removeQueryWidget(){
+        FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
+        cancel.setVisibility(View.GONE);
+        FloatingActionButton clear = (FloatingActionButton) findViewById(R.id.ClearQuery);
+        clear.setVisibility(View.GONE);
+        FloatingActionButton back = (FloatingActionButton) findViewById(R.id.BackQuery);
+        back.setVisibility(View.GONE);
+        FloatingActionButton finish = (FloatingActionButton) findViewById(R.id.FinishQuery);
+        finish.setVisibility(View.GONE);
+    }
 
     public void drawWhiteBlank(){
         graphics.clear();
