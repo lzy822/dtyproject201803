@@ -17,8 +17,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.net.Uri;
 import android.os.Environment;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -126,6 +128,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -159,7 +162,12 @@ public class MainActivity extends AppCompatActivity {
     ArcGISMap map;
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
     public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
+    public static final String ACCESS_FINE_LOCATION = "android.permission.ACCESS_FINE_LOCATION";
+    public static final String ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION";
+    public static final String INTERNET = "android.permission.INTERNET";
     public static final int PERMISSION_CODE = 42042;
+    public static final int PERMISSION_CODE_1 = 42043;
+    public static final int PERMISSION_CODE_2 = 42044;
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
     //记录画笔颜色
     private int color_Whiteblank;
@@ -173,9 +181,78 @@ public class MainActivity extends AppCompatActivity {
     public static final int DRAW_POINT = -3;
     public static final int DRAW_NONE = 0;
 
+    //记录是否处于白板画图状态
+    private boolean isWhiteBlank = false;
+    List<Point> whiteBlankPts;
+    GraphicsOverlay graphicsOverlay_9;
+    GraphicsOverlay graphicsOverlay_10;
+    PointCollection points = new PointCollection(SpatialReference.create(4521));;
+    List<Graphic> graphics = new ArrayList<>();
+    boolean isOk = false;
+    boolean isOK1 = false;
+    boolean isOK2 = false;
+    Point OriginLocation;
 
+    List<xzq> xzqs;
+
+    //记录是否开启白板功能
+    private boolean isOpenWhiteBlank = false;
+    Callout mCallout;
+    boolean inMap;
+    boolean isNorth = false;
+    FloatingActionButton DrawFeature;
+    PointCollection pointCollection;
+    PointCollection pointCollection1 = new PointCollection(SpatialReference.create(4521));
+    int num = 0;
+    Point ppp;
+    FloatingActionButton MapQueryBT;
+    PieChartView pieChartView;
+    List<KeyAndValue> keyAndValues;
+    double wholeArea = 0;
+    private int QueriedFeature = TDGHDL_FEATURE;
+    static final int TDGHDL_FEATURE = 1;
+    static final int XZQ_FEATURE = 2;
+    FloatingActionButton LocHereBT;
+    int numx = 0;
+    Point mLocation;
+    Geodatabase localGdb;
+    LocationDisplay locationDisplay;
+    FeatureLayer featureLayer777 = null;
+    FeatureLayer featureLayer778 = null;
+    boolean hasTPK = false;
+    boolean MapQuery = false;
+    private int QueryProcessType = NOQUERY;
+    private static final int INQUERY = -1;
+    private static final int FINISHQUERY = -2;
+    private static final int NOQUERY = -3;
+
+    private int isQurey = NOQUREY;
+    private static final int QUREY = 0;
+    private static final int NOQUREY = 1;
+    List<QueryInfo> queryInfos = new ArrayList<>();
+
+    private SensorEventListener listener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (isNorth) {
+                mMapView.setViewpointRotationAsync(event.values[0]);
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
+    };
+
+    String[] items;
+    boolean isLoc = false;
+    List<layer1> TPKlayers = new ArrayList<>();
+    //初始化传感器管理器
+    private SensorManager sensorManager;
 
     double m_lat = 0, m_long = 0;
+    double OriginScale;
 
     @Override
     public void onBackPressed() {
@@ -185,7 +262,6 @@ public class MainActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    List<xzq> xzqs;
     private void showPopueWindowForxzqTree(){
         final View popView = View.inflate(this, R.layout.popupwindow_xzqtree,null);
         RecyclerView recyclerView1 = (RecyclerView) popView.findViewById(R.id.xzqtree_recycler_view);
@@ -242,24 +318,17 @@ public class MainActivity extends AppCompatActivity {
         popupWindow.showAtLocation(popView, Gravity.NO_GRAVITY,0,0);
     }
 
-    //重新刷新Recycler
-    public void refreshRecycler(){
-    }
-
-
     //获取文件读取权限
-    void pickFile() {
+    void fileReadPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
                 READ_EXTERNAL_STORAGE);
-        int permissionCheck1 = ContextCompat.checkSelfPermission(this,
-                WRITE_EXTERNAL_STORAGE);
 
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     this,
                     new String[]{
-                            READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE},
-                    PERMISSION_CODE
+                            READ_EXTERNAL_STORAGE},
+                    PERMISSION_CODE_1
             );
 
             return;
@@ -267,20 +336,51 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //获取位置权限
+    void locationPermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                ACCESS_COARSE_LOCATION);
+        int permissionCheck1 = ContextCompat.checkSelfPermission(this,
+                ACCESS_FINE_LOCATION);
 
-    private SensorEventListener listener = new SensorEventListener() {
-        @Override
-        public void onSensorChanged(SensorEvent event) {
-            if (isNorth) {
-                mMapView.setViewpointRotationAsync(event.values[0]);
-            }
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION},
+                    PERMISSION_CODE_2
+            );
+
+            return;
         }
 
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
 
+    //获取文件读取权限
+    void requestAuthority() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                READ_EXTERNAL_STORAGE);
+        int permissionCheck2 = ContextCompat.checkSelfPermission(this,
+                ACCESS_FINE_LOCATION);
+        int permissionCheck3 = ContextCompat.checkSelfPermission(this,
+                ACCESS_COARSE_LOCATION);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck2 != PackageManager.PERMISSION_GRANTED || permissionCheck3 != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "requestAuthority: " + permissionCheck + ";" + permissionCheck2 + ";" + permissionCheck3);
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION},
+                    PERMISSION_CODE
+            );
+        } else{
+            Log.w(TAG, "requestAuthority: ");
+            doSpecificOperation();
+            initWidgetAndVariable();
+            readMMPKData();
         }
-    };
+
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -298,15 +398,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-
-    //记录是否处于白板画图状态
-    private boolean isWhiteBlank = false;
-    List<Point> whiteBlankPts;
-    GraphicsOverlay graphicsOverlay_9;
-    GraphicsOverlay graphicsOverlay_10;
-    PointCollection points = new PointCollection(SpatialReference.create(4521));;
-    List<Graphic> graphics = new ArrayList<>();
-    boolean isOk = false;
 
     private void showPopueWindowForWhiteblank(){
         final View popView = View.inflate(this,R.layout.popupwindow_whiteblank,null);
@@ -531,21 +622,6 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private void showMap(){
-        map = new ArcGISMap();
-        if (isOK1 & isOK2) {
-            map.getOperationalLayers().clear();
-            int size = layers.size();
-            Log.w(TAG, "showMap: " + map.getOperationalLayers().size());
-            for (int i = 0; i < size; i++){
-                Log.w(TAG, "showMap i : " + i);
-                //if (!map.getOperationalLayers().contains(layers.get(i)))
-                map.getOperationalLayers().add(layers.get(i).getLayer());
-            }
-            mMapView.setMap(map);
-        }
-    }
-
     /**
      * 获取导航栏高度
      * @param context
@@ -563,15 +639,6 @@ public class MainActivity extends AppCompatActivity {
         }else
             return 0;
     }
-    boolean isOK1 = false;
-    boolean isOK2 = false;
-    Point OriginLocation;
-
-    //记录是否开启白板功能
-    private boolean isOpenWhiteBlank = false;
-    Callout mCallout;
-    boolean inMap;
-    boolean isNorth = false;
 
     private void showPopueWindowForMessure(){
         View popView = View.inflate(this,R.layout.popupwindow_drawfeature,null);
@@ -642,18 +709,6 @@ public class MainActivity extends AppCompatActivity {
         popupWindow.showAtLocation(popView, Gravity.BOTTOM,0,50);
 
     }
-    FloatingActionButton DrawFeature;
-    PointCollection pointCollection;
-    PointCollection pointCollection1 = new PointCollection(SpatialReference.create(4521));
-    int num = 0;
-    Point ppp;
-    FloatingActionButton MapQueryBT;
-    PieChartView pieChartView;
-    List<KeyAndValue> keyAndValues;
-    double wholeArea = 0;
-    private int QueriedFeature = TDGHDL_FEATURE;
-    static final int TDGHDL_FEATURE = 1;
-    static final int XZQ_FEATURE = 2;
 
     private void queryTask(final QueryParameters query, final Polygon polygon){
         try {
@@ -894,16 +949,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    private void initWidgetAndVariable(){
+        initWidget();
+        initVariable();
+    }
 
-        //LitePal.deleteAll(memoryxzqinfo.class);
-        //行政区数据入库
-        //LitePal.deleteAll(xzq.class);
-        //readXZQ();
-        //
+    private void initWidget(){
         pieChartView = (PieChartView) findViewById(R.id.chart);
         //按钮添加要素
         DrawFeature = (FloatingActionButton)findViewById(R.id.DrawFeature);
@@ -919,7 +970,7 @@ public class MainActivity extends AppCompatActivity {
                     if (DrawType == DRAW_POLYGON && pointCollection.size() >= 3){
                         //pointCollection.add(ppp.getX(), ppp.getY());
                         //if (num == 0) {
-                            final Polygon polygon = new Polygon(pointCollection);
+                        final Polygon polygon = new Polygon(pointCollection);
                             /*GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                             SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
                             SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.WHITE, lineSymbol);
@@ -928,10 +979,10 @@ public class MainActivity extends AppCompatActivity {
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                             num++;*/
 
-                            Log.w(TAG, "onClick: " + pointCollection.size());
-                            Log.w(TAG, "onClick: " + GeometryEngine.area(polygon));
-                            Log.w(TAG, "onClick: " + GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC));
-                            Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polygon.toPolyline(), new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC));
+                        Log.w(TAG, "onClick: " + pointCollection.size());
+                        Log.w(TAG, "onClick: " + GeometryEngine.area(polygon));
+                        Log.w(TAG, "onClick: " + GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC));
+                        Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polygon.toPolyline(), new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC));
 
                         //}
                         /*else {
@@ -958,8 +1009,7 @@ public class MainActivity extends AppCompatActivity {
                         }*/
                         QueryParameters query = new QueryParameters();
                         query.setGeometry(polygon);// 设置空间几何对象
-                        File file = new File(rootPath);
-                        if (file.exists() & MapQuery) {
+                        if (isFileExist(rootPath) & MapQuery) {
                             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                             queryTask(query, polygon);
                         } else
@@ -985,8 +1035,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        //获取传感器管理器系统服务
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         North = (ImageView) findViewById(R.id.North);
         North.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1024,10 +1072,6 @@ public class MainActivity extends AppCompatActivity {
                 mapQueryBtEvent();
             }
         });
-        graphicsOverlay_66 = new GraphicsOverlay();
-        color_Whiteblank = Color.RED;
-        //LitePal.deleteAll(whiteblank.class);
-        //whiteBlankPts = new ArrayList<Point>();
         whiteBlank_fab = (FloatingActionButton) findViewById(R.id.whiteBlank);
         whiteBlank_fab.setImageResource(R.drawable.ic_brush_black_24dp);
         whiteBlank_fab.setOnClickListener(new View.OnClickListener() {
@@ -1079,105 +1123,7 @@ public class MainActivity extends AppCompatActivity {
                 //Log.w(TAG, "onClick: " + recyclerViewButton.getBackground().toString() );
             }
         });
-        /*recyclerViewButton1 = (ImageButton) findViewById(R.id.openRecyclerView1);
-        recyclerViewButton1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isClick == true){
-                    recyclerView.setVisibility(View.GONE);
-                    recyclerViewButton.setVisibility(View.VISIBLE);
-                    recyclerViewButton1.setVisibility(View.GONE);
-                    isClick = false;
-                    //recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_less_black_24dp);
-                    //recyclerViewButton.setX(recyclerView.getX() + recyclerView.getWidth() + 50);
-                }else {
-                    //setRecyclerView();
-                    recyclerView.setVisibility(View.VISIBLE);
-                }
-                //Log.w(TAG, "onClick: " + recyclerViewButton.getBackground().toString() );
-            }
-        });*/
         mMapView = findViewById(R.id.mapView);// = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 34.056295, -117.195800, 16);
-        map = new ArcGISMap();
-        pickFile();
-        Log.w(TAG, "onCreate: " + rootPath );
-        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(rootPath);
-        mainMobileMapPackage.loadAsync();
-        mainMobileMapPackage.addDoneLoadingListener(new Runnable() {
-                                                        @Override
-                                                        public void run() {
-                                                            LoadStatus mainLoadStatus = mainMobileMapPackage.getLoadStatus();
-                                                            if (mainLoadStatus == LoadStatus.LOADED) {
-                                                                List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
-                                                                map = mainArcGISMapL.get(0);
-                                                                int size = map.getOperationalLayers().size();
-                                                                Log.w(TAG, "size: " + size);
-                                                                for (int i = size - 1; i > -1; i--){
-                                                                    if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
-                                                                        layers.add(new layer1(map.getOperationalLayers().get(i), i));
-                                                                        layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
-                                                                    }else {
-                                                                        hasTPK = true;
-                                                                        TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
-                                                                    }
-                                                                }
-                                                                layerList.add(new layer("影像", true));
-                                                                isOK1 = true;
-
-                                                               /* Log.w(TAG, "getFullExtent: " + map.getOperationalLayers().size());
-                                                                for (int i = 0; i < map.getOperationalLayers().size(); i++){
-                                                                    Log.w(TAG, "getFullExtent: " + i);
-                                                                    Log.w(TAG, "getFullExtent: " + map.getOperationalLayers().get(i).getFullExtent());
-                                                                }*/
-                                                                //showMap();
-                                                                mMapView.setMap(map);
-                                                                OriginScale = mMapView.getMapScale();
-                                                                //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
-                                                                //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
-                                                                if (mainMobileMapPackage.getPath().toString().contains("临沧")) {
-                                                                    Log.w(TAG, "run: " + mainMobileMapPackage.getPath().toString());
-                                                                    OriginLocation = new Point(99.626302, 23.928384, 0, SpatialReference.create(4326));
-                                                                    //mMapView.setViewpointCenterAsync(OriginLocation);
-                                                                    //mMapView.setViewpointScaleAsync(1200000);
-                                                                    mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
-                                                                }else mMapView.setViewpointScaleAsync(100000);
-                                                                drawWhiteBlank();
-                                                                //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
-
-                                                            }else mainMobileMapPackage.loadAsync();
-                                                        }
-                                                    });
-        /*final MobileMapPackage mainMobileMapPackage1 = new MobileMapPackage(rootPath1);
-        mainMobileMapPackage1.loadAsync();
-        mainMobileMapPackage1.addDoneLoadingListener(new Runnable() {
-            @Override
-            public void run() {
-                LoadStatus mainLoadStatus = mainMobileMapPackage1.getLoadStatus();
-                if (mainLoadStatus == LoadStatus.LOADED) {
-                    List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage1.getMaps();
-                    Log.w(TAG, "" + Integer.toString(mainArcGISMapL.size()) );
-                    //ArcGISMap mainArcrun: GISMapMMPK = mainArcGISMapL.get(0);
-                    Log.w(TAG, "mainArcGISMapL.size: " + mainArcGISMapL.size());
-                    ArcGISMap map1 = mainArcGISMapL.get(0);
-                    int size = map1.getOperationalLayers().size();
-                    Log.w(TAG, "size: " + size);
-                    for (int i = 0; i < size; i++){
-                        layers.add(map1.getOperationalLayers().get(i));
-                        layerList.add(new layer(map1.getOperationalLayers().get(i).getName()));
-                        //try {
-                        Log.w(TAG, "run: " + map.getOperationalLayers().size());
-                        //if (map.getOperationalLayers().size() <= 6)
-                        //map.getOperationalLayers().add(map1.getOperationalLayers().get(i));
-                        //}catch (ArcGISRuntimeException e){
-
-                        // }
-                    }
-                    isOK2 = true;
-                    showMap();
-                    //mMapView.setMap(map);
-                }
-            }
-        });*/
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
             public boolean  onSingleTapConfirmed(MotionEvent v) {
@@ -1222,8 +1168,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                     QueryParameters query = new QueryParameters();
                     query.setGeometry(clickPoint);// 设置空间几何对象
-                    File file = new File(rootPath);
-                    if (file.exists() & MapQuery) {
+                    if (isFileExist(rootPath) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         try {
                             FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
@@ -1369,97 +1314,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "mapRotationChanged: " + mapRotationChangedEvent.getSource().getMapRotation());
             }
         });
-
-        /*initMap();
-        Log.w(TAG, "初始化后" + Integer.toString(map.getOperationalLayers().size()));
-        mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
-            @Override
-            public boolean  onSingleTapConfirmed(MotionEvent v) {
-                android.graphics.Point screenPoint=new android.graphics.Point(Math.round(v.getX()), Math.round(v.getY()));
-                final Point clickPoint = mMapView.screenToLocation(screenPoint);
-                QueryParameters query = new QueryParameters();
-                query.setGeometry(clickPoint);// 设置空间几何对象
-                FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(2);
-                FeatureTable mTable = featureLayer.getFeatureTable();//得到查询属性表
-                final ListenableFuture<FeatureQueryResult> featureQueryResult
-                        = mTable.queryFeaturesAsync(query);
-                featureQueryResult.addDoneListener(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            FeatureQueryResult featureResul = featureQueryResult.get();
-                            for (Object element : featureResul) {
-                                if (element instanceof Feature) {
-                                    Feature mFeatureGrafic = (Feature) element;
-                                    Geometry geometry=mFeatureGrafic.getGeometry();
-                                    GraphicsOverlay graphicsOverlay_1=new GraphicsOverlay();
-                                    SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
-                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.DASH,Color.GREEN,3);
-                                    Graphic pointGraphic = new Graphic(clickPoint,pointSymbol);
-                                    Graphic fillGraphic = new Graphic(geometry,lineSymbol);
-                                    graphicsOverlay_1.getGraphics().add(pointGraphic);
-                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
-                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                                    Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                    for(String key : mQuerryString.keySet()){
-                                        Log.i("==============="+key,String.valueOf(mQuerryString.get(key)));
-                                    }
-                                }
-                            }
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                return true;
-            }
-        });
-        mMapView.setMap(map);
-        setRecyclerView();
-        Log.w(TAG, "onCreate: "  );*/
-
-
-
-        mCallout = mMapView.getCallout();
-        //Log.w(TAG, "onCreate: " + mMapView.getMap().getOperationalLayers().get(10).getFullExtent().getCenter().getX() + "; " + mMapView.getMap().getOperationalLayers().get(10).getFullExtent().getCenter().getY());
-        locationDisplay = mMapView.getLocationDisplay();
-        Log.w(TAG, "onCreate: " + locationDisplay.getLocation().getPosition());
-        locationDisplay.setShowLocation(true);
-        locationDisplay.setAutoPanMode(LocationDisplay.AutoPanMode.COMPASS_NAVIGATION);
-        locationDisplay.startAsync();
-        if (locationDisplay.isShowPingAnimation()) {
-            final LocationDataSource.Location location = locationDisplay.getLocation();
-            mLocation = location.getPosition();
-            locationDisplay.addLocationChangedListener(new LocationDisplay.LocationChangedListener() {
-                @Override
-                public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
-                    LocationDataSource.Location location = locationChangedEvent.getLocation();
-                    mLocation = location.getPosition();
-                }
-            });
-        }
-
-        File file = new File(rootPath1);
-        if (file.exists()) {
-            localGdb = new Geodatabase(rootPath1);
-            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
-            Log.w(TAG, "run: " + localGdb.getPath());
-            localGdb.loadAsync();
-            localGdb.addDoneLoadingListener(new Runnable() {
-                @Override
-                public void run() {
-                    featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
-                    /*for (int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); i++){
-                        Log.w(TAG, "run: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
-                    }*/
-                    featureLayer778 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
-                    mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
-                    //mMapView.setViewpointCenterAsync();
-                }
-            });
-            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
-        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
-
         mMapView.addMapScaleChangedListener(new MapScaleChangedListener() {
             @Override
             public void mapScaleChanged(MapScaleChangedEvent mapScaleChangedEvent) {
@@ -1481,15 +1335,166 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    FloatingActionButton LocHereBT;
-    int numx = 0;
-    Point mLocation;
-    Geodatabase localGdb;
-    LocationDisplay locationDisplay;
-    FeatureLayer featureLayer777 = null;
-    FeatureLayer featureLayer778 = null;
-    boolean hasTPK = false;
-    boolean MapQuery = false;
+
+    private void doSpecificOperation(){
+
+    }
+
+    private void initLayerList(){
+        int size = map.getOperationalLayers().size();
+        Log.w(TAG, "size: " + size);
+        for (int i = size - 1; i > -1; i--){
+            if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
+                layers.add(new layer1(map.getOperationalLayers().get(i), i));
+                layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
+            }else {
+                hasTPK = true;
+                TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
+            }
+        }
+        layerList.add(new layer("影像", true));
+        isOK1 = true;
+    }
+
+    private void initSurfaceCenterPoint(final MobileMapPackage mainMobileMapPackage){
+        OriginScale = mMapView.getMapScale();
+        if (mainMobileMapPackage.getPath().toString().contains("临沧")) {
+            Log.w(TAG, "run: " + mainMobileMapPackage.getPath().toString());
+            OriginLocation = new Point(99.626302, 23.928384, 0, SpatialReference.create(4326));
+            //mMapView.setViewpointCenterAsync(OriginLocation);
+            //mMapView.setViewpointScaleAsync(1200000);
+            mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+        }else mMapView.setViewpointScaleAsync(100000);
+    }
+
+    private void readMMPKData(){
+        Log.w(TAG, "readMMPKData: " + rootPath );
+        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(rootPath);
+        mainMobileMapPackage.loadAsync();
+        mainMobileMapPackage.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                LoadStatus mainLoadStatus = mainMobileMapPackage.getLoadStatus();
+                if (mainLoadStatus == LoadStatus.LOADED) {
+                    List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
+                    map = mainArcGISMapL.get(0);
+                    initLayerList();
+                    mMapView.setMap(map);
+                    initSurfaceCenterPoint(mainMobileMapPackage);
+                    drawWhiteBlank();
+                    //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
+
+                }else mainMobileMapPackage.loadAsync();
+            }
+        });
+    }
+
+    private void initVariable(){
+        //获取传感器管理器系统服务
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        graphicsOverlay_66 = new GraphicsOverlay();
+        color_Whiteblank = Color.RED;
+        map = new ArcGISMap();mCallout = mMapView.getCallout();
+        //Log.w(TAG, "onCreate: " + mMapView.getMap().getOperationalLayers().get(10).getFullExtent().getCenter().getX() + "; " + mMapView.getMap().getOperationalLayers().get(10).getFullExtent().getCenter().getY());
+        locationDisplay = mMapView.getLocationDisplay();
+        Log.w(TAG, "initVariable: " + locationDisplay.getLocation().getPosition());
+        locationDisplay.setShowLocation(true);
+        locationDisplay.setAutoPanMode(LocationDisplay.AutoPanMode.COMPASS_NAVIGATION);
+        locationDisplay.startAsync();
+        if (locationDisplay.isShowPingAnimation()) {
+            final LocationDataSource.Location location = locationDisplay.getLocation();
+            mLocation = location.getPosition();
+            locationDisplay.addLocationChangedListener(new LocationDisplay.LocationChangedListener() {
+                @Override
+                public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
+                    LocationDataSource.Location location = locationChangedEvent.getLocation();
+                    mLocation = location.getPosition();
+                }
+            });
+        }
+        if (isFileExist(rootPath1)) {
+            localGdb = new Geodatabase(rootPath1);
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+            Log.w(TAG, "run: " + localGdb.getPath());
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
+                    /*for (int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); i++){
+                        Log.w(TAG, "run: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
+                    }*/
+                    featureLayer778 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
+                    mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
+                    //mMapView.setViewpointCenterAsync();
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isFileExist(String path){
+        try {
+            File file = new File(path);
+            if (file.exists()) return true;
+            else return false;
+        }catch (Exception e){
+            Toast.makeText(MainActivity.this, "文件地址存在性检测错误，请核实文件地址!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
+    private boolean isFileExist(URI path){
+        try {
+            File file = new File(path);
+            if (file.exists()) return true;
+            else return false;
+        }catch (Exception e){
+            Toast.makeText(MainActivity.this, "文件地址存在性检测错误，请核实文件地址!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        requestAuthority();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode){
+            case PERMISSION_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    doSpecificOperation();
+                    initWidgetAndVariable();
+                    readMMPKData();
+                }else {
+                    Toast.makeText(MainActivity.this, "请通过所有申请的权限", Toast.LENGTH_LONG).show();
+                }
+                break;
+            case PERMISSION_CODE_1:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    doSpecificOperation();
+                    initWidgetAndVariable();
+                    readMMPKData();
+                }else {
+                    Toast.makeText(MainActivity.this, "请通过文件读取权限", Toast.LENGTH_LONG).show();
+                }
+                break;
+            case PERMISSION_CODE_2:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    doSpecificOperation();
+                    initWidgetAndVariable();
+                    readMMPKData();
+                }else {
+                    Toast.makeText(MainActivity.this, "请通过定位权限", Toast.LENGTH_LONG).show();
+                }
+                break;
+                default:
+        }
+    }
 
     private void showStandardWidget(){
         whiteBlank_fab.setVisibility(View.VISIBLE);
@@ -1506,10 +1511,6 @@ public class MainActivity extends AppCompatActivity {
         LocHereBT.setVisibility(View.GONE);
         ResetBT.setVisibility(View.GONE);
     }
-    private int QueryProcessType = NOQUERY;
-    private static final int INQUERY = -1;
-    private static final int FINISHQUERY = -2;
-    private static final int NOQUERY = -3;
 
     private void showQueryWidget(){
         FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
@@ -1581,8 +1582,7 @@ public class MainActivity extends AppCompatActivity {
                     final Polygon polygon = new Polygon(pointCollection);
                     QueryParameters query = new QueryParameters();
                     query.setGeometry(polygon);// 设置空间几何对象
-                    File file = new File(rootPath);
-                    if (file.exists() & MapQuery) {
+                    if (isFileExist(rootPath) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         queryTask(query, polygon);
                     } else
@@ -1733,11 +1733,6 @@ public class MainActivity extends AppCompatActivity {
         }
         // add done loading listener to fire when the selection returns
     }
-
-
-    private int isQurey = NOQUREY;
-    private static final int QUREY = 0;
-    private static final int NOQUREY = 1;
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         switch (isQurey){
@@ -1758,8 +1753,7 @@ public class MainActivity extends AppCompatActivity {
                         //searchForState(query);
                         pieChartView.setVisibility(View.GONE);
                         mCallout.dismiss();
-                        File file = new File(rootPath1);
-                        if (file.exists()) {
+                        if (isFileExist(rootPath1)) {
                             //showListPopupWindow(searchView, query);
                             showListPopupWindowforListView(searchView, query);
                         }
@@ -1790,7 +1784,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onPrepareOptionsMenu(menu);
     }
 
-    String[] items;
     public void showListPopupWindow(View view, String searchString) {
         queryInfos.clear();
         final ListPopupWindow listPopupWindow = new ListPopupWindow(this);
@@ -2122,7 +2115,6 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setAttributes(lp);
         popupWindow.showAtLocation(popView, Gravity.TOP, 0, 50);
     }
-    List<QueryInfo> queryInfos = new ArrayList<>();
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -2227,10 +2219,6 @@ public class MainActivity extends AppCompatActivity {
         }*/
         isLoc = true;
     }
-    boolean isLoc = false;
-    List<layer1> TPKlayers = new ArrayList<>();
-    //初始化传感器管理器
-    private SensorManager sensorManager;
     @Override
     protected void onPause() {
         mMapView.pause();
@@ -2249,7 +2237,6 @@ public class MainActivity extends AppCompatActivity {
         //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
         //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
     }
-    double OriginScale;
     @Override
     protected void onDestroy() {
         SharedPreferences.Editor editor = getSharedPreferences("xzq", MODE_PRIVATE).edit();
