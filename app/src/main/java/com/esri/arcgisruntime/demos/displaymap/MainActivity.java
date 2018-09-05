@@ -878,9 +878,10 @@ public class MainActivity extends AppCompatActivity {
                             pieChartView.setPieChartData(pieChartData);
                             pieChartView.setValueSelectionEnabled(true);
                             pieChartView.setVisibility(View.VISIBLE);
-                            pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
+                            FloatingActionButton change = (FloatingActionButton) findViewById(R.id.ChangeQuery);
+                            change.setOnClickListener(new View.OnClickListener() {
                                 @Override
-                                public boolean onLongClick(View v) {
+                                public void onClick(View v) {
                                     if (QueriedFeature == TDGHDL_FEATURE)
                                         QueriedFeature = XZQ_FEATURE;
                                     else
@@ -889,9 +890,14 @@ public class MainActivity extends AppCompatActivity {
                                     mCallout.dismiss();
                                     pieChartView.setVisibility(View.GONE);
                                     queryTask(query, polygon);
-                                    return true;
                                 }
                             });
+                            /*pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
+                                @Override
+                                public boolean onLongClick(View v) {
+                                    return true;
+                                }
+                            });*/
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -1521,6 +1527,7 @@ public class MainActivity extends AppCompatActivity {
         back.setVisibility(View.VISIBLE);
         final FloatingActionButton finish = (FloatingActionButton) findViewById(R.id.FinishQuery);
         finish.setVisibility(View.VISIBLE);
+        final FloatingActionButton change = (FloatingActionButton) findViewById(R.id.ChangeQuery);
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1590,11 +1597,12 @@ public class MainActivity extends AppCompatActivity {
                     if (!inMap) mCallout.dismiss();
                         QueryProcessType = FINISHQUERY;
                         removeQueryWidgetFinish();
+                        change.setVisibility(View.VISIBLE);
                         /*RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) finish.getLayoutParams();
                         lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
                         lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                         finish.setLayoutParams(lp);*/
-                }else Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
+                    }else Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
                 }else if (QueryProcessType == FINISHQUERY){
                     QueryProcessType = NOQUERY;
                     removeQueryWidgetFinishLater();
@@ -1609,6 +1617,8 @@ public class MainActivity extends AppCompatActivity {
     private void removeQueryWidgetFinishLater(){
         FloatingActionButton finish = (FloatingActionButton) findViewById(R.id.FinishQuery);
         finish.setVisibility(View.GONE);
+        FloatingActionButton change = (FloatingActionButton) findViewById(R.id.ChangeQuery);
+        change.setVisibility(View.GONE);
     }
 
     private void removeQueryWidgetFinish(){
