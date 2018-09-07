@@ -6,18 +6,34 @@ import java.io.File;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * @auther lizhengyang
+ *
+ * @version 1.0
+ */
 public class DataUtil {
 
-    public static boolean xzqClassify(List<xzq> xzqs){
+    /**
+     * @auther lizhengyang
+     *
+     * @version 1.0
+     *
+     * @param xzqList
+     * Ref List<xzq>
+     *
+     * @return boolean
+     * Ref 如果出现异常就返回false
+     */
+    public static boolean xzqClassify(List<xzq> xzqList){
         try {
-            for (int i = 0; i < xzqs.size(); i++){
+            for (int i = 0; i < xzqList.size(); i++){
                 xzq xzq = new xzq();
-                if (xzqs.get(i).getType().contains("县级")){
+                if (xzqList.get(i).getType().contains("县级")){
                     xzq.setGrade(1);
-                }else if (xzqs.get(i).getType().contains("乡级")){
+                }else if (xzqList.get(i).getType().contains("乡级")){
                     xzq.setGrade(2);
                 }
-                xzq.updateAll("xzqdm = ?", xzqs.get(i).getXzqdm());
+                xzq.updateAll("xzqdm = ?", xzqList.get(i).getXzqdm());
             }
             return true;
         }catch (Exception e){
@@ -25,14 +41,26 @@ public class DataUtil {
         }
     }
 
-    public static long[] xzqCalGrade(List<xzq> xzqs){
+    /**
+     * @auther lizhengyang
+     *
+     * @version 1.0
+     *
+     * @param xzqList
+     * Ref List<xzq>
+     *
+     * @return long[]
+     *
+     * Ref {number of grade1, number of grade2}
+     */
+    public static long[] xzqCalGrade(List<xzq> xzqList){
         try {
             int num1 = 0;
             int num2 = 0;
-            for (int i = 0; i < xzqs.size(); i++){
-                if (xzqs.get(i).getGrade() == 1){
+            for (int i = 0; i < xzqList.size(); i++){
+                if (xzqList.get(i).getGrade() == 1){
                     num1++;
-                }else if (xzqs.get(i).getGrade() == 2){
+                }else if (xzqList.get(i).getGrade() == 2){
                     num2++;
                 }
             }
@@ -42,6 +70,15 @@ public class DataUtil {
         }
     }
 
+    /**
+     * @auther lizhengyang
+     *
+     * @version 1.0
+     *
+     * @param xzqList
+     *
+     * @return List<xzq>
+     */
     public static List<xzq> bubbleSortX(List<xzq> xzqList) {
         int len = xzqList.size();
         for (int i = 0; i < len - 1; i++) {
@@ -56,6 +93,15 @@ public class DataUtil {
         return xzqList;
     }
 
+    /**
+     * @auther lizhengyang
+     *
+     * @version 1.0
+     *
+     * @param xzqList
+     *
+     * @return List<xzq>
+     */
     public static List<xzq> bubbleSortXZ(List<xzq> xzqList) {
         int len = xzqList.size();
         for (int i = 0; i < len - 1; i++) {
@@ -72,6 +118,15 @@ public class DataUtil {
         return xzqList;
     }
 
+    /**
+     * @auther lizhengyang
+     *
+     * @version 1.0
+     *
+     * @param xzqList
+     *
+     * @return List<xzq>
+     */
     public static List<xzq> bubbleSort(List<xzq> xzqList) {
         return bubbleSortXZ(bubbleSortX(xzqList));
     }

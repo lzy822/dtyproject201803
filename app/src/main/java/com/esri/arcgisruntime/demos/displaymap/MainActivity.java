@@ -1343,7 +1343,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doSpecificOperation(){
-
+        Sampler.getInstance().init(MainActivity.this, 100);
+        Sampler.getInstance().start();
     }
 
     private void initLayerList(){
