@@ -36,6 +36,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -400,7 +401,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPopueWindowForWhiteblank(){
-        final View popView = View.inflate(this,R.layout.popupwindow_whiteblank,null);
+        final View popView = View.inflate(this, R.layout.popupwindow_whiteblank,null);
         isWhiteBlank = true;
         whiteBlankPts = new ArrayList<>();
         FloatingActionButton back_pop = (FloatingActionButton) popView.findViewById(R.id.back_pop) ;
@@ -487,7 +488,7 @@ public class MainActivity extends AppCompatActivity {
         FrameLayout frameLayout = (FrameLayout) popView.findViewById(R.id.fml_pop);
         //获取屏幕宽高
         final int weight = getResources().getDisplayMetrics().widthPixels;
-        final int height = getResources().getDisplayMetrics().heightPixels - 60;
+        final int height = getResources().getDisplayMetrics().heightPixels;
 
         final PopupWindow popupWindow = new PopupWindow(popView, weight ,height);
         //popupWindow.setAnimationStyle(R.style.anim_popup_dir);
@@ -548,7 +549,10 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case MotionEvent.ACTION_MOVE:
                         android.graphics.Point screenPoint = new android.graphics.Point(Math.round(event.getX()),
-                                Math.round(event.getY() - getStatusBarHeight(MainActivity.this) - getDaoHangHeight(MainActivity.this)));
+                                Math.round(event.getY() - getWindow().findViewById(Window.ID_ANDROID_CONTENT).getTop()));
+
+                        //final android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
+                                //Math.round(v.getY() - mMapView.getTop()));
                         //Log.w(TAG, "onTouch: " + event.getX() + " ; " + event.getY());
                         // create a map point from screen point
                         Point mapPoint = mMapView.screenToLocation(screenPoint);
