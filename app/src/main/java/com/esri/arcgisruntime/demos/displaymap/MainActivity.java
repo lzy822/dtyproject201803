@@ -1166,7 +1166,7 @@ public class MainActivity extends AppCompatActivity {
                 mCallout.show();*/
 
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
-                if (DrawType == DRAW_NONE) {
+                if (QueryProcessType == NOQUERY && DrawType == DRAW_NONE) {
                     pieChartView.setVisibility(View.GONE);
                     // center on tapped point
                     mMapView.setViewpointCenterAsync(wgs84Point);
@@ -1596,6 +1596,7 @@ public class MainActivity extends AppCompatActivity {
                     query.setGeometry(polygon);// 设置空间几何对象
                     if (isFileExist(rootPath) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                        DrawType = DRAW_NONE;
                         queryTask(query, polygon);
                     } else
                         Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
