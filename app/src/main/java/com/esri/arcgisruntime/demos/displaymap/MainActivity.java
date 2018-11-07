@@ -408,12 +408,12 @@ public class MainActivity extends AppCompatActivity {
         back_pop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for (int i = 0; i < graphics.size(); i++){
+                for (int i = 0; i < graphics.size(); ++i){
                     graphicsOverlay_10.getGraphics().remove(graphics.get(i));
                 }
                 if (graphics.size() != 0) graphics.remove(graphics.size() - 1);
                 graphicsOverlay_10.getGraphics().clear();
-                for (int i = 0; i < graphics.size(); i++){
+                for (int i = 0; i < graphics.size(); ++i){
                     graphicsOverlay_10.getGraphics().add(graphics.get(i));
                 }
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
@@ -463,12 +463,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "onClick: " + mMapView.getGraphicsOverlays().size());
                 /*points.clear();
                 while (mMapView.getGraphicsOverlays().size() != 0){
-                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i){
                         mMapView.getGraphicsOverlays().remove(i);
                     }
                 }*/
 
-                for (int i = 0; i < graphics.size(); i++){
+                for (int i = 0; i < graphics.size(); ++i){
                     graphicsOverlay_10.getGraphics().remove(graphics.get(i));
                 }
                 graphics.clear();
@@ -519,7 +519,7 @@ public class MainActivity extends AppCompatActivity {
                         //抬起
                         //graphicsOverlay_9.setVisible(false);
                         while (mMapView.getGraphicsOverlays().size() != 0){
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i){
                                 mMapView.getGraphicsOverlays().remove(i);
                             }
                         }
@@ -532,7 +532,7 @@ public class MainActivity extends AppCompatActivity {
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
                         whiteblank wb = new whiteblank();
                         String pts = "";
-                        for (int i = 0; i < points.size(); i++){
+                        for (int i = 0; i < points.size(); ++i){
                             if (i == 0) {
                                 pts = Double.toString(points.get(i).getX()) + "," + Double.toString(points.get(i).getY());
                             }else {
@@ -560,7 +560,7 @@ public class MainActivity extends AppCompatActivity {
                         Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4521));
                         //whiteBlankPts.add(wgs84Point);
                         //int size = whiteBlankPts.size();
-                        //for (int i = 0; i < size; i++){
+                        //for (int i = 0; i < size; ++i){
                         points.add(wgs84Point);
                         //}
                         //Log.w(TAG, "onTouch: " + wgs84Point.getX() + " ; " + wgs84Point.getY());
@@ -729,7 +729,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             while (mMapView.getGraphicsOverlays().size() != 0) {
-                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                                     mMapView.getGraphicsOverlays().remove(i);
                                 }
                             }
@@ -816,12 +816,12 @@ public class MainActivity extends AppCompatActivity {
                             String str = "";
                             keyAndValues = new ArrayList<>();
                             if (QueriedFeature != XZQ_FEATURE) {
-                                for (int i = 0; i < queryTaskInfos.size(); i++) {
+                                for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                     if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                         keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
                                     else {
                                         boolean hasKey = false;
-                                        for (int j = 0; j < keyAndValues.size(); j++) {
+                                        for (int j = 0; j < keyAndValues.size(); ++j) {
                                             if (queryTaskInfos.get(i).getTypename().equals(keyAndValues.get(j).getName())) {
                                                 hasKey = true;
                                                 keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
@@ -834,12 +834,12 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 }
                             } else {
-                                for (int i = 0; i < queryTaskInfos.size(); i++) {
+                                for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                     if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                         keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
                                     else {
                                         boolean hasKey = false;
-                                        for (int j = 0; j < keyAndValues.size(); j++) {
+                                        for (int j = 0; j < keyAndValues.size(); ++j) {
                                             if (queryTaskInfos.get(i).getXzq().equals(keyAndValues.get(j).getName())) {
                                                 hasKey = true;
                                                 keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
@@ -854,7 +854,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             DecimalFormat decimalFormat = new DecimalFormat("0.00");
                             DecimalFormat decimalFormat1 = new DecimalFormat("0.0");
-                            for (int j = 0; j < keyAndValues.size(); j++) {
+                            for (int j = 0; j < keyAndValues.size(); ++j) {
                                 float value = Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea;
                                 SliceValue sliceValue = new SliceValue(value, ChartUtils.pickColor());
                                 sliceValue.setLabel(keyAndValues.get(j).getName() + ":" + decimalFormat1.format(value * 100) + "%");
@@ -1189,7 +1189,7 @@ public class MainActivity extends AppCompatActivity {
                                 public void run() {
                                     try {
                                         while (mMapView.getGraphicsOverlays().size() != 0) {
-                                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                                                 mMapView.getGraphicsOverlays().remove(i);
                                             }
                                         }
@@ -1229,7 +1229,7 @@ public class MainActivity extends AppCompatActivity {
                                                         keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
                                                 }
                                                 keyAndValues = KeyAndValue.parseList(keyAndValues);
-                                                for (int i = 0; i < keyAndValues.size(); i++) {
+                                                for (int i = 0; i < keyAndValues.size(); ++i) {
                                                     str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue() + "\n";
                                                 }
                                                 calloutContent.setText(str);
@@ -1258,7 +1258,7 @@ public class MainActivity extends AppCompatActivity {
                     pointCollection.add(wgs84Point);
                     if (pointCollection.size() == 1){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                                 mMapView.getGraphicsOverlays().remove(i);
                             }
                         }
@@ -1269,7 +1269,7 @@ public class MainActivity extends AppCompatActivity {
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                     }else if (pointCollection.size() == 2){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                                 mMapView.getGraphicsOverlays().remove(i);
                             }
                         }
@@ -1280,7 +1280,7 @@ public class MainActivity extends AppCompatActivity {
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                     }else if (pointCollection.size() > 2){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                                 mMapView.getGraphicsOverlays().remove(i);
                             }
                         }
@@ -1294,7 +1294,7 @@ public class MainActivity extends AppCompatActivity {
                     pointCollection.add(wgs84Point);
                     if (pointCollection.size() >= 2){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                                 mMapView.getGraphicsOverlays().remove(i);
                             }
                         }
@@ -1432,7 +1432,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
-                    /*for (int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); i++){
+                    /*for (int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
                         Log.w(TAG, "run: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
                     }*/
                     featureLayer778 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
@@ -1547,7 +1547,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 while (mMapView.getGraphicsOverlays().size() != 0) {
-                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                         mMapView.getGraphicsOverlays().remove(i);
                     }
                 }
@@ -1580,7 +1580,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "已清空", Toast.LENGTH_SHORT).show();
                 pointCollection.clear();
                 while (mMapView.getGraphicsOverlays().size() != 0) {
-                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++) {
+                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
                         mMapView.getGraphicsOverlays().remove(i);
                     }
                 }
@@ -1655,12 +1655,12 @@ public class MainActivity extends AppCompatActivity {
         if (size == 0) graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
         else {
             graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
-            for (int i = 0; i < size; i++){
+            for (int i = 0; i < size; ++i){
                 points.clear();
                 //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
                 String[] strings = whiteblanks.get(i).getPts().split("lzy");
                 Log.w(TAG, "drawWhiteBlank1: " + strings.length);
-                for (int kk = 0; kk < strings.length; kk++){
+                for (int kk = 0; kk < strings.length; ++kk){
                     String[] strings1 = strings[kk].split(",");
                     if (strings1.length == 2) {
                         Log.w(TAG, "drawWhiteBlank2: " + strings1.length);
@@ -1674,7 +1674,7 @@ public class MainActivity extends AppCompatActivity {
                 graphics.add(g);
             }
             if (graphics.size() > 0) {
-                for (int j = 0; j < graphics.size(); j++){
+                for (int j = 0; j < graphics.size(); ++j){
                     try {
                         graphicsOverlay_10.getGraphics().add(graphics.get(j));
                     }catch (ArcGISRuntimeException e){
@@ -1714,7 +1714,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             while (mMapView.getGraphicsOverlays().size() != 0){
-                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i){
                                     mMapView.getGraphicsOverlays().remove(i);
                                 }
                             }
@@ -1828,7 +1828,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             /*while (mMapView.getGraphicsOverlays().size() != 0){
-                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i){
                                     mMapView.getGraphicsOverlays().remove(i);
                                 }
                             }
@@ -1845,7 +1845,7 @@ public class MainActivity extends AppCompatActivity {
                                 Envelope envelope = feature.getGeometry().getExtent();
                                 String name = feature.getAttributes().get("图上名称").toString();
                                 boolean hasSame = false;
-                                for (int i = 0; i < queryInfos.size(); i++){
+                                for (int i = 0; i < queryInfos.size(); ++i){
                                     if (name.equals(queryInfos.get(i).getName())) hasSame = true;
                                 }
                                 if (!hasSame) {
@@ -1856,7 +1856,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
                             items = new String[queryInfos.size()];
-                            for (int i = 0; i < queryInfos.size(); i++){
+                            for (int i = 0; i < queryInfos.size(); ++i){
                                 items[i] = queryInfos.get(i).getName();
                             }
                             // ListView适配器
@@ -1871,7 +1871,7 @@ public class MainActivity extends AppCompatActivity {
                                 Envelope envelope = feature.getGeometry().getExtent();
                                 String name = feature.getAttributes().get("图上名称").toString();
                                 boolean hasSame = false;
-                                for (int i = 0; i < queryInfos.size(); i++){
+                                for (int i = 0; i < queryInfos.size(); ++i){
                                     if (name.equals(queryInfos.get(i).getName())) hasSame = true;
                                 }
                                 if (!hasSame) {
@@ -1882,7 +1882,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
                             items = new String[queryInfos.size()];
-                            for (int i = 0; i < queryInfos.size(); i++){
+                            for (int i = 0; i < queryInfos.size(); ++i){
                                 items[i] = queryInfos.get(i).getName();
                             }
                             // ListView适配器
@@ -1985,7 +1985,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             /*while (mMapView.getGraphicsOverlays().size() != 0){
-                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); i++){
+                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i){
                                     mMapView.getGraphicsOverlays().remove(i);
                                 }
                             }
@@ -2002,7 +2002,7 @@ public class MainActivity extends AppCompatActivity {
                                 Envelope envelope = feature.getGeometry().getExtent();
                                 String name = feature.getAttributes().get("图上名称").toString();
                                 boolean hasSame = false;
-                                for (int i = 0; i < queryInfos.size(); i++){
+                                for (int i = 0; i < queryInfos.size(); ++i){
                                     if (name.equals(queryInfos.get(i).getName())) hasSame = true;
                                 }
                                 if (!hasSame) {
@@ -2013,7 +2013,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
                             items = new String[queryInfos.size()];
-                            for (int i = 0; i < queryInfos.size(); i++){
+                            for (int i = 0; i < queryInfos.size(); ++i){
                                 items[i] = queryInfos.get(i).getName();
                             }
                             // ListView适配器
@@ -2028,7 +2028,7 @@ public class MainActivity extends AppCompatActivity {
                                 Envelope envelope = feature.getGeometry().getExtent();
                                 String name = feature.getAttributes().get("图上名称").toString();
                                 boolean hasSame = false;
-                                for (int i = 0; i < queryInfos.size(); i++){
+                                for (int i = 0; i < queryInfos.size(); ++i){
                                     if (name.equals(queryInfos.get(i).getName())) hasSame = true;
                                 }
                                 if (!hasSame) {
@@ -2039,7 +2039,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
                             items = new String[queryInfos.size()];
-                            for (int i = 0; i < queryInfos.size(); i++){
+                            for (int i = 0; i < queryInfos.size(); ++i){
                                 items[i] = queryInfos.get(i).getName();
                             }
 
@@ -2163,16 +2163,16 @@ public class MainActivity extends AppCompatActivity {
                     if (!name.equals("影像")) {
                         //map.getOperationalLayers().remove(layers.get(position).getLayer());
                         map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
-                        for (int i = 0; i < layerList.size(); i++){
+                        for (int i = 0; i < layerList.size(); ++i){
                             if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
                         }
                     }
                     else {
-                        for (int kk = 0; kk < TPKlayers.size(); kk++){
+                        for (int kk = 0; kk < TPKlayers.size(); ++kk){
                             //map.getOperationalLayers().remove(TPKlayers.get(kk).getLayer());
                             map.getOperationalLayers().get(TPKlayers.get(kk).getNum()).setVisible(false);
                         }
-                        for (int i = 0; i < layerList.size(); i++){
+                        for (int i = 0; i < layerList.size(); ++i){
                             if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
                         }
                     }
@@ -2192,16 +2192,16 @@ public class MainActivity extends AppCompatActivity {
                     if (!name.equals("影像")) {
                         //map.getOperationalLayers().add(layers.get(position).getLayer());
                         map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
-                        for (int i = 0; i < layerList.size(); i++){
+                        for (int i = 0; i < layerList.size(); ++i){
                             if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(true);
                         }
                     }
                     else {
-                        for (int kk = 0; kk < TPKlayers.size(); kk++){
+                        for (int kk = 0; kk < TPKlayers.size(); ++kk){
                             //map.getOperationalLayers().add(TPKlayers.get(kk).getLayer());
                             map.getOperationalLayers().get(TPKlayers.get(kk).getNum()).setVisible(true);
                         }
-                        for (int i = 0; i < layerList.size(); i++){
+                        for (int i = 0; i < layerList.size(); ++i){
                             if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(true);
                         }
                     }
@@ -2270,7 +2270,7 @@ public class MainActivity extends AppCompatActivity {
         public void onValueSelected(int arcIndex, SliceValue value) {
             DecimalFormat decimalFormat = new DecimalFormat("0.00");
             DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
-            for (int i = 0; i < keyAndValues.size(); i++){
+            for (int i = 0; i < keyAndValues.size(); ++i){
                 Log.w(TAG, "onValueSelected: " + (float)(Float.valueOf(keyAndValues.get(i).getValue()) / wholeArea) + ": " + value.getValue() + ": " + arcIndex);
                 if (decimalFormat1.format((float)(Float.valueOf(keyAndValues.get(i).getValue()) / wholeArea)).equals(decimalFormat1.format(value.getValue()))) {
                     Toast.makeText(MainActivity.this, keyAndValues.get(i).getName() + "占比: " + decimalFormat.format(value.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();

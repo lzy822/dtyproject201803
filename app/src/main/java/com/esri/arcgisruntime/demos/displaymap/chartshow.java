@@ -148,7 +148,7 @@ public class chartshow extends AppCompatActivity {
         List<Column> columns = new ArrayList<Column>();
         if (selectedItem.isEmpty()) {
             Log.w(TAG, "showKV: " + "empty");
-            for (int i = 0; i < keyAndValues.size(); i++) {
+            for (int i = 0; i < keyAndValues.size(); ++i) {
                 int color = ChartUtils.pickColor();
                 float value = Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea;
                 SliceValue sliceValue = new SliceValue(Float.valueOf(keyAndValues.get(i).getValue()) / (float) wholeArea, color);
@@ -166,7 +166,7 @@ public class chartshow extends AppCompatActivity {
             }
         }else {
             Log.w(TAG, "showKV: " + "full");
-            for (int i = 0; i < keyAndValues.size(); i++) {
+            for (int i = 0; i < keyAndValues.size(); ++i) {
                 data = data + keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩" + "\n";
                 List<SubcolumnValue> values = new ArrayList<>();
                 Column column = new Column(values);
@@ -193,7 +193,7 @@ public class chartshow extends AppCompatActivity {
         ColumnChartData columnChartData = new ColumnChartData(columns);
         Axis axisX = new Axis();
         List<AxisValue> xAxisValues = new ArrayList<>();
-        for (int i = 0; i < keyAndValues.size(); i++){
+        for (int i = 0; i < keyAndValues.size(); ++i){
             xAxisValues.add(new AxisValue(i, Integer.toString(i + 1).toCharArray()));
         }
         axisX.setValues(xAxisValues);
@@ -217,7 +217,7 @@ public class chartshow extends AppCompatActivity {
                 Log.w(TAG, "onValueSelected: " + subcolumnValue.getValue());
                 DecimalFormat decimalFormat = new DecimalFormat("0.0");
                 DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
-                for (int j = 0; j < kv.size(); j++){
+                for (int j = 0; j < kv.size(); ++j){
                     if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()))).equals(decimalFormat1.format(subcolumnValue.getValue()))) {
                         Toast.makeText(chartshow.this, kv.get(j).getName() + "占地: " + decimalFormat.format(subcolumnValue.getValue()) + "亩", Toast.LENGTH_SHORT).show();
                         break;
@@ -235,7 +235,7 @@ public class chartshow extends AppCompatActivity {
         columnChartView.setVisibility(View.VISIBLE);
         PieChartData pieChartData = new PieChartData(sliceValues);
         if (!selectedItem.isEmpty()){
-            for (int i = 0; i < keyAndValues.size(); i++){
+            for (int i = 0; i < keyAndValues.size(); ++i){
                 if (keyAndValues.get(i).getName().equals(selectedItem)) {
                     pieChartData.setCenterText1(selectedItem);
                     pieChartData.setCenterText1FontSize(21);
@@ -263,7 +263,7 @@ public class chartshow extends AppCompatActivity {
                 Log.w(TAG, "onValueSelected: " + sliceValue.getValue());
                 DecimalFormat decimalFormat = new DecimalFormat("0.00");
                 DecimalFormat decimalFormat1 = new DecimalFormat("0.000000");
-                for (int j = 0; j < kv.size(); j++){
+                for (int j = 0; j < kv.size(); ++j){
                     if (decimalFormat1.format((float)(Float.valueOf(kv.get(j).getValue()) / wholeArea)).equals(decimalFormat1.format(sliceValue.getValue()))) {
                         Toast.makeText(chartshow.this, kv.get(j).getName() + "占比: " + decimalFormat.format(sliceValue.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
                         break;
@@ -282,7 +282,7 @@ public class chartshow extends AppCompatActivity {
 
     private String classifyKV(final List<KeyAndValue> keyAndValues){
         String kvString = "";
-        for (int i = 0; i < keyAndValues.size(); i++){
+        for (int i = 0; i < keyAndValues.size(); ++i){
             if (i != keyAndValues.size() - 1)
                 kvString = kvString + keyAndValues.get(i).getName() + ":" + keyAndValues.get(i).getValue() + ",";
             else kvString = kvString + keyAndValues.get(i).getNickname();
@@ -293,7 +293,7 @@ public class chartshow extends AppCompatActivity {
     private List<KeyAndValue> parseKV(final String keyAndValues){
         List<KeyAndValue> keyAndValues1 = new ArrayList<>();
         String[] strings1 = keyAndValues.split(",");
-        for (int i = 0; i < strings1.length; i++){
+        for (int i = 0; i < strings1.length; ++i){
             if (strings1.length - 1 != i) {
                 String[] strings = strings1[i].split(":");
                 keyAndValues1.add(new KeyAndValue(strings1[strings1.length - 1], strings[0], strings[1]));
@@ -364,7 +364,7 @@ public class chartshow extends AppCompatActivity {
                     featureLayer778 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
                     /*FeatureTable featureTable = featureLayer778.getFeatureTable();
                     List<Field> list = featureTable.getFields();
-                    for (int i = 0; i < list.size(); i++){
+                    for (int i = 0; i < list.size(); ++i){
                         Log.w(TAG, "run: " + list.get(i).getName());
                     }*/
                     QueryParameters query = new QueryParameters();
@@ -420,12 +420,12 @@ public class chartshow extends AppCompatActivity {
                                                                 queryTaskInfos.add(queryTaskInfo);
                                                             }
                                                         }
-                                                        for (int i = 0; i < queryTaskInfos.size(); i++) {
+                                                        for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                                             if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                                                 keyAndValues.add(new KeyAndValue(Double.toString(wholeArea), queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
                                                             else {
                                                                 boolean hasKey = false;
-                                                                for (int j = 0; j < keyAndValues.size(); j++) {
+                                                                for (int j = 0; j < keyAndValues.size(); ++j) {
                                                                     if (queryTaskInfos.get(i).getTypename().equals(keyAndValues.get(j).getName())) {
                                                                         hasKey = true;
                                                                         keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
