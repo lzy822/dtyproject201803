@@ -148,27 +148,16 @@ import lecho.lib.hellocharts.view.PieChartView;
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
     private static final String TAG = "MainActivity";
-    private static final String rootPath = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市土地利用规划和基本农田数据.mmpk";
-    private static final String rootPath2 = Environment.getExternalStorageDirectory().toString() + "/昆明.mmpk";
-    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市5309省标准乡级土地利用总体规划及基本农田数据库2000.geodatabase";
     private List<layer> layerList = new ArrayList<>();
     private List<layer1> layers = new ArrayList<>();
-    private layerAdapter adapter;
+    //private layerAdapter adapter;
     private RecyclerView recyclerView;
-    private GridLayoutManager layoutManager;
+    //private GridLayoutManager layoutManager;
     private ImageButton recyclerViewButton;
     FeatureLayer mFeaturelayer;
     private boolean isClick = false;
     private TextView ScaleShow;
     ArcGISMap map;
-    public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
-    public static final String WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE";
-    public static final String ACCESS_FINE_LOCATION = "android.permission.ACCESS_FINE_LOCATION";
-    public static final String ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION";
-    public static final String INTERNET = "android.permission.INTERNET";
-    public static final int PERMISSION_CODE = 42042;
-    public static final int PERMISSION_CODE_1 = 42043;
-    public static final int PERMISSION_CODE_2 = 42044;
     com.github.clans.fab.FloatingActionButton whiteBlank_fab;
     //记录画笔颜色
     private int color_Whiteblank;
@@ -176,11 +165,11 @@ public class MainActivity extends AppCompatActivity {
     ImageView North;
     FloatingActionButton ResetBT;
 
-    private int DrawType;
-    public static final int DRAW_POLYGON = -1;
+    private DisplayEnum DrawType = DisplayEnum.DRAW_NONE;
+    /*public static final int DRAW_POLYGON = -1;
     public static final int DRAW_POLYLINE = -2;
     public static final int DRAW_POINT = -3;
-    public static final int DRAW_NONE = 0;
+    public static final int DRAW_NONE = 0;*/
 
     //记录是否处于白板画图状态
     private boolean isWhiteBlank = false;
@@ -191,7 +180,6 @@ public class MainActivity extends AppCompatActivity {
     List<Graphic> graphics = new ArrayList<>();
     boolean isOk = false;
     boolean isOK1 = false;
-    boolean isOK2 = false;
     Point OriginLocation;
 
     List<xzq> xzqs;
@@ -203,18 +191,12 @@ public class MainActivity extends AppCompatActivity {
     boolean isNorth = false;
     FloatingActionButton DrawFeature;
     PointCollection pointCollection;
-    PointCollection pointCollection1 = new PointCollection(SpatialReference.create(4521));
-    int num = 0;
-    Point ppp;
     FloatingActionButton MapQueryBT;
     PieChartView pieChartView;
     List<KeyAndValue> keyAndValues;
     double wholeArea = 0;
-    private int QueriedFeature = TDGHDL_FEATURE;
-    static final int TDGHDL_FEATURE = 1;
-    static final int XZQ_FEATURE = 2;
+    private DisplayEnum QueriedFeature = DisplayEnum.TDGHDL_FEATURE;
     FloatingActionButton LocHereBT;
-    int numx = 0;
     Point mLocation;
     Geodatabase localGdb;
     LocationDisplay locationDisplay;
@@ -222,14 +204,14 @@ public class MainActivity extends AppCompatActivity {
     FeatureLayer featureLayer778 = null;
     boolean hasTPK = false;
     boolean MapQuery = false;
-    private int QueryProcessType = NOQUERY;
-    private static final int INQUERY = -1;
-    private static final int FINISHQUERY = -2;
-    private static final int NOQUERY = -3;
+    private DisplayEnum QueryProcessType = DisplayEnum.NOQUERY;
+    //private static final int INQUERY = -1;
+    //private static final int FINISHQUERY = -2;
+    //private static final int NOQUERY = -3;
 
-    private int isQurey = NOQUREY;
-    private static final int QUREY = 0;
-    private static final int NOQUREY = 1;
+    private DisplayEnum isQurey = DisplayEnum.I_NOQUREY;
+    //private static final int QUREY = 0;
+    //private static final int NOQUREY = 1;
     List<QueryInfo> queryInfos = new ArrayList<>();
 
     private SensorEventListener listener = new SensorEventListener() {
@@ -251,8 +233,6 @@ public class MainActivity extends AppCompatActivity {
     List<layer1> TPKlayers = new ArrayList<>();
     //初始化传感器管理器
     private SensorManager sensorManager;
-
-    double m_lat = 0, m_long = 0;
     double OriginScale;
 
     @Override
@@ -322,14 +302,14 @@ public class MainActivity extends AppCompatActivity {
     //获取文件读取权限
     void fileReadPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
-                READ_EXTERNAL_STORAGE);
+                StaticVariableEnum.READ_EXTERNAL_STORAGE);
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     this,
                     new String[]{
-                            READ_EXTERNAL_STORAGE},
-                    PERMISSION_CODE_1
+                            StaticVariableEnum.READ_EXTERNAL_STORAGE},
+                    StaticVariableEnum.PERMISSION_CODE_1
             );
 
             return;
@@ -340,16 +320,16 @@ public class MainActivity extends AppCompatActivity {
     //获取位置权限
     void locationPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
-                ACCESS_COARSE_LOCATION);
+                StaticVariableEnum.ACCESS_COARSE_LOCATION);
         int permissionCheck1 = ContextCompat.checkSelfPermission(this,
-                ACCESS_FINE_LOCATION);
+                StaticVariableEnum.ACCESS_FINE_LOCATION);
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     this,
                     new String[]{
-                            ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION},
-                    PERMISSION_CODE_2
+                            StaticVariableEnum.ACCESS_COARSE_LOCATION, StaticVariableEnum.ACCESS_FINE_LOCATION},
+                    StaticVariableEnum.PERMISSION_CODE_2
             );
 
             return;
@@ -360,19 +340,19 @@ public class MainActivity extends AppCompatActivity {
     //获取文件读取权限
     void requestAuthority() {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
-                READ_EXTERNAL_STORAGE);
+                StaticVariableEnum.READ_EXTERNAL_STORAGE);
         int permissionCheck2 = ContextCompat.checkSelfPermission(this,
-                ACCESS_FINE_LOCATION);
+                StaticVariableEnum.ACCESS_FINE_LOCATION);
         int permissionCheck3 = ContextCompat.checkSelfPermission(this,
-                ACCESS_COARSE_LOCATION);
+                StaticVariableEnum.ACCESS_COARSE_LOCATION);
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck2 != PackageManager.PERMISSION_GRANTED || permissionCheck3 != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "requestAuthority: " + permissionCheck + ";" + permissionCheck2 + ";" + permissionCheck3);
             ActivityCompat.requestPermissions(
                     this,
                     new String[]{
-                            READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION},
-                    PERMISSION_CODE
+                            StaticVariableEnum.READ_EXTERNAL_STORAGE, StaticVariableEnum.WRITE_EXTERNAL_STORAGE, StaticVariableEnum.ACCESS_FINE_LOCATION, StaticVariableEnum.ACCESS_COARSE_LOCATION},
+                    StaticVariableEnum.PERMISSION_CODE
             );
         } else{
             Log.w(TAG, "requestAuthority: ");
@@ -387,11 +367,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.cancel:
-                isQurey = NOQUREY;
+                isQurey = DisplayEnum.I_NOQUREY;
                 invalidateOptionsMenu();
                 break;
             case R.id.search:
-                isQurey = QUREY;
+                isQurey = DisplayEnum.I_QUREY;
                 invalidateOptionsMenu();
                 break;
             default:
@@ -664,11 +644,11 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!MapQuery)
                     mapQueryBtEvent();
-                DrawType = DRAW_POLYGON;
+                DrawType = DisplayEnum.DRAW_POLYGON;
                 pointCollection = new PointCollection(SpatialReference.create(4521));
                 showQueryWidget();
                 removeStandardWidget();
-                QueryProcessType = INQUERY;
+                QueryProcessType = DisplayEnum.INQUERY;
                 popupWindow.dismiss();
             }
         });
@@ -717,7 +697,7 @@ public class MainActivity extends AppCompatActivity {
     private void queryTask(final QueryParameters query, final Polygon polygon){
         try {
             FeatureTable mTable = null;
-            if (QueriedFeature == TDGHDL_FEATURE)
+            if (QueriedFeature == DisplayEnum.TDGHDL_FEATURE)
                 mTable = featureLayer777.getFeatureTable();//得到查询属性表
             else
                 mTable = featureLayer778.getFeatureTable();//得到查询属性表
@@ -740,7 +720,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (element instanceof Feature) {
                                     Feature mFeatureGrafic = (Feature) element;
                                     Geometry geometry = null;
-                                    if (QueriedFeature == XZQ_FEATURE) {
+                                    if (QueriedFeature == DisplayEnum.XZQ_FEATURE) {
                                     /*Polyline geometry2 = (Polyline) mFeatureGrafic.getGeometry();
                                     Polygon polygon1 = new Polygon(new PointCollection(geometry2.getParts().getPartsAsPoints()));
                                     //Polygon geometry = (Polygon) mFeatureGrafic.getGeometry();
@@ -768,17 +748,23 @@ public class MainActivity extends AppCompatActivity {
                                     // format coordinates to 4 decimal places
                                     //String str = "";
                                     //List<KeyAndValue> keyAndValues = new ArrayList<>();
-                                    if (QueriedFeature == TDGHDL_FEATURE) {
+                                    if (QueriedFeature == DisplayEnum.TDGHDL_FEATURE) {
                                         for (String key : mQuerryString.keySet()) {
                                             //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
-                                            if (key.equals("GHDLMC"))
-                                                queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
-                                            else if (key.equals("GHDLBM"))
-                                                queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
-                                            else if (key.equals("XZQMC"))
-                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
-                                            else if (key.equals("XZQDM"))
-                                                queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                            switch (key){
+                                                case "GHDLMC":
+                                                    queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                                case "GHDLBM":
+                                                    queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                                case "XZQMC":
+                                                    queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                                case "XZQDM":
+                                                    queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                            }
                                             isOK = true;
                                         }
                                     } else {
@@ -815,7 +801,7 @@ public class MainActivity extends AppCompatActivity {
                             calloutContent.setTextColor(Color.BLACK);
                             String str = "";
                             keyAndValues = new ArrayList<>();
-                            if (QueriedFeature != XZQ_FEATURE) {
+                            if (QueriedFeature != DisplayEnum.XZQ_FEATURE) {
                                 for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                     if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                         keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
@@ -860,11 +846,11 @@ public class MainActivity extends AppCompatActivity {
                                 sliceValue.setLabel(keyAndValues.get(j).getName() + ":" + decimalFormat1.format(value * 100) + "%");
                                 sliceValues.add(sliceValue);
                                 if (j < keyAndValues.size() - 1) {
-                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
-                                    str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%" + "\n";
+                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩";
+                                    str = str + ",占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%" + "\n";
                                 } else {
-                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩" + "\n";
-                                    str = str + "占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%";
+                                    str = str + keyAndValues.get(j).getName() + ": " + decimalFormat1.format(Double.valueOf(keyAndValues.get(j).getValue())) + "亩";
+                                    str = str + ",占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%";
                                 }
                             }
                             calloutContent.setText(str);
@@ -886,10 +872,14 @@ public class MainActivity extends AppCompatActivity {
                             change.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    if (QueriedFeature == TDGHDL_FEATURE)
-                                        QueriedFeature = XZQ_FEATURE;
-                                    else
-                                        QueriedFeature = TDGHDL_FEATURE;
+                                    switch (QueriedFeature){
+                                        case TDGHDL_FEATURE:
+                                            QueriedFeature = DisplayEnum.XZQ_FEATURE;
+                                            break;
+                                        case XZQ_FEATURE:
+                                            QueriedFeature = DisplayEnum.TDGHDL_FEATURE;
+                                            break;
+                                    }
                                     keyAndValues.clear();
                                     mCallout.dismiss();
                                     pieChartView.setVisibility(View.GONE);
@@ -971,13 +961,13 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (DrawType == DRAW_NONE) {
+                if (DrawType == DisplayEnum.DRAW_NONE) {
                     mCallout.dismiss();
                     pieChartView.setVisibility(View.GONE);
                     showPopueWindowForMessure();
                 }
                 else {
-                    if (DrawType == DRAW_POLYGON && pointCollection.size() >= 3){
+                    if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3){
                         //pointCollection.add(ppp.getX(), ppp.getY());
                         //if (num == 0) {
                         final Polygon polygon = new Polygon(pointCollection);
@@ -1019,14 +1009,14 @@ public class MainActivity extends AppCompatActivity {
                         }*/
                         QueryParameters query = new QueryParameters();
                         query.setGeometry(polygon);// 设置空间几何对象
-                        if (isFileExist(rootPath) & MapQuery) {
+                        if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
                             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                             queryTask(query, polygon);
                         } else
                             Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                         if (!inMap) mCallout.dismiss();
 
-                    }else if (DrawType == DRAW_POLYLINE && pointCollection.size() >= 2){
+                    }else if (DrawType == DisplayEnum.DRAW_POLYLINE && pointCollection.size() >= 2){
                         Polyline polyline = new Polyline(pointCollection);
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
@@ -1040,7 +1030,7 @@ public class MainActivity extends AppCompatActivity {
                     }else {
                         Toast.makeText(MainActivity.this, "请构建面(至少三个点)后进行查询", Toast.LENGTH_SHORT).show();
                     }
-                    DrawType = DRAW_NONE;
+                    DrawType = DisplayEnum.DRAW_NONE;
                     mapQueryBtEvent();
                 }
             }
@@ -1166,7 +1156,7 @@ public class MainActivity extends AppCompatActivity {
                 mCallout.show();*/
 
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
-                if (QueryProcessType == NOQUERY && DrawType == DRAW_NONE) {
+                if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
                     pieChartView.setVisibility(View.GONE);
                     // center on tapped point
                     mMapView.setViewpointCenterAsync(wgs84Point);
@@ -1178,7 +1168,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                     QueryParameters query = new QueryParameters();
                     query.setGeometry(clickPoint);// 设置空间几何对象
-                    if (isFileExist(rootPath) & MapQuery) {
+                    if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         try {
                             FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
@@ -1215,17 +1205,7 @@ public class MainActivity extends AppCompatActivity {
                                                 List<KeyAndValue> keyAndValues = new ArrayList<>();
                                                 for (String key : mQuerryString.keySet()) {
                                                     //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
-                                                    if (key.equals("GHDLMC"))
-                                                        keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
-                                                    else if (key.equals("GHDLBM"))
-                                                        keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
-                                                    else if (key.equals("GHDLMJ"))
-                                                        keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
-                                                    else if (key.equals("PDJB"))
-                                                        keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
-                                                    else if (key.equals("XZQMC"))
-                                                        keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
-                                                    else if (key.equals("XZQDM"))
+                                                    if (key == "GHDLMC" || key == "GHDLBM" || key == "GHDLMJ" || key == "PDJB" || key == "XZQMC" || key == "XZQDM")
                                                         keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
                                                 }
                                                 keyAndValues = KeyAndValue.parseList(keyAndValues);
@@ -1253,8 +1233,7 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                     if (!inMap) mCallout.dismiss();
                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
-                }else if (DrawType == DRAW_POLYGON){
-                    ppp = wgs84Point;
+                }else if (DrawType == DisplayEnum.DRAW_POLYGON){
                     pointCollection.add(wgs84Point);
                     if (pointCollection.size() == 1){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
@@ -1290,7 +1269,7 @@ public class MainActivity extends AppCompatActivity {
                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                     }
-                }else if (DrawType == DRAW_POLYLINE){
+                }else if (DrawType == DisplayEnum.DRAW_POLYLINE){
                     pointCollection.add(wgs84Point);
                     if (pointCollection.size() >= 2){
                         while (mMapView.getGraphicsOverlays().size() != 0) {
@@ -1306,7 +1285,7 @@ public class MainActivity extends AppCompatActivity {
                         DecimalFormat format = new DecimalFormat("0.00");
                         Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
                     }
-                }else if (DrawType == DRAW_POINT){
+                }else if (DrawType == DisplayEnum.DRAW_POINT){
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                     SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
                     Graphic fillGraphic = new Graphic(wgs84Point, pointSymbol);
@@ -1379,8 +1358,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void readMMPKData(){
-        Log.w(TAG, "readMMPKData: " + rootPath );
-        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(rootPath);
+        Log.w(TAG, "readMMPKData: " + StaticVariableEnum.MMPKROOTPATH );
+        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(StaticVariableEnum.MMPKROOTPATH);
         mainMobileMapPackage.loadAsync();
         mainMobileMapPackage.addDoneLoadingListener(new Runnable() {
             @Override
@@ -1423,8 +1402,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-        if (isFileExist(rootPath1)) {
-            localGdb = new Geodatabase(rootPath1);
+        if (isFileExist(StaticVariableEnum.GDBROOTPATH)) {
+            localGdb = new Geodatabase(StaticVariableEnum.GDBROOTPATH);
             Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
             Log.w(TAG, "run: " + localGdb.getPath());
             localGdb.loadAsync();
@@ -1476,7 +1455,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode){
-            case PERMISSION_CODE:
+            case StaticVariableEnum.PERMISSION_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     doSpecificOperation();
                     initWidgetAndVariable();
@@ -1485,7 +1464,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "请通过所有申请的权限", Toast.LENGTH_LONG).show();
                 }
                 break;
-            case PERMISSION_CODE_1:
+            case StaticVariableEnum.PERMISSION_CODE_1:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     doSpecificOperation();
                     initWidgetAndVariable();
@@ -1494,7 +1473,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "请通过文件读取权限", Toast.LENGTH_LONG).show();
                 }
                 break;
-            case PERMISSION_CODE_2:
+            case StaticVariableEnum.PERMISSION_CODE_2:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     doSpecificOperation();
                     initWidgetAndVariable();
@@ -1536,10 +1515,10 @@ public class MainActivity extends AppCompatActivity {
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                QueryProcessType = NOQUERY;
+                QueryProcessType = DisplayEnum.NOQUERY;
                 removeQueryWidget();
                 showStandardWidget();
-                DrawType = DRAW_NONE;
+                DrawType = DisplayEnum.DRAW_NONE;
                 mapQueryBtEvent();
             }
         });
@@ -1589,19 +1568,19 @@ public class MainActivity extends AppCompatActivity {
         finish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (QueryProcessType == INQUERY){
-                    if (DrawType == DRAW_POLYGON && pointCollection.size() >= 3){
+                if (QueryProcessType == DisplayEnum.INQUERY){
+                    if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3){
                     final Polygon polygon = new Polygon(pointCollection);
                     QueryParameters query = new QueryParameters();
                     query.setGeometry(polygon);// 设置空间几何对象
-                    if (isFileExist(rootPath) & MapQuery) {
+                    if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
-                        DrawType = DRAW_NONE;
+                        DrawType = DisplayEnum.DRAW_NONE;
                         queryTask(query, polygon);
                     } else
                         Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                     if (!inMap) mCallout.dismiss();
-                        QueryProcessType = FINISHQUERY;
+                        QueryProcessType = DisplayEnum.FINISHQUERY;
                         removeQueryWidgetFinish();
                         change.setVisibility(View.VISIBLE);
                         /*RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) finish.getLayoutParams();
@@ -1609,11 +1588,11 @@ public class MainActivity extends AppCompatActivity {
                         lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                         finish.setLayoutParams(lp);*/
                     }else Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
-                }else if (QueryProcessType == FINISHQUERY){
-                    QueryProcessType = NOQUERY;
+                }else if (QueryProcessType == DisplayEnum.FINISHQUERY){
+                    QueryProcessType = DisplayEnum.NOQUERY;
                     removeQueryWidgetFinishLater();
                     showStandardWidget();
-                    DrawType = DRAW_NONE;
+                    DrawType = DisplayEnum.DRAW_NONE;
                     mapQueryBtEvent();
                 }
             }
@@ -1752,7 +1731,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         switch (isQurey){
-            case QUREY:
+            case I_QUREY:
                 pieChartView.setVisibility(View.GONE);
                 menu.findItem(R.id.search).setVisible(false);
                 menu.findItem(R.id.cancel).setVisible(true);
@@ -1769,7 +1748,7 @@ public class MainActivity extends AppCompatActivity {
                         //searchForState(query);
                         pieChartView.setVisibility(View.GONE);
                         mCallout.dismiss();
-                        if (isFileExist(rootPath1)) {
+                        if (isFileExist(StaticVariableEnum.GDBROOTPATH)) {
                             //showListPopupWindow(searchView, query);
                             showListPopupWindowforListView(searchView, query);
                         }
@@ -1790,7 +1769,7 @@ public class MainActivity extends AppCompatActivity {
                 });
                 //menu.findItem(R.id.action_search).setVisible(true);
                 break;
-            case NOQUREY:
+            case I_NOQUREY:
                 pieChartView.setVisibility(View.GONE);
                 menu.findItem(R.id.search).setVisible(true);
                 menu.findItem(R.id.cancel).setVisible(false);
@@ -2149,10 +2128,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void setRecyclerView(){
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        layoutManager = new GridLayoutManager(this,1);
+        GridLayoutManager layoutManager = new GridLayoutManager(this,1);
         recyclerView.setLayoutManager(layoutManager);
         Log.w(TAG, "setRecyclerView: " + layerList.size() );
-        adapter = new layerAdapter(layerList);
+        layerAdapter adapter = new layerAdapter(layerList);
         adapter.setOnItemCheckListener(new layerAdapter.OnRecyclerItemCheckListener() {
             @Override
             public void onItemCheckClick(layerAdapter.ViewHolder holder, String name, int position) {
