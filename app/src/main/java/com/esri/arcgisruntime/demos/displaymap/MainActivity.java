@@ -1,28 +1,35 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
 import android.app.SearchManager;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.location.LocationProvider;
+import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -48,6 +55,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -131,7 +139,9 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -152,6 +162,8 @@ public class MainActivity extends AppCompatActivity {
     private List<layer1> layers = new ArrayList<>();
     //private layerAdapter adapter;
     private RecyclerView recyclerView;
+    String[] strings;
+    String ic;
     //private GridLayoutManager layoutManager;
     private ImageButton recyclerViewButton;
     FeatureLayer mFeaturelayer;
@@ -164,6 +176,19 @@ public class MainActivity extends AppCompatActivity {
     GraphicsOverlay graphicsOverlay_66;
     ImageView North;
     FloatingActionButton ResetBT;
+    //声明bts容器
+    List<bt> bts;
+    boolean CreatePOI = false;
+    int POIType = -1;
+    int theNum;
+    //记录用户当前坐标
+    double m_long, m_lat;
+    //记录是否缓存了图片
+    boolean isCreateBitmap;
+    //记录拍摄照片的存储位置
+    Uri imageUri;
+    //记录当前进行的操作
+    DisplayEnum RunningFunction = DisplayEnum.FUNC_NONE;
 
     private DisplayEnum DrawType = DisplayEnum.DRAW_NONE;
     /*public static final int DRAW_POLYGON = -1;
@@ -283,7 +308,6 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 SharedPreferences.Editor editor = getSharedPreferences("xzq", MODE_PRIVATE).edit();
                 editor.putString("name", "");
                 editor.apply();
@@ -627,7 +651,10 @@ public class MainActivity extends AppCompatActivity {
     private void showPopueWindowForMessure(){
         View popView = View.inflate(this,R.layout.popupwindow_drawfeature,null);
         Button bt_polygon = (Button) popView.findViewById(R.id.btn_pop_drawpolygon);
-        final Button bt_polyline = (Button) popView.findViewById(R.id.btn_pop_drawpolyline);
+        final Button bt_xzq = (Button) popView.findViewById(R.id.btn_pop_xzq);
+        final Button bt_distance = (Button) popView.findViewById(R.id.btn_pop_distance);
+        final Button bt_area = (Button) popView.findViewById(R.id.btn_pop_area);
+        final Button bt_addpoi = (Button) popView.findViewById(R.id.btn_pop_addpoi);
         //final Button bt_point = (Button) popView.findViewById(R.id.btn_pop_drawpoint);
         Button bt_cancle = (Button) popView.findViewById(R.id.btn_pop_cancel);
         //获取屏幕宽高
@@ -642,22 +669,62 @@ public class MainActivity extends AppCompatActivity {
         bt_polygon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                RunningFunction = DisplayEnum.FUNC_ANA;
                 if (!MapQuery)
                     mapQueryBtEvent();
                 DrawType = DisplayEnum.DRAW_POLYGON;
                 pointCollection = new PointCollection(SpatialReference.create(4521));
+                RunningAnalyseFunction = DisplayEnum.ANA_NEED;
                 showQueryWidget();
                 removeStandardWidget();
                 QueryProcessType = DisplayEnum.INQUERY;
                 popupWindow.dismiss();
             }
         });
-        bt_polyline.setOnClickListener(new View.OnClickListener() {
+        bt_xzq.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 /*Intent intent = new Intent(MainActivity.this, chartshow.class);
                 startActivity(intent);*/
+
+                RunningFunction = DisplayEnum.FUNC_ANA;
+                RunningAnalyseFunction = DisplayEnum.ANA_XZQ;
                 showPopueWindowForxzqTree();
+                popupWindow.dismiss();
+            }
+        });
+        bt_distance.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RunningFunction = DisplayEnum.FUNC_ANA;
+                DrawType = DisplayEnum.DRAW_POLYLINE;
+                QueryProcessType = DisplayEnum.INQUERY;
+                pointCollection = new PointCollection(SpatialReference.create(4521));
+                RunningAnalyseFunction = DisplayEnum.ANA_DISTANCE;
+                showQueryWidget();
+                removeStandardWidget();
+                popupWindow.dismiss();
+            }
+        });
+        bt_area.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RunningFunction = DisplayEnum.FUNC_ANA;
+                DrawType = DisplayEnum.DRAW_POLYGON;
+                QueryProcessType = DisplayEnum.INQUERY;
+                pointCollection = new PointCollection(SpatialReference.create(4521));
+                RunningAnalyseFunction = DisplayEnum.ANA_AREA;
+                showQueryWidget();
+                removeStandardWidget();
+                popupWindow.dismiss();
+            }
+        });
+        bt_addpoi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RunningFunction = DisplayEnum.FUNC_ADDPOI;
+                removeStandardWidget();
+                //showPopueWindowForPhoto();
                 popupWindow.dismiss();
             }
         });
@@ -692,6 +759,327 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setAttributes(lp);
         popupWindow.showAtLocation(popView, Gravity.BOTTOM,0,50);
 
+    }
+
+    private void AddPhoto(final Uri uri, final float[] latandlong, final int num) {
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(MainActivity.this.getResources().getText(R.string.DateAndTime).toString());
+        final Date date = new Date(System.currentTimeMillis());
+        CreatePOI = true;
+        POIType = num;
+        final List<POI> POIs = LitePal.where("type = ?", strings[num]).find(POI.class);
+        int size = POIs.size();
+        if (size > 0) {
+            float K = (float) 0.002;
+            float delta = Math.abs(POIs.get(0).getX() - latandlong[0]) + Math.abs(POIs.get(0).getY() - latandlong[1]);
+            for (int i = 0; i < size; ++i) {
+                float theLat = POIs.get(i).getX();
+                float theLong = POIs.get(i).getY();
+                float delta1 = Math.abs(theLat - latandlong[0]) + Math.abs(theLong - latandlong[1]);
+                if (delta1 < delta && delta1 < K) {
+                    delta = delta1;
+                    theNum = i;
+                }
+            }
+            if (delta < K) {
+                AlertDialog.Builder dialog1 = new AlertDialog.Builder(MainActivity.this);
+                dialog1.setTitle("提示");
+                dialog1.setMessage("你想怎样添加照片");
+                dialog1.setCancelable(false);
+                dialog1.setPositiveButton("合并到<" + POIs.get(theNum).getName() + ">点图集", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        POI poi = new POI();
+                        poi.setPhotonum(POIs.get(theNum).getPhotonum() + 1);
+                        DataUtil.addPhotoToDB(DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri), ic, POIs.get(theNum).getPoic(), simpleDateFormat.format(date));
+                        getNormalBitmap();
+                        updateMapPage(POIs.get(theNum).getPoic(), num);
+                    }
+                });
+                dialog1.setNegativeButton("创建新兴趣点", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        long time = System.currentTimeMillis();
+                        String poic = "POI" + String.valueOf(time);
+                        DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), latandlong[0], latandlong[1], simpleDateFormat.format(date), num);
+                        DataUtil.addPhotoToDB(DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri), ic, poic, simpleDateFormat.format(date));
+                        getNormalBitmap();
+                        updateMapPage(poic, num);
+                    }
+                });
+                dialog1.show();
+            } else {
+                long time = System.currentTimeMillis();
+                String poic = "POI" + String.valueOf(time);
+                DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), latandlong[0], latandlong[1], simpleDateFormat.format(date), num);
+                DataUtil.addPhotoToDB(DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri), ic, poic, simpleDateFormat.format(date));
+                getNormalBitmap();
+                updateMapPage(poic, num);
+            }
+        } else {
+            long time = System.currentTimeMillis();
+            String poic = "POI" + String.valueOf(time);
+            DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), latandlong[0], latandlong[1], simpleDateFormat.format(date), num);
+            DataUtil.addPhotoToDB(DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri), ic, poic, simpleDateFormat.format(date));
+            getNormalBitmap();
+            updateMapPage(poic, num);
+        }
+        POIType = -1;
+        CreatePOI = false;
+    }
+
+    private void AddTape(final Uri uri, final int num) {
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(MainActivity.this.getResources().getText(R.string.DateAndTime).toString());
+        final Date date = new Date(System.currentTimeMillis());
+        theNum = 0;
+        final long time = System.currentTimeMillis();
+        final List<POI> POIs = LitePal.where("type = ?", strings[num]).find(POI.class);
+        int size = POIs.size();
+        if (size > 0) {
+            float K = (float) 0.002;
+            float delta = Math.abs(POIs.get(0).getX() - (float) m_lat) + Math.abs(POIs.get(0).getY() - (float) m_long);
+            for (int i = 0; i < size; ++i) {
+                float theLat = POIs.get(i).getX();
+                float theLong = POIs.get(i).getY();
+                float delta1 = Math.abs(theLat - (float) m_lat) + Math.abs(theLong - (float) m_long);
+                if (delta1 < delta && delta1 < K) {
+                    delta = delta1;
+                    theNum = i;
+                }
+            }
+            if (delta < K) {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+                dialog.setTitle("提示");
+                dialog.setMessage("你想怎样添加音频");
+                dialog.setCancelable(false);
+                dialog.setPositiveButton("合并到<" + POIs.get(theNum).getName() + ">点音频集", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        POI poi = new POI();
+                        poi.setTapenum(POIs.get(theNum).getTapenum() + 1);
+                        poi.updateAll("poic = ?", POIs.get(theNum).getPoic());
+                        DataUtil.addTapeToDB(DataUtil.getRealPathFromUriForAudio(MainActivity.this, uri), ic, POIs.get(theNum).getPoic(), simpleDateFormat.format(date));
+                        updateMapPage(POIs.get(theNum).getPoic(), num);
+                    }
+                });
+                dialog.setNegativeButton("创建新兴趣点", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String POIC = "POI" + String.valueOf(time);
+                        //List<POI> POIs = LitePal.where("ic = ?", ic).find(POI.class);
+                        //List<POI> POIs = LitePal.findAll(POI.class);
+                        DataUtil.addPOI(ic, POIC, "录音POI" + String.valueOf(POIs.size() + 1), (float) m_lat, (float) m_long, simpleDateFormat.format(date), num);
+                        DataUtil.addTapeToDB(DataUtil.getRealPathFromUriForAudio(MainActivity.this, uri), ic, POIC, simpleDateFormat.format(date));
+                        updateMapPage(POIC, num);
+                    }
+                });
+                dialog.show();
+            } else {
+                String POIC = "POI" + String.valueOf(time);
+                //List<POI> POIs = LitePal.where("ic = ?", ic).find(POI.class);
+                //List<POI> POIs = LitePal.findAll(POI.class);
+                DataUtil.addPOI(ic, POIC, "录音POI" + String.valueOf(POIs.size() + 1), (float) m_lat, (float) m_long, simpleDateFormat.format(date), num);
+                DataUtil.addTapeToDB(DataUtil.getRealPathFromUriForAudio(this, uri), ic, POIC, simpleDateFormat.format(date));
+                updateMapPage(POIC, num);
+            }
+        } else {
+            String POIC = "POI" + String.valueOf(time);
+            //List<POI> POIs = LitePal.where("ic = ?", ic).find(POI.class);
+            //List<POI> POIs = LitePal.findAll(POI.class);
+            DataUtil.addPOI(ic, POIC, "录音POI" + String.valueOf(POIs.size() + 1), (float) m_lat, (float) m_long, simpleDateFormat.format(date), num);
+            DataUtil.addTapeToDB(DataUtil.getRealPathFromUriForAudio(MainActivity.this, uri), ic, POIC, simpleDateFormat.format(date));
+            updateMapPage(POIC, num);
+        }
+    }
+
+    private void AddTakePhoto(final String imageuri, final float[] latandlong, final int num) {
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(MainActivity.this.getResources().getText(R.string.DateAndTime).toString());
+        final Date date = new Date(System.currentTimeMillis());
+        final long time = System.currentTimeMillis();
+        final List<POI> POIs = LitePal.where("type = ?", strings[num]).find(POI.class);
+        int size = POIs.size();
+        if (size > 0) {
+            float K = (float) 0.002;
+            float delta = Math.abs(POIs.get(0).getX() - (float) m_lat) + Math.abs(POIs.get(0).getY() - (float) m_long);
+            for (int i = 0; i < size; ++i) {
+                float theLat = POIs.get(i).getX();
+                float theLong = POIs.get(i).getY();
+                float delta1 = Math.abs(theLat - (float) m_lat) + Math.abs(theLong - (float) m_long);
+                if (delta1 < delta && delta1 < K) {
+                    delta = delta1;
+                    theNum = i;
+                }
+            }
+            if (delta < K) {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+                dialog.setTitle("提示");
+                dialog.setMessage("你想怎样添加照片");
+                dialog.setCancelable(false);
+                dialog.setPositiveButton("合并到<" + POIs.get(theNum).getName() + ">点图集", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        POI poi = new POI();
+                        poi.setPhotonum(POIs.get(theNum).getPhotonum() + 1);
+                        poi.updateAll("poic = ?", POIs.get(theNum).getPoic());
+                        Date date = new Date(time);
+                        DataUtil.addPhotoToDB(imageuri, ic, POIs.get(theNum).getPoic(), simpleDateFormat.format(date));
+                        getNormalBitmap();
+                        updateMapPage(POIs.get(theNum).getPoic(), num);
+                    }
+                });
+                dialog.setNegativeButton("创建新兴趣点", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //long time = System.currentTimeMillis();
+                        String poic = "POI" + String.valueOf(time);
+                        if (latandlong[0] != 0 && latandlong[1] != 0) {
+                            DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), latandlong[0], latandlong[1], simpleDateFormat.format(date), num);
+                        } else {
+                            DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), (float) m_lat, (float) m_long, simpleDateFormat.format(date), num);
+                        }
+                        DataUtil.addPhotoToDB(imageuri, ic, poic, simpleDateFormat.format(date));
+                        getNormalBitmap();
+                        updateMapPage(poic, num);
+                    }
+                });
+                dialog.show();
+            } else {
+                //List<POI> POIs = LitePal.findAll(POI.class);
+                //long time = System.currentTimeMillis();
+                String poic = "POI" + String.valueOf(time);
+                if (latandlong[0] != 0 && latandlong[1] != 0) {
+                    DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), latandlong[0], latandlong[1], simpleDateFormat.format(date), num);
+                } else {
+                    DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), (float) m_lat, (float) m_long, simpleDateFormat.format(date), num);
+                }
+                DataUtil.addPhotoToDB(imageuri, ic, poic, simpleDateFormat.format(date));
+                getNormalBitmap();
+                updateMapPage(poic, num);
+            }
+        } else {
+            String poic = "POI" + String.valueOf(time);
+            if (latandlong[0] != 0 && latandlong[1] != 0) {
+                DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), latandlong[0], latandlong[1], simpleDateFormat.format(date), num);
+            } else {
+                DataUtil.addPOI(ic, poic, "图片POI" + String.valueOf(POIs.size() + 1), (float) m_lat, (float) m_long, simpleDateFormat.format(date), num);
+            }
+            DataUtil.addPhotoToDB(imageuri, ic, poic, simpleDateFormat.format(date));
+            getNormalBitmap();
+            updateMapPage(poic, num);
+        }
+    }
+
+    private void updateMapPage(String poic, int num) {
+        /*Intent intent = new Intent(MainActivity.this, singlepoi.class);
+        intent.putExtra("POIC", poic);
+        startActivity(intent);*/
+        Log.w(TAG, "updateMapPage: ");
+        // TODO LM
+        GoNormalSinglePOIPage(poic);
+    }
+
+    public void getNormalBitmap() {
+        ////////////////////////缓存Bitmap//////////////////////////////
+        bts = new ArrayList<bt>();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                bts.clear();
+                List<POI> pois = LitePal.findAll(POI.class);
+                if (pois.size() > 0) {
+                    for (POI poi : pois) {
+                        List<MPHOTO> mphotos = LitePal.where("poic = ?", poi.getPoic()).find(MPHOTO.class);
+                        //PointF pt2 = LatLng.getPixLocFromGeoL(new PointF(poi.getX(), poi.getY()));
+                        //canvas.drawRect(new RectF(pt2.x - 5, pt2.y - 38, pt2.x + 5, pt2.y), paint2);
+                        //locError(Boolean.toString(poi.getPath().isEmpty()));
+                        //locError(Integer.toString(poi.getPath().length()));
+                        //locError(poi.getPath());
+                        if (poi.getPhotonum() != 0 && mphotos.size() != 0) {
+                            String path = mphotos.get(0).getPath();
+                            File file = new File(path);
+                            if (file.exists()) {
+                                Bitmap bitmap = DataUtil.getImageThumbnail(path, 100, 80);
+                                if (mphotos.size() != 0) {
+                                    int degree = DataUtil.getPicRotate(path);
+                                    if (degree != 0) {
+                                        Matrix m = new Matrix();
+                                        m.setRotate(degree); // 旋转angle度
+                                        Log.w(TAG, "showPopueWindowForPhoto: " + degree);
+                                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+                                    }
+                                    Log.w(TAG, "imageUri: " + path);
+                                    bt btt = new bt(bitmap, path);
+                                    btt.setPoic(poi.getPoic());
+                                    bts.add(btt);
+                                }
+                            } else {
+                                Log.w(TAG, "imageUriWithWrongPath: " + path);
+                                //Resources res = MyApplication.getContext().getResources();
+                                //Bitmap bmp = BitmapFactory.decodeResource(res, R.drawable.ic_info_black);
+                                Drawable drawable = MyApplication.getContext().getResources().getDrawable(R.drawable.imgerror);
+                                BitmapDrawable bd = (BitmapDrawable) drawable;
+                                Bitmap bitmap = Bitmap.createBitmap(bd.getBitmap(), 0, 0, bd.getBitmap().getWidth(), bd.getBitmap().getHeight());
+                                bitmap = ThumbnailUtils.extractThumbnail(bitmap, 80, 120,
+                                        ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+                                bt btt = new bt(bitmap, path);
+                                btt.setPoic("11");
+                                bts.add(btt);
+                            }
+                        } else {
+                            POI poi1 = new POI();
+                            if (mphotos.size() != 0) poi1.setPhotonum(mphotos.size());
+                            else poi1.setToDefault("photonum");
+                            poi1.updateAll("poic = ?", poi.getPoic());
+                        }
+                    }
+                }
+                isCreateBitmap = true;
+                /*runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            pdfView.zoomWithAnimation(c_zoom);
+                        }catch (Exception e){
+
+                        }
+                    }
+                });*/
+            }
+        }).start();
+        //////////////////////////////////////////////////////////////////
+    }
+
+    private void GoNormalSinglePOIPage(String poic) {
+        Log.w(TAG, "updateMapPage: 0");
+        if (!poic.isEmpty()) {
+            Intent intent = new Intent(MainActivity.this, singlepoi.class);
+            intent.putExtra("POIC", poic);
+            intent.putExtra("type", 0);
+            startActivity(intent);
+        }
+    }
+
+    private void GoDMBZSinglePOIPage(String XH) {
+        Log.w(TAG, "updateMapPage: 1");
+        Intent intent = new Intent(MainActivity.this, singlepoi.class);
+        intent.putExtra("DMBZ", XH);
+        intent.putExtra("type", 1);
+        startActivity(intent);
+    }
+
+    private void GoDMLSinglePOIPage(String MapId) {
+        Log.w(TAG, "updateMapPage: 1");
+        Intent intent = new Intent(MainActivity.this, singlepoi.class);
+        intent.putExtra("DML", MapId);
+        intent.putExtra("type", 2);
+        startActivity(intent);
+    }
+
+    private void GoDMPSinglePOIPage(String MapId) {
+        Log.w(TAG, "updateMapPage: 1");
+        Intent intent = new Intent(MainActivity.this, singlepoi.class);
+        intent.putExtra("DMP", MapId);
+        intent.putExtra("type", 3);
+        startActivity(intent);
     }
 
     private void queryTask(final QueryParameters query, final Polygon polygon){
@@ -1091,7 +1479,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isClick == true){
+                if (isClick){
                     recyclerView.setVisibility(View.GONE);
                     recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_more_black_24dp);
                     recyclerViewButton.setY(recyclerView.getY());
@@ -1156,141 +1544,190 @@ public class MainActivity extends AppCompatActivity {
                 mCallout.show();*/
 
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
-                if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
-                    pieChartView.setVisibility(View.GONE);
-                    // center on tapped point
-                    mMapView.setViewpointCenterAsync(wgs84Point);
-                    Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
-                    inMap = false;
-                    Log.w(TAG, "onSingleTapConfirmed: ");
-                    //final android.graphics.Point screenPoint=new android.graphics.Point(Math.round(v.getX()), Math.round(v.getY()));
+                if (RunningFunction == DisplayEnum.FUNC_ANA) {
+                    if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
+                        pieChartView.setVisibility(View.GONE);
+                        // center on tapped point
+                        mMapView.setViewpointCenterAsync(wgs84Point);
+                        Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
+                        inMap = false;
+                        Log.w(TAG, "onSingleTapConfirmed: ");
+                        //final android.graphics.Point screenPoint=new android.graphics.Point(Math.round(v.getX()), Math.round(v.getY()));
 
-                    Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
-                    QueryParameters query = new QueryParameters();
-                    query.setGeometry(clickPoint);// 设置空间几何对象
-                    if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
-                        //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
-                        try {
-                            FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
-                            final ListenableFuture<FeatureQueryResult> featureQueryResult
-                                    = mTable.queryFeaturesAsync(query);
-                            featureQueryResult.addDoneListener(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        while (mMapView.getGraphicsOverlays().size() != 0) {
-                                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                                mMapView.getGraphicsOverlays().remove(i);
-                                            }
-                                        }
-                                        FeatureQueryResult featureResul = featureQueryResult.get();
-                                        for (Object element : featureResul) {
-                                            if (element instanceof Feature) {
-                                                Feature mFeatureGrafic = (Feature) element;
-                                                Geometry geometry = mFeatureGrafic.getGeometry();
-                                                GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                                                SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 5);
-                                                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                                                Graphic pointGraphic = new Graphic(clickPoint, pointSymbol);
-                                                Graphic fillGraphic = new Graphic(geometry, lineSymbol);
-                                                graphicsOverlay_1.getGraphics().add(pointGraphic);
-                                                graphicsOverlay_1.getGraphics().add(fillGraphic);
-                                                mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                                                Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                                TextView calloutContent = new TextView(getApplicationContext());
-                                                calloutContent.setTextColor(Color.BLACK);
-                                                //calloutContent.setSingleLine();
-                                                // format coordinates to 4 decimal places
-                                                String str = "";
-                                                List<KeyAndValue> keyAndValues = new ArrayList<>();
-                                                for (String key : mQuerryString.keySet()) {
-                                                    //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
-                                                    if (key == "GHDLMC" || key == "GHDLBM" || key == "GHDLMJ" || key == "PDJB" || key == "XZQMC" || key == "XZQDM")
-                                                        keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                        Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
+                        QueryParameters query = new QueryParameters();
+                        query.setGeometry(clickPoint);// 设置空间几何对象
+                        if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
+                            //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                            try {
+                                FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                                        = mTable.queryFeaturesAsync(query);
+                                featureQueryResult.addDoneListener(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            while (mMapView.getGraphicsOverlays().size() != 0) {
+                                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
+                                                    mMapView.getGraphicsOverlays().remove(i);
                                                 }
-                                                keyAndValues = KeyAndValue.parseList(keyAndValues);
-                                                for (int i = 0; i < keyAndValues.size(); ++i) {
-                                                    str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue() + "\n";
-                                                }
-                                                calloutContent.setText(str);
-                                                // get callout, set content and show
-                                                mCallout.setLocation(mapPoint);
-                                                mCallout.setContent(calloutContent);
-                                                mCallout.show();
-                                                Log.w(TAG, "run: callout" + mCallout.isShowing());
-                                                inMap = true;
                                             }
+                                            FeatureQueryResult featureResul = featureQueryResult.get();
+                                            for (Object element : featureResul) {
+                                                if (element instanceof Feature) {
+                                                    Feature mFeatureGrafic = (Feature) element;
+                                                    Geometry geometry = mFeatureGrafic.getGeometry();
+                                                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                                    SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 5);
+                                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                                                    Graphic pointGraphic = new Graphic(clickPoint, pointSymbol);
+                                                    Graphic fillGraphic = new Graphic(geometry, lineSymbol);
+                                                    graphicsOverlay_1.getGraphics().add(pointGraphic);
+                                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                                    Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                                    TextView calloutContent = new TextView(getApplicationContext());
+                                                    calloutContent.setTextColor(Color.BLACK);
+                                                    //calloutContent.setSingleLine();
+                                                    // format coordinates to 4 decimal places
+                                                    String str = "";
+                                                    List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                                    for (String key : mQuerryString.keySet()) {
+                                                        //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                                        if (key == "GHDLMC" || key == "GHDLBM" || key == "GHDLMJ" || key == "PDJB" || key == "XZQMC" || key == "XZQDM")
+                                                            keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                                    }
+                                                    keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                                    for (int i = 0; i < keyAndValues.size(); ++i) {
+                                                        str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue() + "\n";
+                                                    }
+                                                    calloutContent.setText(str);
+                                                    // get callout, set content and show
+                                                    mCallout.setLocation(mapPoint);
+                                                    mCallout.setContent(calloutContent);
+                                                    mCallout.show();
+                                                    Log.w(TAG, "run: callout" + mCallout.isShowing());
+                                                    inMap = true;
+                                                }
+                                            }
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
                                         }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
                                     }
-                                }
-                            });
-                        } catch (ArcGISRuntimeException e) {
-                            Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
-                        }
-                    } else
-                        Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
-                    if (!inMap) mCallout.dismiss();
-                    //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
-                }else if (DrawType == DisplayEnum.DRAW_POLYGON){
-                    pointCollection.add(wgs84Point);
-                    if (pointCollection.size() == 1){
-                        while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                mMapView.getGraphicsOverlays().remove(i);
+                                });
+                            } catch (ArcGISRuntimeException e) {
+                                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                            }
+                        } else
+                            Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+                        if (!inMap) mCallout.dismiss();
+                        //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
+                    } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
+                        pointCollection.add(wgs84Point);
+                        if (pointCollection.size() == 1) {
+                            removeGraphicsOverlayers();
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
+                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                        } else if (pointCollection.size() == 2) {
+                            removeGraphicsOverlayers();
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                        } else if (pointCollection.size() > 2) {
+                            removeGraphicsOverlayers();
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                            SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
+                            switch (RunningAnalyseFunction) {
+                                case ANA_NEED:
+                                    Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                    break;
+                                case ANA_AREA:
+                                    fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), fillSymbol);
+                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                    break;
                             }
                         }
-                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
-                        Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
-                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                    }else if (pointCollection.size() == 2){
-                        while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                mMapView.getGraphicsOverlays().remove(i);
-                            }
+                    } else if (DrawType == DisplayEnum.DRAW_POLYLINE) {
+                        pointCollection.add(wgs84Point);
+                        if (pointCollection.size() == 1) {
+                            removeGraphicsOverlayers();
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
+                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                        } else if (pointCollection.size() >= 2) {
+                            removeGraphicsOverlayers();
+                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            DecimalFormat format = new DecimalFormat("0.00");
+                            Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
                         }
+                    } else if (DrawType == DisplayEnum.DRAW_POINT) {
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                        Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
-                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                    }else if (pointCollection.size() > 2){
-                        while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                mMapView.getGraphicsOverlays().remove(i);
-                            }
-                        }
-                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                        Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                        SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+                        Graphic fillGraphic = new Graphic(wgs84Point, pointSymbol);
                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                     }
-                }else if (DrawType == DisplayEnum.DRAW_POLYLINE){
-                    pointCollection.add(wgs84Point);
-                    if (pointCollection.size() >= 2){
-                        while (mMapView.getGraphicsOverlays().size() != 0) {
-                            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                mMapView.getGraphicsOverlays().remove(i);
-                            }
+                }else if (RunningFunction == DisplayEnum.FUNC_ADDPOI){
+                    Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point.getX() + "; " + wgs84Point.getY());
+                    final Point wgs84Point1 = (Point) GeometryEngine.project(wgs84Point, SpatialReferences.getWgs84());
+                    Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point1.getX() + "; " + wgs84Point1.getY());
+                    final PointF wgs84Point2 = new PointF((float) wgs84Point1.getY(), (float)wgs84Point1.getX());
+                    RunningFunction = DisplayEnum.FUNC_NONE;
+                    showStandardWidget();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("提示");
+                    builder.setMessage("请选择你要添加的图层");
+                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            CreatePOI = true;
+                            POIType = 0;
+                            // TODO LM
+                            GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 0));
+                            POIType = -1;
+                            CreatePOI = false;
                         }
-                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                        Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
-                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                        DecimalFormat format = new DecimalFormat("0.00");
-                        Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
-                    }
-                }else if (DrawType == DisplayEnum.DRAW_POINT){
-                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                    SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
-                    Graphic fillGraphic = new Graphic(wgs84Point, pointSymbol);
-                    graphicsOverlay_1.getGraphics().add(fillGraphic);
-                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    });
+                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            CreatePOI = true;
+                            POIType = 1;
+
+                            // TODO LM
+                            GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 1));
+
+                            POIType = -1;
+                            CreatePOI = false;
+                        }
+                    });
+                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            CreatePOI = true;
+                            POIType = 2;
+                            // TODO LM
+                            GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 2));
+                            POIType = -1;
+                            CreatePOI = false;
+                        }
+                    });
+                    builder.show();
                 }
                 return true;
             }
@@ -1325,9 +1762,40 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void removeGraphicsOverlayers(){
+        while (mMapView.getGraphicsOverlays().size() != 0) {
+            for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
+                mMapView.getGraphicsOverlays().remove(i);
+            }
+        }
+    }
+
     private void doSpecificOperation(){
         Sampler.getInstance().init(MainActivity.this, 100);
         Sampler.getInstance().start();
+    }
+
+    private String AddNormalPOI(final PointF pt1, final int num) {
+        List<POI> POIs = LitePal.findAll(POI.class);
+        POI poi = new POI();
+        poi.setName("POI" + String.valueOf(POIs.size() + 1));
+        poi.setIc(ic);
+        //if (showMode == TuzhiEnum.NOCENTERMODE) {
+            poi.setX(pt1.x);
+            poi.setY(pt1.y);
+        /*} else {
+            poi.setX(centerPointLoc.x);
+            poi.setY(centerPointLoc.y);
+        }*/
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(MainActivity.this.getResources().getText(R.string.DateAndTime).toString());
+        Date date = new Date(System.currentTimeMillis());
+        poi.setTime(simpleDateFormat.format(date));
+        poi.setPhotonum(0);
+        String mpoic = "POI" + String.valueOf(System.currentTimeMillis());
+        poi.setPoic(mpoic);
+        poi.setType(strings[num]);
+        poi.save();
+        return mpoic;
     }
 
     private void initLayerList(){
@@ -1382,6 +1850,7 @@ public class MainActivity extends AppCompatActivity {
     private void initVariable(){
         //获取传感器管理器系统服务
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        strings = getResources().getStringArray(R.array.Type);
         graphicsOverlay_66 = new GraphicsOverlay();
         color_Whiteblank = Color.RED;
         map = new ArcGISMap();mCallout = mMapView.getCallout();
@@ -1399,6 +1868,9 @@ public class MainActivity extends AppCompatActivity {
                 public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
                     LocationDataSource.Location location = locationChangedEvent.getLocation();
                     mLocation = location.getPosition();
+                    Log.w(TAG, "initVariable: " + mLocation.getX() + "; "+ mLocation.getY());
+                    m_lat = mLocation.getY();
+                    m_long = mLocation.getX();
                 }
             });
         }
@@ -1450,6 +1922,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         requestAuthority();
+        ic = "自然资源监管系统";
     }
 
     @Override
@@ -1502,6 +1975,8 @@ public class MainActivity extends AppCompatActivity {
         ResetBT.setVisibility(View.GONE);
     }
 
+    private DisplayEnum RunningAnalyseFunction = DisplayEnum.ANA_NONE;
+
     private void showQueryWidget(){
         FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
         cancel.setVisibility(View.VISIBLE);
@@ -1519,17 +1994,19 @@ public class MainActivity extends AppCompatActivity {
                 removeQueryWidget();
                 showStandardWidget();
                 DrawType = DisplayEnum.DRAW_NONE;
-                mapQueryBtEvent();
+                if (RunningAnalyseFunction == DisplayEnum.ANA_NEED)
+                    mapQueryBtEvent();
+                else {
+                    mMapView.getGraphicsOverlays().clear();
+                    drawWhiteBlank();
+                }
+                RunningAnalyseFunction = DisplayEnum.ANA_NONE;
             }
         });
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                while (mMapView.getGraphicsOverlays().size() != 0) {
-                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                        mMapView.getGraphicsOverlays().remove(i);
-                    }
-                }
+                removeGraphicsOverlayers();
                 if (pointCollection.size() >= 1)
                     pointCollection.remove(pointCollection.size() - 1);
                 if (pointCollection.size() == 1){
@@ -1547,9 +2024,26 @@ public class MainActivity extends AppCompatActivity {
                 }else if (pointCollection.size() > 2){
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                     SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                    Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
-                    graphicsOverlay_1.getGraphics().add(fillGraphic);
-                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    SimpleFillSymbol fillSymbol;
+                    Graphic fillGraphic;
+                    switch (RunningAnalyseFunction){
+                        case ANA_DISTANCE:
+                            fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            break;
+                        case ANA_AREA:
+                            fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
+                            fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), fillSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            break;
+                        case ANA_NEED:
+                            fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            graphicsOverlay_1.getGraphics().add(fillGraphic);
+                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                            break;
+                    }
                 }
             }
         });
@@ -1558,42 +2052,106 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Toast.makeText(MainActivity.this, "已清空", Toast.LENGTH_SHORT).show();
                 pointCollection.clear();
-                while (mMapView.getGraphicsOverlays().size() != 0) {
-                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                        mMapView.getGraphicsOverlays().remove(i);
-                    }
-                }
+                removeGraphicsOverlayers();
             }
         });
         finish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (QueryProcessType == DisplayEnum.INQUERY){
-                    if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3){
-                    final Polygon polygon = new Polygon(pointCollection);
-                    QueryParameters query = new QueryParameters();
-                    query.setGeometry(polygon);// 设置空间几何对象
-                    if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
-                        //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
-                        DrawType = DisplayEnum.DRAW_NONE;
-                        queryTask(query, polygon);
-                    } else
-                        Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
-                    if (!inMap) mCallout.dismiss();
-                        QueryProcessType = DisplayEnum.FINISHQUERY;
-                        removeQueryWidgetFinish();
-                        change.setVisibility(View.VISIBLE);
+                switch (RunningAnalyseFunction){
+                    case ANA_NEED:
+                        if (QueryProcessType == DisplayEnum.INQUERY) {
+                            if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3) {
+                                final Polygon polygon = new Polygon(pointCollection);
+                                QueryParameters query = new QueryParameters();
+                                query.setGeometry(polygon);// 设置空间几何对象
+                                if (isFileExist(StaticVariableEnum.MMPKROOTPATH) & MapQuery) {
+                                    //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                                    DrawType = DisplayEnum.DRAW_NONE;
+                                    queryTask(query, polygon);
+                                } else
+                                    Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+                                if (!inMap) mCallout.dismiss();
+                                QueryProcessType = DisplayEnum.FINISHQUERY;
+                                removeQueryWidgetFinish();
+                                change.setVisibility(View.VISIBLE);
                         /*RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) finish.getLayoutParams();
                         lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
                         lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                         finish.setLayoutParams(lp);*/
-                    }else Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
-                }else if (QueryProcessType == DisplayEnum.FINISHQUERY){
-                    QueryProcessType = DisplayEnum.NOQUERY;
-                    removeQueryWidgetFinishLater();
-                    showStandardWidget();
-                    DrawType = DisplayEnum.DRAW_NONE;
-                    mapQueryBtEvent();
+                            } else
+                                Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
+                        } else if (QueryProcessType == DisplayEnum.FINISHQUERY) {
+                            QueryProcessType = DisplayEnum.NOQUERY;
+                            removeQueryWidgetFinishLater();
+                            showStandardWidget();
+                            DrawType = DisplayEnum.DRAW_NONE;
+                            mapQueryBtEvent();
+                        }
+                        break;
+                    case ANA_AREA:
+                        if (QueryProcessType == DisplayEnum.INQUERY) {
+                            if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3) {
+                                final Polygon polygon = new Polygon(pointCollection);
+                                DecimalFormat df = new DecimalFormat("0.0");
+                                double area = GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC);
+                                String str = df.format(area);
+                                TextView calloutContent = new TextView(getApplicationContext());
+                                calloutContent.setTextColor(Color.BLACK);
+                                calloutContent.setText(str + getResources().getString(R.string.SQUARE_KILOMETERS));
+                                //calloutContent.setText(str);
+                                // get callout, set content and show
+                                mCallout.setLocation(new Point(polygon.getExtent().getCenter().getX(), polygon.getExtent().getYMax(), SpatialReference.create(4521)));
+                                mCallout.setContent(calloutContent);
+                                mCallout.show();
+                                //if (!inMap) mCallout.dismiss();
+                                removeQueryWidgetFinish();
+                                QueryProcessType = DisplayEnum.FINISHQUERY;
+                                //change.setVisibility(View.VISIBLE);
+                            } else
+                                Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
+                        }else if (QueryProcessType == DisplayEnum.FINISHQUERY) {
+                            QueryProcessType = DisplayEnum.NOQUERY;
+                            removeQueryWidgetFinishLater();
+                            showStandardWidget();
+                            DrawType = DisplayEnum.DRAW_NONE;
+                            mCallout.dismiss();
+                            mMapView.getGraphicsOverlays().clear();
+                            drawWhiteBlank();
+                        }
+                        break;
+                    case ANA_DISTANCE:
+                        if (QueryProcessType == DisplayEnum.INQUERY) {
+                            if (DrawType == DisplayEnum.DRAW_POLYLINE && pointCollection.size() >= 2) {
+                                final Polyline polyline = new Polyline(pointCollection);
+                                DecimalFormat df = new DecimalFormat("0.0");
+                                double length = GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC);
+                                String str = df.format(length);
+                                Log.w(TAG, "onClick: " + str);
+                                TextView calloutContent = new TextView(getApplicationContext());
+                                calloutContent.setTextColor(Color.BLACK);
+                                calloutContent.setText(str + getResources().getString(R.string.KILOMETERS));
+                                //calloutContent.setText(str + R.string.SQUARE_KILOMETERS);
+                                // get callout, set content and show
+                                mCallout.setLocation(new Point(polyline.getExtent().getCenter().getX(), polyline.getExtent().getYMax(), SpatialReference.create(4521)));
+                                mCallout.setContent(calloutContent);
+                                mCallout.show();
+                                //if (!inMap) mCallout.dismiss();
+                                removeQueryWidgetFinish();
+                                QueryProcessType = DisplayEnum.FINISHQUERY;
+                                //change.setVisibility(View.VISIBLE);
+                            } else
+                                Toast.makeText(MainActivity.this, "请构建线(至少两个点)", Toast.LENGTH_SHORT).show();
+                        }else if (QueryProcessType == DisplayEnum.FINISHQUERY) {
+                            QueryProcessType = DisplayEnum.NOQUERY;
+                            removeQueryWidgetFinishLater();
+                            showStandardWidget();
+                            DrawType = DisplayEnum.DRAW_NONE;
+                            mCallout.dismiss();
+                            mMapView.getGraphicsOverlays().clear();
+                            drawWhiteBlank();
+                            }
+                        break;
                 }
             }
         });
@@ -2264,5 +2822,283 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+    }
+
+    //获取文件管理器的返回信息
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK && requestCode == EnumClass.REQUEST_CODE_PHOTO) {
+            theNum = 0;
+            final Uri uri = data.getData();
+            Log.w(TAG, "onActivityResult: " + DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri));
+            final float[] latandlong = new float[2];
+            try {
+                ExifInterface exifInterface = new ExifInterface(DataUtil.getRealPathFromUriForPhoto(this, uri));
+                exifInterface.getLatLong(latandlong);
+                if (latandlong[0] != 0) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("提示");
+                    builder.setMessage("请选择你要添加的图层");
+                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddPhoto(uri, latandlong, 0);
+                        }
+                    });
+                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddPhoto(uri, latandlong, 1);
+                            /*else {
+                                dmbzList = LitePal.findAll(DMBZ.class);
+                                int size = dmbzList.size();
+                                DMBZ dmbz = new DMBZ();
+                                dmbz.setIMGPATH(DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri));
+                                dmbz.setLat(latandlong[0]);
+                                dmbz.setLng(latandlong[1]);
+                                dmbz.setXH(String.valueOf(size + 1));
+                                dmbz.setTime(simpleDateFormat1.format(new Date(System.currentTimeMillis())));
+                                dmbz.save();
+                                getDMBZBitmap();
+                            }*/
+                        }
+                    });
+                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddPhoto(uri, latandlong, 2);
+                        }
+                    });
+                    builder.show();
+                } else
+                    Toast.makeText(MainActivity.this, R.string.LocError1, Toast.LENGTH_LONG).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (resultCode == RESULT_OK && requestCode == EnumClass.REQUEST_CODE_TAPE) {
+            final Uri uri = data.getData();
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("提示");
+            builder.setMessage("请选择你要添加的图层");
+            builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    AddTape(uri, 0);
+                }
+            });
+            builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    AddTape(uri, 1);
+                    /*else {
+                        dmbzList = LitePal.findAll(DMBZ.class);
+                        int size = dmbzList.size();
+                        DMBZ dmbz = new DMBZ();
+                        dmbz.setTAPEPATH(DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri));
+                        dmbz.setLat((float) m_lat);
+                        dmbz.setLng((float) m_long);
+                        dmbz.setXH(String.valueOf(size + 1));
+                        dmbz.setTime(simpleDateFormat1.format(new Date(System.currentTimeMillis())));
+                        dmbz.save();
+                        getDMBZBitmap();
+                    }*/
+                }
+            });
+            builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    AddTape(uri, 2);
+                }
+            });
+            builder.show();
+        }
+        if (resultCode == RESULT_OK && requestCode == EnumClass.TAKE_PHOTO) {
+            theNum = 0;
+            final String imageuri;
+            if (Build.VERSION.SDK_INT >= 24) {
+                imageuri = DataUtil.getRealPath(imageUri.toString());
+            } else {
+                imageuri = imageUri.toString().substring(7);
+            }
+            File file = new File(imageuri);
+            if (file.exists()) {
+                final float[] latandlong = new float[2];
+                try {
+                    MediaStore.Images.Media.insertImage(getContentResolver(), imageuri, "title", "description");
+                    // 最后通知图库更新
+                    MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + imageuri)));
+                    ExifInterface exifInterface = new ExifInterface(imageuri);
+                    exifInterface.getLatLong(latandlong);
+                    //List<POI> POIs = LitePal.where("ic = ?", ic).find(POI.class);
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("提示");
+                    builder.setMessage("请选择你要添加的图层");
+                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddTakePhoto(imageuri, latandlong, 0);
+                        }
+                    });
+                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddTakePhoto(imageuri, latandlong, 1);
+                            /*else {
+                                dmbzList = LitePal.findAll(DMBZ.class);
+                                int size = dmbzList.size();
+                                DMBZ dmbz = new DMBZ();
+                                dmbz.setLat(latandlong[0]);
+                                dmbz.setLng(latandlong[1]);
+                                dmbz.setIMGPATH(imageuri);
+                                dmbz.setXH(String.valueOf(size + 1));
+                                dmbz.setTime(simpleDateFormat1.format(new Date(System.currentTimeMillis())));
+                                dmbz.save();
+                                getDMBZBitmap();
+                            }*/
+                        }
+                    });
+                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddTakePhoto(imageuri, latandlong, 2);
+                        }
+                    });
+                    builder.show();
+
+                } catch (Exception e) {
+                    Log.w(TAG, e.toString());
+                }
+            } else {
+                file.delete();
+                Toast.makeText(MainActivity.this, R.string.TakePhotoError, Toast.LENGTH_LONG).show();
+            }
+            //String imageuri = getRealPathFromUriForPhoto(this, imageUri);
+
+        }
+    }
+
+    private void takePhoto() {
+        File file2 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo");
+        if (!file2.exists() && !file2.isDirectory()) {
+            file2.mkdirs();
+        }
+        long timenow = System.currentTimeMillis();
+        File outputImage = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo", Long.toString(timenow) + ".jpg");
+        try {
+            if (outputImage.exists()) {
+                outputImage.delete();
+            }
+            outputImage.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= 24) {
+                //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
+                imageUri = FileProvider.getUriForFile(MainActivity.this, "com.android.tuzhi.fileprovider", outputImage);
+
+            } else imageUri = Uri.fromFile(outputImage);
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(intent, EnumClass.TAKE_PHOTO);
+        } catch (Exception e) {
+            Log.w(TAG, e.toString());
+        }
+
+    }
+
+    private void showPopueWindowForPhoto() {
+        View popView = View.inflate(this, R.layout.popupwindow_camera_need, null);
+        Button bt_album = (Button) popView.findViewById(R.id.btn_pop_album);
+        Button bt_camera = (Button) popView.findViewById(R.id.btn_pop_camera);
+        Button bt_cancle = (Button) popView.findViewById(R.id.btn_pop_cancel);
+        //获取屏幕宽高
+        int weight = getResources().getDisplayMetrics().widthPixels;
+        int height = getResources().getDisplayMetrics().heightPixels * 1 / 3;
+
+        final PopupWindow popupWindow = new PopupWindow(popView, weight, height);
+        //popupWindow.setAnimationStyle(R.style.anim_popup_dir);
+        popupWindow.setFocusable(true);
+        //点击外部popueWindow消失
+        popupWindow.setOutsideTouchable(true);
+
+        bt_album.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pickFile();
+                popupWindow.dismiss();
+
+            }
+        });
+        bt_camera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (m_lat != 0) takePhoto();
+                else
+                    Toast.makeText(MainActivity.this, R.string.LocError, Toast.LENGTH_LONG).show();
+                popupWindow.dismiss();
+
+            }
+        });
+        bt_cancle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                popupWindow.dismiss();
+
+            }
+        });
+        //popupWindow消失屏幕变为不透明
+        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.alpha = 1.0f;
+                getWindow().setAttributes(lp);
+            }
+        });
+        //popupWindow出现屏幕变为半透明
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.alpha = 0.5f;
+        getWindow().setAttributes(lp);
+        popupWindow.showAtLocation(popView, Gravity.BOTTOM, 0, 50);
+
+    }
+
+    //获取文件读取权限
+    void pickFile() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                EnumClass.READ_EXTERNAL_STORAGE);
+        int permissionCheck1 = ContextCompat.checkSelfPermission(this,
+                EnumClass.WRITE_EXTERNAL_STORAGE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            EnumClass.READ_EXTERNAL_STORAGE, EnumClass.WRITE_EXTERNAL_STORAGE},
+                    EnumClass.PERMISSION_CODE
+            );
+
+            return;
+        }
+
+        launchPicker();
+    }
+
+    //打开图片的文件管理器
+    void launchPicker() {
+        //Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        //intent.setData(Uri.parse(DEF_DIR));
+        //intent.addCategory(Intent.CATEGORY_OPENABLE);
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        try {
+            startActivityForResult(intent, EnumClass.REQUEST_CODE_PHOTO);
+        } catch (ActivityNotFoundException e) {
+            //alert user that file manager not working
+            Toast.makeText(this, R.string.toast_pick_file_error, Toast.LENGTH_SHORT).show();
+        }
     }
 }

@@ -20,10 +20,34 @@
             android:textSize="18sp" />
 
         <Button
-            android:id="@+id/btn_pop_drawpolyline"
+            android:id="@+id/btn_pop_xzq"
             android:layout_width="match_parent"
             android:layout_height="45dp"
             android:text="行政区查询"
+            android:background="#ffff"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_pop_distance"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="距离测量"
+            android:background="#ffff"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_pop_area"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="面积测量"
+            android:background="#ffff"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_pop_addpoi"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:text="添加兴趣点"
             android:background="#ffff"
             android:textSize="18sp" />
 

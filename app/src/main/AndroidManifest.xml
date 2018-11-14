@@ -13,7 +13,7 @@
         android:required="true" />
 
     <application
-        android:name="org.litepal.LitePalApplication"
+        android:name="com.esri.arcgisruntime.demos.displaymap.MyApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -30,7 +30,13 @@
         </activity>
         <activity
             android:name=".chartshow"
-            android:label="@string/title_activity_chartshow"></activity>
+            android:label="@string/title_activity_chartshow" />
+        <activity android:name=".singlepoi"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+        <activity android:name=".photoshow"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity android:name=".tapeshow"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"></activity>
     </application>
 
 </manifest>
