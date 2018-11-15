@@ -472,9 +472,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }*/
 
-                for (int i = 0; i < graphics.size(); ++i){
-                    graphicsOverlay_10.getGraphics().remove(graphics.get(i));
-                }
+
                 /*graphics.clear();
                 graphicsOverlay_10.getGraphics().clear();
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
@@ -1551,14 +1549,15 @@ public class MainActivity extends AppCompatActivity {
                     if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
                         pieChartView.setVisibility(View.GONE);
                         // center on tapped point
-                        mMapView.setViewpointCenterAsync(wgs84Point);
+                        //mMapView.setViewpointCenterAsync(wgs84Point);
                         Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
                         inMap = false;
                         Log.w(TAG, "onSingleTapConfirmed: ");
 
                         Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                         //TODO queryPOI
-                        queryTB(clickPoint, mapPoint);
+                        if (!queryPoi(mMapView.locationToScreen(clickPoint)))
+                            queryTB(clickPoint, mapPoint);
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                     } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
                         pointCollection.add(wgs84Point);
@@ -1700,8 +1699,64 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private boolean queryPoi(){
-        return true;
+    private boolean queryPoi(android.graphics.Point point){
+        Log.w(TAG, "queryPoi: " + point.x + "; " + point.y);
+        List<mPOIobj> pois = new ArrayList<>();
+        Cursor cursor = LitePal.findBySQL("select * from POI");
+        if (cursor.moveToFirst()) {
+            do {
+                String POIC = cursor.getString(cursor.getColumnIndex("poic"));
+                String time = cursor.getString(cursor.getColumnIndex("time"));
+                String name = cursor.getString(cursor.getColumnIndex("name"));
+                String description = cursor.getString(cursor.getColumnIndex("description"));
+                int tapenum = cursor.getInt(cursor.getColumnIndex("tapenum"));
+                int photonum = cursor.getInt(cursor.getColumnIndex("photonum"));
+                float x = cursor.getFloat(cursor.getColumnIndex("x"));
+                float y = cursor.getFloat(cursor.getColumnIndex("y"));
+                mPOIobj mPOIobj = new mPOIobj(POIC, x, y, time, tapenum, photonum, name, description);
+                pois.add(mPOIobj);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        int n = 0;
+        int num = 0;
+        if (pois.size() > 0) {
+            mPOIobj poii = pois.get(0);
+
+            //PointF pointF1 = new PointF(poii.getM_X(), poii.getM_Y());
+            //pointF1 = LatLng.getPixLocFromGeoL(pointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+            Point mpt0 = (Point) GeometryEngine.project(new Point((double)poii.getM_Y(), (double)poii.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+            android.graphics.Point pt0 = mMapView.locationToScreen(mpt0);
+            Log.w(TAG, "queryPoi0: " + pt0.x + "; " + pt0.y);
+            //pointF1 = new PointF(pointF1.x, pointF1.y);
+            //pointF = getGeoLocFromPixL(pointF);
+            //final PointF pt9 = LatLng.getPixLocFromGeoL(pt1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+            float mdelta = Math.abs(pt0.x - point.x) + Math.abs(pt0.y - point.y);
+            for (mPOIobj poi : pois) {
+                /*PointF mpointF1 = new PointF(poi.getM_X(), poi.getM_Y());
+                Log.w(TAG, "mpointF1 queried: " + mpointF1.x + ";" + mpointF1.y);
+                mpointF1 = LatLng.getPixLocFromGeoL(mpointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                mpointF1 = new PointF(mpointF1.x, mpointF1.y);*/
+                Point mpt1 = (Point) GeometryEngine.project(new Point((double)poi.getM_Y(), (double)poi.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                android.graphics.Point pt1 = mMapView.locationToScreen(mpt1);
+                Log.w(TAG, "queryPoi: " + n);
+                Log.w(TAG, "queryPoi: " + pt1.x + "; " + pt1.y);
+                if (Math.abs(pt1.x - point.x) + Math.abs(pt1.y - point.y) < mdelta && Math.abs(pt1.x - point.x) + Math.abs(pt1.y - point.y) < 35) {
+                    //locError("mpointF : " + mpointF1.toString());
+                    mdelta = Math.abs(pt1.x - point.x) + Math.abs(pt1.y - point.y);
+                    num = n;
+                }
+                n++;
+            }
+            if (mdelta < 35 || num != 0) {
+                //return pois.get(num).getM_POIC();
+                GoNormalSinglePOIPage(pois.get(num).getM_POIC());
+                return true;
+                //locError(Integer.toString(pois.get(num).getPhotonum()));
+            } else {
+                return false;
+            }
+        } else return false;
     }
 
     private void queryTB(final Point clickPoint, final Point mapPoint){
@@ -2200,6 +2255,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void drawPoiAndWhiteBlank(){
+        for (int i = 0; i < graphics.size(); ++i){
+        graphicsOverlay_10.getGraphics().remove(graphics.get(i));
+    }
         graphics.clear();
 
 
