@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">临沧市自然资源管理辅助决策系统</string>
+    <string name="version_info">1.5</string>
     <string name="action_search">简单查询</string>
     <string name="search_hint">请输入纽约地区名称</string>
     <string name="WhiteBlankDrawing">正在进行白板绘图</string>
@@ -29,7 +30,6 @@
     <string name="NoInRedLine">不在生态保护红线内</string>
     <string name="RedLineError">请输入标准经纬度格式</string>
     <string name="NoLongClickError">请长按某个子项后, 再选择菜单栏操作</string>
-    <string name="version_info">1.6</string>
     <string name="version_info_0">当前版本: </string>
     <string name="QueryPathError">请安装一款主流地图软件</string>
     <string name="QueryPathError1">路径规划查询中出现了未知错误</string>
