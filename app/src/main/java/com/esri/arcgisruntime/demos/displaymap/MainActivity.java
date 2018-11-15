@@ -658,7 +658,7 @@ public class MainActivity extends AppCompatActivity {
         Button bt_cancle = (Button) popView.findViewById(R.id.btn_pop_cancel);
         //获取屏幕宽高
         int weight = getResources().getDisplayMetrics().widthPixels;
-        int height = getResources().getDisplayMetrics().heightPixels * 1/3;
+        int height = getResources().getDisplayMetrics().heightPixels * 2/3;
 
         final PopupWindow popupWindow = new PopupWindow(popView, weight, height);
         //popupWindow.setAnimationStyle(R.style.anim_popup_dir);
