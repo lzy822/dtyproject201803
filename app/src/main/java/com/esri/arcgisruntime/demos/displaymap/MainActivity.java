@@ -90,6 +90,7 @@ import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.layers.ArcGISMapImageLayer;
 import com.esri.arcgisruntime.layers.ArcGISMapImageSublayer;
 import com.esri.arcgisruntime.layers.ArcGISTiledLayer;
+import com.esri.arcgisruntime.layers.ArcGISVectorTiledLayer;
 import com.esri.arcgisruntime.layers.FeatureCollectionLayer;
 import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.layers.Layer;
@@ -1872,9 +1873,14 @@ public class MainActivity extends AppCompatActivity {
         int size = map.getOperationalLayers().size();
         Log.w(TAG, "size: " + size);
         for (int i = size - 1; i > -1; i--){
+            Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
             if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
                 layers.add(new layer1(map.getOperationalLayers().get(i), i));
                 layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
+                if (map.getOperationalLayers().get(i).getName().contains("土地规划地类")) {
+                    ArcGISVectorTiledLayer mVectorTiledLayer = (ArcGISVectorTiledLayer) map.getOperationalLayers().get(i);
+                    Log.w(TAG, "initLayerList: " + mVectorTiledLayer.getSourceInfo());
+                }
             }else {
                 hasTPK = true;
                 TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
@@ -1938,9 +1944,11 @@ public class MainActivity extends AppCompatActivity {
                 public void onLocationChanged(LocationDisplay.LocationChangedEvent locationChangedEvent) {
                     LocationDataSource.Location location = locationChangedEvent.getLocation();
                     mLocation = location.getPosition();
-                    Log.w(TAG, "initVariable: " + mLocation.getX() + "; "+ mLocation.getY());
-                    m_lat = mLocation.getY();
-                    m_long = mLocation.getX();
+                    //Log.w(TAG, "initVariable: " + mLocation.getX() + "; "+ mLocation.getY());
+                    if (mLocation != null) {
+                        m_lat = mLocation.getY();
+                        m_long = mLocation.getX();
+                    }
                 }
             });
         }
@@ -3234,7 +3242,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             if (Build.VERSION.SDK_INT >= 24) {
                 //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
-                imageUri = FileProvider.getUriForFile(MainActivity.this, "com.android.tuzhi.fileprovider", outputImage);
+                imageUri = FileProvider.getUriForFile(MainActivity.this, "com.android.displaymap.fileprovider", outputImage);
 
             } else imageUri = Uri.fromFile(outputImage);
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);

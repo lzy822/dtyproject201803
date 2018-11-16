@@ -192,7 +192,7 @@ public class DataUtil {
     public static String getRealPath(String filePath) {
         try {
             if (!filePath.contains("raw")) {
-                String str = "content://com.android.tuzhi.fileprovider/external_files";
+                String str = "content://com.android.displaymap.fileprovider/external_files";
                 String Dir = Environment.getExternalStorageDirectory().toString();
                 filePath = Dir + filePath.substring(str.length());
             }else {

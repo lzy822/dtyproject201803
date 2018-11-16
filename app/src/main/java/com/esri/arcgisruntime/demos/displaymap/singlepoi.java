@@ -1,9 +1,11 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
+import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -13,6 +15,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -293,8 +297,7 @@ public class singlepoi extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
-                    Intent intent = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
-                    startActivityForResult(intent, REQUEST_CODE_TAPE);
+                    requestRecordAudioPermission();
                 }catch (ActivityNotFoundException e){
                     Toast.makeText(MyApplication.getContext(), R.string.TakeTapeError, Toast.LENGTH_LONG).show();
                 }
@@ -1458,7 +1461,7 @@ public class singlepoi extends AppCompatActivity {
         bt_camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                takePhoto();
+                requestCameraPermission();
                 popupWindow.dismiss();
 
             }
@@ -1486,6 +1489,23 @@ public class singlepoi extends AppCompatActivity {
         popupWindow.showAtLocation(popView, Gravity.BOTTOM,0,50);
 
     }
+    private void pickFile() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                EnumClass.READ_EXTERNAL_STORAGE);
+        int permissionCheck1 = ContextCompat.checkSelfPermission(this,
+                EnumClass.WRITE_EXTERNAL_STORAGE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            EnumClass.READ_EXTERNAL_STORAGE, EnumClass.WRITE_EXTERNAL_STORAGE},
+                    2
+            );
+
+            return;
+        }else takePhoto();
+    }
 
     private void takePhoto(){
         File file2 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo");
@@ -1504,12 +1524,72 @@ public class singlepoi extends AppCompatActivity {
         }
         if (Build.VERSION.SDK_INT >= 24){
             //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
-            imageUri = FileProvider.getUriForFile(singlepoi.this, "com.android.tuzhi.fileprovider", outputImage);
-
+            imageUri = FileProvider.getUriForFile(singlepoi.this, "com.android.displaymap.fileprovider", outputImage);
+            Log.w(TAG, "takePhoto: " + imageUri);
         }else imageUri = Uri.fromFile(outputImage);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
         startActivityForResult(intent, TAKE_PHOTO);
+    }
+
+    private void requestCameraPermission(){
+        if (Build.VERSION.SDK_INT >= 23) {
+            int checkCallPhonePermission = ContextCompat.checkSelfPermission(singlepoi.this, Manifest.permission.CAMERA);
+            if(checkCallPhonePermission != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(singlepoi.this,new String[]{Manifest.permission.CAMERA},1);
+                return;
+            }else{
+                pickFile();
+            }
+        } else {
+            pickFile();
+        }
+    }
+
+    private void requestRecordAudioPermission(){
+        if (Build.VERSION.SDK_INT >= 23) {
+            int checkCallPhonePermission = ContextCompat.checkSelfPermission(singlepoi.this, Manifest.permission.CAMERA);
+            if(checkCallPhonePermission != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(singlepoi.this,new String[]{Manifest.permission.RECORD_AUDIO},3);
+                return;
+            }else{
+                Intent intent = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
+                startActivityForResult(intent, REQUEST_CODE_TAPE);
+            }
+        } else {
+            Intent intent = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
+            startActivityForResult(intent, REQUEST_CODE_TAPE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case 1:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    pickFile();
+                } else {
+                    Toast.makeText(singlepoi.this, "相机权限禁用了。请务必开启相机权限", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case 2:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    takePhoto();
+                } else {
+                    Toast.makeText(singlepoi.this, "相机权限禁用了。请务必开启相机权限", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case 3:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Intent intent = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
+                    startActivityForResult(intent, REQUEST_CODE_TAPE);
+                } else {
+                    Toast.makeText(singlepoi.this, "相机权限禁用了。请务必开启相机权限", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
     @Override

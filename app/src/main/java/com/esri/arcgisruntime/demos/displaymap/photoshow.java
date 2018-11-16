@@ -1,7 +1,9 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
+import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -11,6 +13,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -111,6 +115,63 @@ public class photoshow extends AppCompatActivity {
             }
         });
         recyclerView.setAdapter(adapter);
+    }
+
+    private void pickFile() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                EnumClass.READ_EXTERNAL_STORAGE);
+        int permissionCheck1 = ContextCompat.checkSelfPermission(this,
+                EnumClass.WRITE_EXTERNAL_STORAGE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            EnumClass.READ_EXTERNAL_STORAGE, EnumClass.WRITE_EXTERNAL_STORAGE},
+                    2
+            );
+
+            return;
+        }else takePhoto();
+    }
+
+    private void takePhoto(){
+        File file2 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo");
+        if (!file2.exists() && !file2.isDirectory()){
+            file2.mkdirs();
+        }
+        long timenow = System.currentTimeMillis();
+        File outputImage = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo", Long.toString(timenow) + ".jpg");
+        try {
+            if (outputImage.exists()){
+                outputImage.delete();
+            }
+            outputImage.createNewFile();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        if (Build.VERSION.SDK_INT >= 24){
+            //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
+            imageUri = FileProvider.getUriForFile(photoshow.this, "com.android.displaymap.fileprovider", outputImage);
+            Log.w(TAG, "takePhoto: " + imageUri);
+        }else imageUri = Uri.fromFile(outputImage);
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        startActivityForResult(intent, TAKE_PHOTO);
+    }
+
+    private void requestCameraPermission(){
+        if (Build.VERSION.SDK_INT >= 23) {
+            int checkCallPhonePermission = ContextCompat.checkSelfPermission(photoshow.this, Manifest.permission.CAMERA);
+            if(checkCallPhonePermission != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(photoshow.this,new String[]{Manifest.permission.CAMERA},1);
+                return;
+            }else{
+                pickFile();
+            }
+        } else {
+            pickFile();
+        }
     }
 
     private void refreshCardFromDMBZ(){
@@ -847,7 +908,7 @@ public class photoshow extends AppCompatActivity {
         bt_camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                takePhoto();
+                requestCameraPermission();
                 popupWindow.dismiss();
 
             }
@@ -874,31 +935,6 @@ public class photoshow extends AppCompatActivity {
         getWindow().setAttributes(lp);
         popupWindow.showAtLocation(popView, Gravity.BOTTOM,0,50);
 
-    }
-
-    private void takePhoto(){
-        File file2 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo");
-        if (!file2.exists() && !file2.isDirectory()){
-            file2.mkdirs();
-        }
-        long timenow = System.currentTimeMillis();
-        File outputImage = new File(Environment.getExternalStorageDirectory() + "/TuZhi/photo", Long.toString(timenow) + ".jpg");
-        try {
-            if (outputImage.exists()){
-                outputImage.delete();
-            }
-            outputImage.createNewFile();
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-        if (Build.VERSION.SDK_INT >= 24){
-            //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
-            imageUri = FileProvider.getUriForFile(photoshow.this, "com.android.tuzhi.fileprovider", outputImage);
-
-        }else imageUri = Uri.fromFile(outputImage);
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-        startActivityForResult(intent, TAKE_PHOTO);
     }
 
     private void showPopueWindowForPhoto(String path){
