@@ -26,7 +26,8 @@ public class KeyAndValue {
         else if (name.equals("PDJB")) nickname = "坡度级别";
         else if (name.equals("XZQMC")) nickname = "行政区名称";
         else if (name.equals("XZQDM")) nickname = "行政区代码";
-
+        else if (name.equals("BZPZWH")) nickname = "标准批准文号";
+        else nickname = "其他";
     }
 
     public String getNickname() {
@@ -72,6 +73,9 @@ public class KeyAndValue {
         }
         for (int i = 0; i < keyAndValues.size(); i++){
             if (keyAndValues.get(i).getName().equals("XZQDM")) keyAndValues1.add(keyAndValues.get(i));
+        }
+        for (int i = 0; i < keyAndValues.size(); i++){
+            if (keyAndValues.get(i).getName().equals("BZPZWH")) keyAndValues1.add(keyAndValues.get(i));
         }
         return keyAndValues1;
     }
