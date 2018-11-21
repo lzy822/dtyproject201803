@@ -2233,12 +2233,19 @@ public class MainActivity extends AppCompatActivity {
                 layers.add(new layer1(map.getOperationalLayers().get(i), i));
                 layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
                 if (map.getOperationalLayers().get(i).getName().contains("土地规划地类")) {
-                    ArcGISVectorTiledLayer mVectorTiledLayer = (ArcGISVectorTiledLayer) map.getOperationalLayers().get(i);
-                    Log.w(TAG, "initLayerList: " + mVectorTiledLayer.getSourceInfo());
+                    //ArcGISVectorTiledLayer mVectorTiledLayer = (ArcGISVectorTiledLayer) map.getOperationalLayers().get(i);
+                    //Log.w(TAG, "initLayerList: " + "omg");
                 }
             }else {
+                //Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
                 hasTPK = true;
-                TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
+                if (!map.getOperationalLayers().get(i).getName().contains("临沧市中心城区影像"))
+                    TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
+                else{
+                    layers.add(new layer1(map.getOperationalLayers().get(i), i));
+                    layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
+                }
+
             }
         }
         layerList.add(new layer("影像", true));
@@ -2268,6 +2275,8 @@ public class MainActivity extends AppCompatActivity {
                     List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
                     map = mainArcGISMapL.get(0);
                     initLayerList();
+                    Log.w(TAG, "initLayerList: " + TPKlayers.size());
+                    Log.w(TAG, "initLayerList: " + layerList.size());
                     setRecyclerView();
                     mMapView.setMap(map);
                     initSurfaceCenterPoint(mainMobileMapPackage);
@@ -2653,6 +2662,8 @@ public class MainActivity extends AppCompatActivity {
                     drawPoiAndWhiteBlank();
                 }
                 RunningAnalyseFunction = DisplayEnum.ANA_NONE;
+                pieChartView.setVisibility(View.INVISIBLE);
+                removeGraphicsOverlayers();
             }
         });
         //change.setVisibility(View.VISIBLE);
@@ -3308,6 +3319,8 @@ public class MainActivity extends AppCompatActivity {
     Geometry mPolygon;
     private void queryPTB(String name){
         //queryInfos.clear();
+        pieChartView.setVisibility(View.INVISIBLE);
+        removeGraphicsOverlayers();
         QueryParameters query = new QueryParameters();
         //make search case insensitive
         query.setWhereClause("upper(BZPZWH) LIKE '%" + name + "%'");
