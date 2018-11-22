@@ -1351,7 +1351,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void queryTaskForP(final QueryParameters query, final Polygon polygon){
+    private void queryTaskForPolygon(final QueryParameters query, final Polygon polygon){
         try {
             FeatureTable mTable = null;
             switch (QueriedFeature){
@@ -1587,7 +1587,7 @@ public class MainActivity extends AppCompatActivity {
                                 keyAndValues.clear();
                                 mCallout.dismiss();
                                 pieChartView.setVisibility(View.GONE);
-                                queryTaskForP(query, polygon);
+                                queryTaskForPolygon(query, polygon);
                             }
                         });
                             /*pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
@@ -1679,7 +1679,7 @@ public class MainActivity extends AppCompatActivity {
                         query.setGeometry(polygon);// 设置空间几何对象
                         if (isFileExist(StaticVariableEnum.GDBROOTPATH) && isFileExist(StaticVariableEnum.PGDBROOTPATH) && MapQuery) {
                             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
-                            queryTask(query, polygon);
+                            queryTaskForPolygon(query, polygon);
                         } else
                             Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                         if (!inMap) mCallout.dismiss();
@@ -2549,7 +2549,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (isFileExist(StaticVariableEnum.GDBROOTPATH) & MapQuery) {
                                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                                     DrawType = DisplayEnum.DRAW_NONE;
-                                    queryTask(query, polygon);
+                                    queryTaskForPolygon(query, polygon);
                                 } else
                                     Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                                 if (!inMap) mCallout.dismiss();
@@ -2677,7 +2677,7 @@ public class MainActivity extends AppCompatActivity {
                     if (isFileExist(StaticVariableEnum.PGDBROOTPATH) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         DrawType = DisplayEnum.DRAW_NONE;
-                        queryTaskForP(query, (Polygon) mPolygon);
+                        queryTaskForPolygon(query, (Polygon) mPolygon);
                     } else
                         Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
                     if (!inMap) mCallout.dismiss();
@@ -3299,11 +3299,15 @@ public class MainActivity extends AppCompatActivity {
                             }
                             if (!hasSame) {
                                 Log.w(TAG, "run: " + "hasSame");
-                                QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                QueryInfo queryInfo = new QueryInfo(name, feature, envelope, 2, Integer.valueOf(name.substring(name.indexOf("[") + 1, name.indexOf("]"))));
                                 queryInfos.add(queryInfo);
+                                //Log.w(TAG, "setRecyclerViewForP: " + name.substring(name.indexOf("[") + 1, name.indexOf("]")));
                             }
                         }
                         Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
+                        SharedPreferences.Editor editor = getSharedPreferences("ptb", MODE_PRIVATE).edit();
+                        editor.putString("year", "");
+                        editor.apply();
                         setRecyclerViewForP();
                     } catch (Exception e) {
                         Toast.makeText(MainActivity.this, "Feature search failed for: " + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -3472,19 +3476,29 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerViewForP);
         GridLayoutManager layoutManager = new GridLayoutManager(this,1);
         recyclerView.setLayoutManager(layoutManager);
-        Log.w(TAG, "setRecyclerViewForP: " + queryInfos.size());
-        QueryInfoAdapter adapter = new QueryInfoAdapter(queryInfos);
+        List<QueryInfo> queryInfos2 = new ArrayList<>();
+        queryInfos2.addAll(QueryInfo.sort(queryInfos));
+
+        QueryInfoAdapter adapter = new QueryInfoAdapter(queryInfos2, queryInfos);
         adapter.setOnItemClickListener(new QueryInfoAdapter.OnRecyclerItemClickListener() {
             @Override
             public void onItemClick(View view, String path, int position) {
                 Log.w(TAG, "onItemClick: " + path);
-                queryPTB(path);
-                RunningFunction = DisplayEnum.FUNC_ANA;
-                if (!MapQuery)
-                    mapQueryBtEvent();
-                showQueryWidgetForP();
-                removeStandardWidget();
-                QueryProcessType = DisplayEnum.INQUERY;
+                if (path.contains("号")){
+                    queryPTB(path);
+                    RunningFunction = DisplayEnum.FUNC_ANA;
+                    if (!MapQuery)
+                        mapQueryBtEvent();
+                    showQueryWidgetForP();
+                    removeStandardWidget();
+                    QueryProcessType = DisplayEnum.INQUERY;
+                }else{
+                    /*SharedPreferences.Editor editor = getSharedPreferences("ptb", MODE_PRIVATE).edit();
+                    editor.putString("year", path);
+                    editor.apply();*/
+
+
+                }
             }
         });
         recyclerView.setAdapter(adapter);

@@ -1,21 +1,32 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.esri.arcgisruntime.geometry.Envelope;
+
+import java.util.ArrayList;
 import java.util.List;
+
+import static android.content.Context.MODE_PRIVATE;
 
 public class QueryInfoAdapter extends RecyclerView.Adapter<com.esri.arcgisruntime.demos.displaymap.QueryInfoAdapter.ViewHolder>{
         private static final String TAG = "QueryInfoAdapter";
         private Context mContext;
 
         private List<QueryInfo> queryInfoList;
+
+    private List<QueryInfo> queryInfoList1;
+
+    private List<QueryInfo> queryInfoList2;
 
         private com.esri.arcgisruntime.demos.displaymap.QueryInfoAdapter.OnRecyclerItemLongListener mOnItemLong;
 
@@ -36,8 +47,10 @@ public class QueryInfoAdapter extends RecyclerView.Adapter<com.esri.arcgisruntim
 
             }
         }
-        public QueryInfoAdapter(List<QueryInfo> queryInfoList) {
+        public QueryInfoAdapter(List<QueryInfo> queryInfoList, List<QueryInfo> queryInfoList1) {
             this.queryInfoList = queryInfoList;
+            this.queryInfoList1 = queryInfoList1;
+            queryInfoList2 = queryInfoList;
         }
 
         @Override
@@ -55,6 +68,32 @@ public class QueryInfoAdapter extends RecyclerView.Adapter<com.esri.arcgisruntim
                     QueryInfo queryInfo = queryInfoList.get(position);
                     try {
                         mOnItemClick.onItemClick(v, queryInfo.getName(), position);
+                        if (!queryInfo.getName().contains("[")) {
+                            boolean isOK = false;
+                            for (int j = 0; j < queryInfoList.size(); ++j){
+                                if (queryInfoList.get(j).getStatus() == 2){
+                                    if (!Integer.toString(queryInfoList.get(j).getFnode()).contains(queryInfo.getName())){
+                                        isOK = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (queryInfoList.size() == queryInfoList2.size() || isOK) {
+                                List<QueryInfo> queryInfos1 = new ArrayList<>();
+                                for (int i = 0; i < queryInfoList1.size(); ++i) {
+                                    if (queryInfoList1.get(i).getFnode() == Integer.valueOf(queryInfo.getName()))
+                                        queryInfos1.add(queryInfoList1.get(i));
+                                }
+                                queryInfos1.addAll(queryInfoList2);
+                                QueryInfo.sort1(queryInfos1);
+                                queryInfoList = queryInfos1;
+                            }else {
+                                List<QueryInfo> queryInfos1 = new ArrayList<>();
+                                queryInfos1.addAll(queryInfoList2);
+                                queryInfoList = queryInfos1;
+                            }
+                            notifyDataSetChanged();
+                        }
                     }catch (NullPointerException e){
 
                     }
@@ -78,7 +117,29 @@ public class QueryInfoAdapter extends RecyclerView.Adapter<com.esri.arcgisruntim
         @Override
         public void onBindViewHolder(final com.esri.arcgisruntime.demos.displaymap.QueryInfoAdapter.ViewHolder holder, int position) {
             QueryInfo queryInfo = queryInfoList.get(position);
-            holder.textView.setText(queryInfo.getName());
+            /*
+            if (name.substring(name.indexOf("["), name.indexOf("]")) == "2017")*/
+            //String name = queryInfo.getName();
+
+            /*SharedPreferences pref1 = mContext.getSharedPreferences("ptb", MODE_PRIVATE);
+            String year = (String) pref1.getString("year", "");*/
+            if (queryInfo.getStatus() == 1)
+            {
+                holder.textView.setTextColor(Color.RED);
+                holder.textView.setText(queryInfo.getName() + "年");
+            }
+            else
+            {
+                holder.textView.setTextColor(Color.BLACK);
+                holder.textView.setText(queryInfo.getName());
+            }
+            /*if (queryInfo.getStatus() == 2) {
+                holder.textView.setText(queryInfo.getName());
+                //holder.textView.setText("onBindViewHolder");
+            }else {
+                holder.cardView.setVisibility(View.INVISIBLE);
+            }*/
+            //holder.textView.setText(queryInfo.getName());
         }
 
 
