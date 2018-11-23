@@ -1849,9 +1849,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                         //TODO queryPOI
                         if (!queryPoi(mMapView.locationToScreen(clickPoint)))
-                            //queryTB(clickPoint, mapPoint);
                             queryTB(clickPoint, mapPoint);
-                            queryPTuBan(clickPoint, mapPoint);
+                            //queryPTuBan(clickPoint, mapPoint);
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                     } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
                         pointCollection.add(wgs84Point);
@@ -2066,11 +2065,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            while (mMapView.getGraphicsOverlays().size() != 0) {
-                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                    mMapView.getGraphicsOverlays().remove(i);
-                                }
-                            }
+                            removeGraphicsOverlayers();
                             FeatureQueryResult featureResul = featureQueryResult.get();
                             for (Object element : featureResul) {
                                 if (element instanceof Feature) {
@@ -2139,11 +2134,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            while (mMapView.getGraphicsOverlays().size() != 0) {
-                                for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i) {
-                                    mMapView.getGraphicsOverlays().remove(i);
-                                }
-                            }
+                            boolean isOK = true;
+                            removeGraphicsOverlayers();
                             FeatureQueryResult featureResul = featureQueryResult.get();
                             for (Object element : featureResul) {
                                 if (element instanceof Feature) {
@@ -2184,8 +2176,11 @@ public class MainActivity extends AppCompatActivity {
                                     mCallout.show();
                                     Log.w(TAG, "run: callout" + mCallout.isShowing());
                                     inMap = true;
+                                    isOK = false;
                                 }
                             }
+                            if (isOK)
+                                queryTB(clickPoint, mapPoint);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
