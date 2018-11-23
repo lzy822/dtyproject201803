@@ -1567,21 +1567,33 @@ public class MainActivity extends AppCompatActivity {
                                 switch (QueriedFeature){
                                     case TDGHDL_FEATURE:
                                         QueriedFeature = DisplayEnum.XZQ_FEATURE;
+                                        setTitle("行政区查询");
+                                        Toast.makeText(MainActivity.this, "行政区查询", Toast.LENGTH_LONG).show();
                                         break;
                                     case XZQ_FEATURE:
                                         QueriedFeature = DisplayEnum.PTB_FEATURE;
+                                        setTitle("批图斑查询");
+                                        Toast.makeText(MainActivity.this, "批图斑查询", Toast.LENGTH_LONG).show();
                                         break;
                                     case PTB_FEATURE:
                                         QueriedFeature = DisplayEnum.DLTB09_FEATURE;
+                                        setTitle("09年地类图斑查询");
+                                        Toast.makeText(MainActivity.this, "09年地类图斑查询", Toast.LENGTH_LONG).show();
                                         break;
                                     case DLTB09_FEATURE:
                                         QueriedFeature = DisplayEnum.DLTB16_FEATURE;
+                                        setTitle("16年地类图斑查询");
+                                        Toast.makeText(MainActivity.this, "16年地类图斑查询", Toast.LENGTH_LONG).show();
                                         break;
                                     case DLTB16_FEATURE:
                                         QueriedFeature = DisplayEnum.DLTB17_FEATURE;
+                                        setTitle("17年地类图斑查询");
+                                        Toast.makeText(MainActivity.this, "17年地类图斑查询", Toast.LENGTH_LONG).show();
                                         break;
                                     case DLTB17_FEATURE:
                                         QueriedFeature = DisplayEnum.TDGHDL_FEATURE;
+                                        setTitle("土地规划地类查询");
+                                        Toast.makeText(MainActivity.this, "土地规划地类查询", Toast.LENGTH_LONG).show();
                                         break;
                                 }
                                 keyAndValues.clear();
@@ -2481,6 +2493,7 @@ public class MainActivity extends AppCompatActivity {
                     mMapView.getGraphicsOverlays().clear();
                     drawPoiAndWhiteBlank();
                 }
+                setTitle(R.string.app_name);
                 RunningAnalyseFunction = DisplayEnum.ANA_NONE;
             }
         });
@@ -2549,6 +2562,8 @@ public class MainActivity extends AppCompatActivity {
                                 if (isFileExist(StaticVariableEnum.GDBROOTPATH) & MapQuery) {
                                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                                     DrawType = DisplayEnum.DRAW_NONE;
+                                    setTitle("土地规划地类查询");
+                                    Toast.makeText(MainActivity.this, "土地规划地类查询", Toast.LENGTH_LONG).show();
                                     queryTaskForPolygon(query, polygon);
                                 } else
                                     Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
@@ -2568,6 +2583,7 @@ public class MainActivity extends AppCompatActivity {
                             showStandardWidget();
                             DrawType = DisplayEnum.DRAW_NONE;
                             mapQueryBtEvent();
+                            setTitle(R.string.app_name);
                         }
                         break;
                     case ANA_AREA:
@@ -2661,6 +2677,7 @@ public class MainActivity extends AppCompatActivity {
                     mMapView.getGraphicsOverlays().clear();
                     drawPoiAndWhiteBlank();
                 }
+                setTitle(R.string.app_name);
                 RunningAnalyseFunction = DisplayEnum.ANA_NONE;
                 pieChartView.setVisibility(View.INVISIBLE);
                 removeGraphicsOverlayers();
@@ -2677,6 +2694,8 @@ public class MainActivity extends AppCompatActivity {
                     if (isFileExist(StaticVariableEnum.PGDBROOTPATH) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         DrawType = DisplayEnum.DRAW_NONE;
+                        setTitle("土地规划地类查询");
+                        Toast.makeText(MainActivity.this, "土地规划地类查询", Toast.LENGTH_LONG).show();
                         queryTaskForPolygon(query, (Polygon) mPolygon);
                     } else
                         Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
@@ -2689,6 +2708,7 @@ public class MainActivity extends AppCompatActivity {
                         lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                         finish.setLayoutParams(lp);*/
                 } else if (QueryProcessType == DisplayEnum.FINISHQUERY) {
+                    setTitle(R.string.app_name);
                     QueryProcessType = DisplayEnum.NOQUERY;
                     removeQueryWidgetFinishLater();
                     showStandardWidget();
