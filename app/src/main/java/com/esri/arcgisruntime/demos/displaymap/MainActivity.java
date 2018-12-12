@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     String ic;
     //private GridLayoutManager layoutManager;
     //private ImageButton recyclerViewButton;
-    FeatureLayer mFeaturelayer;
+    FeatureLayer DMPointFeatureLayer;
     private boolean isClick = false;
     private TextView ScaleShow;
     ArcGISMap map;
@@ -230,8 +230,8 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton LocHereBT;
     Point mLocation;
     LocationDisplay locationDisplay;
-    FeatureLayer featureLayer777 = null;
-    FeatureLayer featureLayer778 = null;
+    FeatureLayer TDGHDLFeatureLayer = null;
+    FeatureLayer XZQFeatureLayer = null;
     boolean hasTPK = false;
     boolean MapQuery = false;
     private DisplayEnum QueryProcessType = DisplayEnum.NOQUERY;
@@ -1093,15 +1093,15 @@ public class MainActivity extends AppCompatActivity {
         try {
             FeatureTable mTable = null;
             /*if (QueriedFeature == DisplayEnum.TDGHDL_FEATURE)
-                mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
             else
-                mTable = featureLayer778.getFeatureTable();//得到查询属性表*/
+                mTable = XZQFeatureLayer.getFeatureTable();//得到查询属性表*/
             switch (QueriedFeature){
                 case TDGHDL_FEATURE:
-                    mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                    mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case XZQ_FEATURE:
-                    mTable = featureLayer778.getFeatureTable();//得到查询属性表
+                    mTable = XZQFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case PTB_FEATURE:
                     mTable = PTuBanFeatureLayer.getFeatureTable();//得到查询属性表
@@ -1351,15 +1351,225 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void querySingleTaskForPolygon(final QueryParameters query, final Polygon polygon, FeatureTable mTable, final String text){
+        //TODO 查询逻辑
+        try {
+            final ListenableFuture<FeatureQueryResult> featureQueryResult
+                    = mTable.queryFeaturesAsync(query);
+            featureQueryResult.addDoneListener(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        removeGraphicsOverlayers();
+                        FeatureQueryResult featureResul = featureQueryResult.get();
+                        Geometry geometry1 = polygon;
+                        List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
+                        for (Object element : featureResul) {
+                            if (element instanceof Feature) {
+                                Feature mFeatureGrafic = (Feature) element;
+                                Geometry geometry = null;
+                                Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
+                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                boolean isOK = false;
+                                QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
+                                Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
+                                Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                switch (QueriedFeature){
+                                    case TDGHDL_FEATURE:
+                                        for (String key : mQuerryString.keySet()) {
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            switch (key){
+                                                case "GHDLMC":
+                                                    queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                                case "GHDLBM":
+                                                    queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                                case "XZQMC":
+                                                    queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                                case "XZQDM":
+                                                    queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                                    break;
+                                            }
+                                            isOK = true;
+                                        }
+                                        break;
+                                    case XZQ_FEATURE:
+                                        for (String key : mQuerryString.keySet()) {
+                                            //Log.w(TAG, "行政区: " + key);
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            if (key.equals("XZQDM")) {
+                                                //Log.w(TAG, "行政区界线: " + String.valueOf(mQuerryString.get(key)));
+                                                //Log.w(TAG, "行政区界线 面积: " + queryTaskInfo.getArea());
+                                                String str = String.valueOf(mQuerryString.get(key));
+                                                if (str.length() >= 9) {
+                                                    queryTaskInfo.setXzqdm(str);
+                                                    isOK = true;
+                                                } else
+                                                    break;
+                                            } else if (key.equals("XZQMC")) {
+                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                            }/*else {
+                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                            }*/
+                                        }
+                                        break;
+                                    case PTB_FEATURE:
+                                        for (String key : mQuerryString.keySet()) {
+                                            Log.w(TAG, "行政区: " + key);
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            if (key.equals("XJXZQHDM")) {
+                                                //Log.w(TAG, "行政区界线: " + String.valueOf(mQuerryString.get(key)));
+                                                //Log.w(TAG, "行政区界线 面积: " + queryTaskInfo.getArea());
+                                                String str = String.valueOf(mQuerryString.get(key));
+                                                queryTaskInfo.setXzqdm(str);
+                                                isOK = true;
+                                            } else if (key.equals("BZPZWH")) {
+                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                            }
+                                        }
+                                        break;
+                                    default:
+                                        for (String key : mQuerryString.keySet()) {
+                                            Log.w(TAG, "行政区: " + key);
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            if (key.equals("DLBM")) {
+                                                //Log.w(TAG, "行政区界线: " + String.valueOf(mQuerryString.get(key)));
+                                                //Log.w(TAG, "行政区界线 面积: " + queryTaskInfo.getArea());
+                                                String str = String.valueOf(mQuerryString.get(key));
+                                                queryTaskInfo.setXzqdm(str);
+                                                isOK = true;
+                                            } else if (key.equals("DLMC")) {
+                                                queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                            }
+                                        }
+                                        break;
+                                }
+                                if (isOK)
+                                    queryTaskInfos.add(queryTaskInfo);
+
+                            }
+                        }
+                        wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
+                        keyAndValues = new ArrayList<>();
+
+                        if (QueriedFeature == DisplayEnum.TDGHDL_FEATURE) {
+                            for (int i = 0; i < queryTaskInfos.size(); ++i) {
+                                if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
+                                    keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                else {
+                                    boolean hasKey = false;
+                                    for (int j = 0; j < keyAndValues.size(); ++j) {
+                                        if (queryTaskInfos.get(i).getTypename().equals(keyAndValues.get(j).getName())) {
+                                            hasKey = true;
+                                            keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
+                                            break;
+                                        }
+                                    }
+                                    if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
+                                        keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                    }
+                                }
+                            }
+                        } else {
+                            for (int i = 0; i < queryTaskInfos.size(); ++i) {
+                                if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
+                                    keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                else {
+                                    boolean hasKey = false;
+                                    for (int j = 0; j < keyAndValues.size(); ++j) {
+                                        if (queryTaskInfos.get(i).getXzq().equals(keyAndValues.get(j).getName())) {
+                                            hasKey = true;
+                                            keyAndValues.get(j).setValue(Double.toString(Double.valueOf(keyAndValues.get(j).getValue()) + queryTaskInfos.get(i).getArea()));
+                                            break;
+                                        }
+                                    }
+                                    if (!hasKey && queryTaskInfos.get(i).getArea() != 0) {
+                                        keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
+                                    }
+                                }
+                            }
+                        }
+                        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                        DecimalFormat decimalFormat1 = new DecimalFormat("0.0");
+                        for (int j = 0; j < keyAndValues.size(); ++j) {
+                            float value = Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea;
+                            if (j < keyAndValues.size() - 1) {
+
+                            } else {
+
+                            }
+                        }
+                        inMap = true;
+                        if (text == "TDGHDL") {
+                            isQueryTDGHDL = true;
+                        }
+                        else if (text == "09TDGHDL") {
+                            isQuery09TDGHDL = true;
+                        }
+                        else if (text == "16TDGHDL") {
+                            isQuery16TDGHDL = true;
+                        }
+                        else if (text == "17TDGHDL") {
+                            isQuery17TDGHDL = true;
+                        }
+                        String data = "";
+                        isOkForPopWindow(data);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (ArcGISRuntimeException e) {
+            Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    boolean isQueryTDGHDL;
+    boolean isQuery09TDGHDL;
+    boolean isQuery16TDGHDL;
+    boolean isQuery17TDGHDL;
+    private void queryAllTaskForPolygon(final QueryParameters query, final Polygon polygon){
+        try {
+            //行政区层
+            //querySingleTaskForPolygon(query, polygon, XZQFeatureLayer.getFeatureTable());
+            //P图斑层
+            //querySingleTaskForPolygon(query, polygon, PTuBanFeatureLayer.getFeatureTable());
+
+            //土地规划地类层
+            querySingleTaskForPolygon(query, polygon, TDGHDLFeatureLayer.getFeatureTable(), "TDGHDL");
+            //09年土地规划地类层
+            querySingleTaskForPolygon(query, polygon, DLTB2009FeatureLayer.getFeatureTable(), "09TDGHDL");
+            //16年土地规划地类层
+            querySingleTaskForPolygon(query, polygon, DLTB2016FeatureLayer.getFeatureTable(), "16TDGHDL");
+            //17年土地规划地类层
+            querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "17TDGHDL");
+        } catch (ArcGISRuntimeException e) {
+            Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    String PopWindowData;
+    private void isOkForPopWindow(String data){
+        if (!PopWindowData.isEmpty())
+            PopWindowData = PopWindowData + ";" + data;
+        else
+            PopWindowData = data;
+        if (isQueryTDGHDL && isQuery09TDGHDL && isQuery16TDGHDL && isQuery17TDGHDL){
+            showPopWindowForListShow();
+        }
+    }
+
     private void queryTaskForPolygon(final QueryParameters query, final Polygon polygon){
         try {
             FeatureTable mTable = null;
             switch (QueriedFeature){
                 case TDGHDL_FEATURE:
-                    mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                    mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case XZQ_FEATURE:
-                    mTable = featureLayer778.getFeatureTable();//得到查询属性表
+                    mTable = XZQFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case PTB_FEATURE:
                     mTable = PTuBanFeatureLayer.getFeatureTable();//得到查询属性表
@@ -2058,7 +2268,7 @@ public class MainActivity extends AppCompatActivity {
         if (isFileExist(StaticVariableEnum.GDBROOTPATH) & MapQuery) {
             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
             try {
-                FeatureTable mTable = featureLayer777.getFeatureTable();//得到查询属性表
+                FeatureTable mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
                 final ListenableFuture<FeatureQueryResult> featureQueryResult
                         = mTable.queryFeaturesAsync(query);
                 featureQueryResult.addDoneListener(new Runnable() {
@@ -2092,7 +2302,8 @@ public class MainActivity extends AppCompatActivity {
                                             keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
                                         }
                                     }
-                                    keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                    //keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                    KeyAndValue.parseList(keyAndValues);
                                     for (int i = 0; i < keyAndValues.size(); ++i) {
                                         if (i == keyAndValues.size() - 1){
                                             str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue();
@@ -2162,7 +2373,8 @@ public class MainActivity extends AppCompatActivity {
                                         keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
                                         //}
                                     }
-                                    keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                    //keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                    KeyAndValue.parseList(keyAndValues);
                                     for (int i = 0; i < keyAndValues.size(); ++i) {
                                         if (i == keyAndValues.size() - 1){
                                             str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue();
@@ -2364,12 +2576,13 @@ public class MainActivity extends AppCompatActivity {
             localGdb.addDoneLoadingListener(new Runnable() {
                 @Override
                 public void run() {
-                    featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
+                    TDGHDLFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
+                    //TDGHDLFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("基本农田保护区"));
                     /*for (int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
                         Log.w(TAG, "run: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
                     }*/
-                    featureLayer778 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
-                    mFeaturelayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
+                    XZQFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
+                    DMPointFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
                     //mMapView.setViewpointCenterAsync();
                 }
             });
@@ -2554,6 +2767,10 @@ public class MainActivity extends AppCompatActivity {
                                 final Polygon polygon = new Polygon(pointCollection);
                                 QueryParameters query = new QueryParameters();
                                 query.setGeometry(polygon);// 设置空间几何对象
+
+                                //查询所有的图层内容
+                                queryAllTaskForPolygon(query, polygon);
+
                                 if (isFileExist(StaticVariableEnum.GDBROOTPATH) & MapQuery) {
                                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                                     DrawType = DisplayEnum.DRAW_NONE;
@@ -2579,6 +2796,7 @@ public class MainActivity extends AppCompatActivity {
                             DrawType = DisplayEnum.DRAW_NONE;
                             mapQueryBtEvent();
                             setTitle(R.string.app_name);
+                            removePopWindowForListShow();
                         }
                         break;
                     case ANA_AREA:
@@ -2649,6 +2867,24 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void showPopWindowForListShow(){
+        FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
+        popListShow.setVisibility(View.VISIBLE);
+        popListShow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, PopWindowForListShow.class);
+                intent.putExtra("data", PopWindowData);
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void removePopWindowForListShow(){
+        FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
+        popListShow.setVisibility(View.GONE);
+    }
+
     private void showQueryWidgetForP(){
         FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
         cancel.setVisibility(View.VISIBLE);
@@ -2709,6 +2945,7 @@ public class MainActivity extends AppCompatActivity {
                     showStandardWidget();
                     DrawType = DisplayEnum.DRAW_NONE;
                     mapQueryBtEvent();
+                    removePopWindowForListShow();
                 }
             }
         });
@@ -2899,7 +3136,7 @@ public class MainActivity extends AppCompatActivity {
 
         // clear any previous selections
 
-        mFeaturelayer.clearSelection();
+        DMPointFeatureLayer.clearSelection();
 
         // create objects required to do a selection with a query
         QueryParameters query = new QueryParameters();
@@ -2911,9 +3148,9 @@ public class MainActivity extends AppCompatActivity {
 
             //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
             //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
-            //mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            //DMPointFeatureLayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
             try {
-                FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
+                FeatureTable mTable = DMPointFeatureLayer.getFeatureTable();//得到查询属性表
                 //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
                 final ListenableFuture<FeatureQueryResult> featureQueryResult
                         = mTable.queryFeaturesAsync(query);
@@ -2938,7 +3175,7 @@ public class MainActivity extends AppCompatActivity {
                                 mMapView.setViewpointGeometryAsync(envelope, 200);
 
                                 //Select the feature
-                                mFeaturelayer.selectFeature(feature);
+                                DMPointFeatureLayer.selectFeature(feature);
                                 Log.w(TAG, "run: " + mMapView.getMapScale());
                                 mMapView.setViewpointScaleAsync(3000);
 
@@ -3012,7 +3249,7 @@ public class MainActivity extends AppCompatActivity {
         queryInfos.clear();
         final ListPopupWindow listPopupWindow = new ListPopupWindow(this);
         searchString = searchString.trim();
-        mFeaturelayer.clearSelection();
+        DMPointFeatureLayer.clearSelection();
 
         // create objects required to do a selection with a query
         QueryParameters query = new QueryParameters();
@@ -3024,10 +3261,10 @@ public class MainActivity extends AppCompatActivity {
 
             //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
             //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
-            //mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            //DMPointFeatureLayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
             try {
                 final String string = searchString;
-                FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
+                FeatureTable mTable = DMPointFeatureLayer.getFeatureTable();//得到查询属性表
                 //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
                 final ListenableFuture<FeatureQueryResult> featureQueryResult
                         = mTable.queryFeaturesAsync(query);
@@ -3135,7 +3372,7 @@ public class MainActivity extends AppCompatActivity {
                 mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
 
                 //Select the feature
-                mFeaturelayer.selectFeature(queryInfos.get(position).getFeature());
+                DMPointFeatureLayer.selectFeature(queryInfos.get(position).getFeature());
                 Log.w(TAG, "run: " + mMapView.getMapScale());
                 mMapView.setViewpointScaleAsync(3000);
                 listPopupWindow.dismiss();
@@ -3162,7 +3399,7 @@ public class MainActivity extends AppCompatActivity {
         queryInfos.clear();
         final View popView = View.inflate(this, R.layout.popupwindow_listview,null);
         searchString = searchString.trim();
-        mFeaturelayer.clearSelection();
+        DMPointFeatureLayer.clearSelection();
         popView.setX(view.getX());
         popView.setY(view.getY() + view.getHeight());
         final PopupWindow popupWindow = new PopupWindow(popView, view.getWidth(), 800);
@@ -3181,10 +3418,10 @@ public class MainActivity extends AppCompatActivity {
 
             //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
             //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
-            //mFeaturelayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            //DMPointFeatureLayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
             try {
                 final String string = searchString;
-                FeatureTable mTable = mFeaturelayer.getFeatureTable();//得到查询属性表
+                FeatureTable mTable = DMPointFeatureLayer.getFeatureTable();//得到查询属性表
                 //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
                 final ListenableFuture<FeatureQueryResult> featureQueryResult
                         = mTable.queryFeaturesAsync(query);
@@ -3226,7 +3463,7 @@ public class MainActivity extends AppCompatActivity {
                                     mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
 
                                     //Select the feature
-                                    mFeaturelayer.selectFeature(queryInfos.get(position).getFeature());
+                                    DMPointFeatureLayer.selectFeature(queryInfos.get(position).getFeature());
                                     Log.w(TAG, "run: " + mMapView.getMapScale());
                                     mMapView.setViewpointScaleAsync(3000);
                                     popupWindow.dismiss();
@@ -3254,7 +3491,7 @@ public class MainActivity extends AppCompatActivity {
                 mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
 
                 //Select the feature
-                mFeaturelayer.selectFeature(queryInfos.get(position).getFeature());
+                DMPointFeatureLayer.selectFeature(queryInfos.get(position).getFeature());
                 Log.w(TAG, "run: " + mMapView.getMapScale());
                 mMapView.setViewpointScaleAsync(3000);
                 popupWindow.dismiss();
@@ -3608,7 +3845,8 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < keyAndValues.size(); ++i){
                 Log.w(TAG, "onValueSelected: " + (float)(Float.valueOf(keyAndValues.get(i).getValue()) / wholeArea) + ": " + value.getValue() + ": " + arcIndex);
                 if (decimalFormat1.format((float)(Float.valueOf(keyAndValues.get(i).getValue()) / wholeArea)).equals(decimalFormat1.format(value.getValue()))) {
-                    Toast.makeText(MainActivity.this, keyAndValues.get(i).getName() + "占比: " + decimalFormat.format(value.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(MainActivity.this, keyAndValues.get(i).getName() + "占比: " + decimalFormat.format(value.getValue() * 100) + "%", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, keyAndValues.get(i).getName() + ": " + decimalFormat.format(Double.valueOf(keyAndValues.get(i).getValue())) + "亩", Toast.LENGTH_SHORT).show();
                     break;
                 }
             }

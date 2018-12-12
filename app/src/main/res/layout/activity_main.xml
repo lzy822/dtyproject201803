@@ -183,6 +183,23 @@
             app:fab_shadowColor="#000"
             app:fab_size="mini" />
 
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/PopWindow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="-81dp"
+            android:layout_toEndOf="@+id/ChangeQuery"
+            android:adjustViewBounds="false"
+            android:src="@drawable/ic_assignment_white_24dp"
+            android:visibility="gone"
+            app:fab_colorNormal="#F50057"
+            app:fab_colorPressed="#E8004A"
+            app:fab_colorRipple="#C20024"
+            app:fab_elevationCompat="6dp"
+            app:fab_shadowColor="#000"
+            app:fab_size="mini" />
+
         <!--<android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerView"
             android:layout_width="wrap_content"
