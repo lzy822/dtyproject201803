@@ -1360,7 +1360,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     try {
-                        removeGraphicsOverlayers();
+                        //removeGraphicsOverlayers();
                         FeatureQueryResult featureResul = featureQueryResult.get();
                         Geometry geometry1 = polygon;
                         List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
@@ -1374,8 +1374,8 @@ public class MainActivity extends AppCompatActivity {
                                 QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
                                 Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
                                 Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                switch (QueriedFeature){
-                                    case TDGHDL_FEATURE:
+                                switch (text){
+                                    case "TDGHDL":
                                         for (String key : mQuerryString.keySet()) {
                                             //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
                                             switch (key){
@@ -1395,7 +1395,7 @@ public class MainActivity extends AppCompatActivity {
                                             isOK = true;
                                         }
                                         break;
-                                    case XZQ_FEATURE:
+                                    case "XZQ_FEATURE":
                                         for (String key : mQuerryString.keySet()) {
                                             //Log.w(TAG, "行政区: " + key);
                                             //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
@@ -1415,7 +1415,7 @@ public class MainActivity extends AppCompatActivity {
                                             }*/
                                         }
                                         break;
-                                    case PTB_FEATURE:
+                                    case "PTB_FEATURE":
                                         for (String key : mQuerryString.keySet()) {
                                             Log.w(TAG, "行政区: " + key);
                                             //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
@@ -1454,7 +1454,7 @@ public class MainActivity extends AppCompatActivity {
                         wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                         keyAndValues = new ArrayList<>();
 
-                        if (QueriedFeature == DisplayEnum.TDGHDL_FEATURE) {
+                        if (text.equals("TDGHDL")) {
                             for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                 if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                     keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
@@ -1493,28 +1493,33 @@ public class MainActivity extends AppCompatActivity {
                         }
                         DecimalFormat decimalFormat = new DecimalFormat("0.00");
                         DecimalFormat decimalFormat1 = new DecimalFormat("0.0");
+                        String data = "";
                         for (int j = 0; j < keyAndValues.size(); ++j) {
-                            float value = Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea;
+                            //float value = Float.valueOf(keyAndValues.get(j).getValue()) / (float) wholeArea;
                             if (j < keyAndValues.size() - 1) {
-
+                                data = data + keyAndValues.get(j).getName() + ":" + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue())) + ",";
                             } else {
-
+                                data = data + keyAndValues.get(j).getName() + ":" + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()));
                             }
                         }
                         inMap = true;
-                        if (text == "TDGHDL") {
+                        if (text.equals("TDGHDL")) {
                             isQueryTDGHDL = true;
+                            data = "图层:TDGHDL," + data;
                         }
-                        else if (text == "09TDGHDL") {
+                        else if (text.equals("09TDGHDL")) {
                             isQuery09TDGHDL = true;
+                            data = "图层:09TDGHDL," + data;
                         }
-                        else if (text == "16TDGHDL") {
+                        else if (text.equals("16TDGHDL")) {
                             isQuery16TDGHDL = true;
+                            data = "图层:16TDGHDL," + data;
                         }
-                        else if (text == "17TDGHDL") {
+                        else if (text.equals("17TDGHDL")) {
                             isQuery17TDGHDL = true;
+                            data = "图层:17TDGHDL," + data;
                         }
-                        String data = "";
+                        Log.w(TAG, "onCreate: " + data);
                         isOkForPopWindow(data);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1550,13 +1555,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    String PopWindowData;
+    List<String> PopWindowData;
     private void isOkForPopWindow(String data){
-        if (!PopWindowData.isEmpty())
-            PopWindowData = PopWindowData + ";" + data;
-        else
-            PopWindowData = data;
+        Log.w(TAG, "isOkForPopWindow: " + isQueryTDGHDL + isQuery09TDGHDL + isQuery16TDGHDL + isQuery17TDGHDL);
+        PopWindowData.add(data);
         if (isQueryTDGHDL && isQuery09TDGHDL && isQuery16TDGHDL && isQuery17TDGHDL){
+            isQueryTDGHDL = isQuery09TDGHDL = isQuery16TDGHDL = isQuery17TDGHDL = false;
             showPopWindowForListShow();
         }
     }
@@ -2535,6 +2539,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+        readJBNTGDB();
         readGDB();
         readPGDB();
     }
@@ -2584,6 +2589,23 @@ public class MainActivity extends AppCompatActivity {
                     XZQFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
                     DMPointFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
                     //mMapView.setViewpointCenterAsync();
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+    }
+
+    FeatureLayer JBNTFeatureLayer;
+    private void readJBNTGDB(){
+        if (isFileExist(StaticVariableEnum.JBNTGDBROOTPATH)) {
+            final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.JBNTGDBROOTPATH);
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+            Log.w(TAG, "run: " + localGdb.getPath());
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    JBNTFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("基本农田保护区"));
                 }
             });
             Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
@@ -2767,7 +2789,7 @@ public class MainActivity extends AppCompatActivity {
                                 final Polygon polygon = new Polygon(pointCollection);
                                 QueryParameters query = new QueryParameters();
                                 query.setGeometry(polygon);// 设置空间几何对象
-
+                                PopWindowData = new ArrayList<>();
                                 //查询所有的图层内容
                                 queryAllTaskForPolygon(query, polygon);
 
@@ -2874,7 +2896,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, PopWindowForListShow.class);
-                intent.putExtra("data", PopWindowData);
+                String data = "";
+                for (int i = 0; i < PopWindowData.size(); ++i){
+                    if (i > 0)
+                        data = data + ";" + PopWindowData.get(i);
+                    else
+                        data = PopWindowData.get(i);
+                }
+                intent.putExtra("data", data);
                 startActivity(intent);
             }
         });
@@ -2922,6 +2951,10 @@ public class MainActivity extends AppCompatActivity {
                     //final Polygon polygon = new Polygon(pointCollection);
                     QueryParameters query = new QueryParameters();
                     query.setGeometry(mPolygon);// 设置空间几何对象
+
+                    PopWindowData = new ArrayList<>();
+                    //查询所有的图层内容
+                    queryAllTaskForPolygon(query, (Polygon) mPolygon);
                     if (isFileExist(StaticVariableEnum.PGDBROOTPATH) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         DrawType = DisplayEnum.DRAW_NONE;
