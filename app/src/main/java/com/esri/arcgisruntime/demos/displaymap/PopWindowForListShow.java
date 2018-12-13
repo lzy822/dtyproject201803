@@ -1,10 +1,15 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.bin.david.form.core.SmartTable;
@@ -17,120 +22,149 @@ import com.bin.david.form.data.style.FontStyle;
 import com.bin.david.form.data.table.TableData;
 import com.bin.david.form.listener.OnColumnItemClickListener;
 import com.bin.david.form.utils.DensityUtils;
+import com.github.clans.fab.FloatingActionButton;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PopWindowForListShow extends AppCompatActivity {
     private static final String TAG = "PopWindowForListShow";
-    private SmartTable<User> table;
-    Column<String> name;
-    Column<Integer> age;
-    Column<Boolean> operation;
-    List<String> name_selected = new ArrayList<String>();
+    private SmartTable<PopWindowList> table;
+    List<PopWindowList> codeList;
 
-    /**
-     * 收集所有被勾选的姓名记录到 name_selected 集合中，并实时更新
-     * @param position  被选择记录的行数，根据行数用来找到其他列中该行记录对应的信息
-     * @param selectedState   当前的操作状态：选中 || 取消选中
-     */
-    public void showName(int position, boolean selectedState){
-        List<String> rotorIdList = name.getDatas();
-        if(position >-1){
-            String rotorTemp = rotorIdList.get(position);
-            if(selectedState && !name_selected.contains(rotorTemp)){            //当前操作是选中，并且“所有选中的姓名的集合”中没有该记录，则添加进去
-                name_selected.add(rotorTemp);
-            }else if(!selectedState && name_selected.contains(rotorTemp)){     // 当前操作是取消选中，并且“所有选中姓名的集合”总含有该记录，则删除该记录
-                name_selected.remove(rotorTemp);
-            }
-        }
-        for(String s:name_selected){
-            System.out.print(s + " -- ");
-        }
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pop_window_for_list_show);
         String data = getIntent().getStringExtra("data");
         String[] str1 = data.split(";");
-        List<KeyAndValue> keyAndValueList = new ArrayList<>();
-        List<KeyAndValue> keyAndValueList1 = new ArrayList<>();
-        List<KeyAndValue> keyAndValueList2 = new ArrayList<>();
-        List<KeyAndValue> keyAndValueList3 = new ArrayList<>();
-        String[] keyAndValue = str1[0].split(",");
-        for (int j = 0; j < keyAndValue.length; ++j){
-            String[] keyAndValue1 = keyAndValue[j].split(":");
-            keyAndValueList.add(new KeyAndValue(keyAndValue1[0], keyAndValue1[1]));
-        }
-        keyAndValue = str1[1].split(",");
-        for (int j = 0; j < keyAndValue.length; ++j){
-            String[] keyAndValue1 = keyAndValue[j].split(":");
-            keyAndValueList1.add(new KeyAndValue(keyAndValue1[0], keyAndValue1[1]));
-        }
-        keyAndValue = str1[2].split(",");
-        for (int j = 0; j < keyAndValue.length; ++j){
-            String[] keyAndValue1 = keyAndValue[j].split(":");
-            keyAndValueList2.add(new KeyAndValue(keyAndValue1[0], keyAndValue1[1]));
-        }
-        keyAndValue = str1[3].split(",");
-        for (int j = 0; j < keyAndValue.length; ++j){
-            String[] keyAndValue1 = keyAndValue[j].split(":");
-            keyAndValueList3.add(new KeyAndValue(keyAndValue1[0], keyAndValue1[1]));
-        }
         Log.w(TAG, "onCreate: " + data);
-        table = (SmartTable<User>)findViewById(R.id.table);
-        List<User> codeList = new ArrayList<User>();
-        codeList.add(new User("user_01",20,false));
-        codeList.add(new User("user_02",21,false));
-        codeList.add(new User("user_03",22,false));
-        codeList.add(new User("user_04",22,false));
-        codeList.add(new User("user_05",21,false));
-        codeList.add(new User("user_06",21,false));
-        codeList.add(new User("user_07",23,false));
-        codeList.add(new User("user_08",20,false));
-
-        name = new Column<>("姓名", "name");
-
-        age = new Column<>("年龄", "age");
-
-        int size = DensityUtils.dp2px(this,30);
-
-        operation = new Column<>("勾选", "operation", new ImageResDrawFormat<Boolean>(size,size) {    //设置"操作"这一列以图标显示 true、false 的状态
-            @Override
-            protected Context getContext() {
-                return PopWindowForListShow.this;
+        table = (SmartTable<PopWindowList>)findViewById(R.id.table);
+        codeList = new ArrayList<PopWindowList>();
+        String jbntStr = "";
+        int mnum = 0;
+        for (int i = 0; i < str1.length; ++i){
+            if (str1[i].contains("基本农田保护区")){
+                String[] mstr = str1[i].split(",");
+                jbntStr = mstr[1];
+                mnum = i;
             }
-            @Override
-            protected int getResourceID(Boolean isCheck, String value, int position) {
-                if(isCheck){
-                    return R.mipmap.ic_launcher;      //将图标提前放入 app/res/mipmap 目录下
-                }
-                return R.mipmap.lincanglogo;
-            }
-        });
-        operation.setComputeWidth(40);
+        }
+        for (int i = 0; i < str1.length; ++i){
+            if (i != mnum)
+                codeList.add(new PopWindowList(str1[i] + "," + jbntStr));
+        }
 
-        final TableData<User> tableData = new TableData<>("测试标题",codeList, operation, name, age);
+        Column<String> name = new Column<>("图层名", "name");
+        Column<Double> jbnt = new Column<>("基本农田（亩）", "jbnt");
+        Column<Double> hd = new Column<>("旱地（亩）", "hd");
+        Column<Double> ld = new Column<>("林地（亩）", "ld");
+        Column<Double> ncjmdyd = new Column<>("农村居民点用地（亩）", "ncjmdyd");
+        Column<Double> zrbld = new Column<>("自然保留地（亩）", "zrbld");
+        Column<Double> yd = new Column<>("园地（亩）", "yd");
+        Column<Double> st = new Column<>("水田（亩）", "st");
+        Column<Double> ktsm = new Column<>("坑塘水面（亩）", "ktsm");
+        Column<Double> tt = new Column<>("滩涂（亩）", "tt");
+        Column<Double> ssnyd = new Column<>("设施农用地（亩）", "ssnyd");
+        Column<Double> ckyd = new Column<>("采矿用地（亩）", "ckyd");
+        Column<Double> tsyd = new Column<>("特殊用地（亩）", "tsyd");
+        Column<Double> czyd = new Column<>("城镇用地（亩）", "czyd");
+        Column<Double> sgjzyd = new Column<>("水工建筑用地（亩）", "sgjzyd");
+        Column<Double> glyd = new Column<>("公路用地（亩）", "glyd");
+        Column<Double> sjd = new Column<>("水浇地（亩）", "sjd");
+        Column<Double> hlsm = new Column<>("河流水面（亩）", "hlsm");
+        Column<Double> qtdljsyd = new Column<>("其他独立建设用地（亩）", "qtdljsyd");
+        Column<Double> fjmsssyd = new Column<>("风景名胜设施用地（亩）", "fjmsssyd");
+        Column<Double> sksm = new Column<>("水库水面（亩）", "sksm");
+        Column<Double> ncdl = new Column<>("农村道路（亩）", "ncdl");
+        Column<Double> mcd = new Column<>("牧草地（亩）", "mcd");
+        Column<Double> myjcyd = new Column<>("民用机场用地（亩）", "myjcyd");
+        Column<Double> gkmtyd = new Column<>("港口码头用地（亩）", "gkmtyd");
+        Column<Double> hpsm = new Column<>("湖泊水面（亩）", "hpsm");
+
+        final TableData<PopWindowList> tableData = new TableData<>("测试标题",codeList, name, jbnt, hd, ld, ncjmdyd, zrbld, yd, st
+                , ktsm, tt, ssnyd, ckyd, tsyd, czyd, sgjzyd, glyd, sjd, hlsm, qtdljsyd, fjmsssyd, sksm, ncdl, mcd, myjcyd, gkmtyd, hpsm);
         table.getConfig().setShowTableTitle(false);
 
         table.setTableData(tableData);
-//        table.getConfig().setContentStyle(new FontStyle(50, Color.BLUE));
-        table.getConfig().setMinTableWidth(1024);       //设置表格最小宽度
-        FontStyle style = new FontStyle();
-        style.setTextSize(30);
-        table.getConfig().setContentStyle(style);       //设置表格主题字体样式
-        table.getConfig().setColumnTitleStyle(style);   //设置表格标题字体样式
-        table.getConfig().setContentCellBackgroundFormat(new BaseCellBackgroundFormat<CellInfo>() {     //设置隔行变色
+
+        FloatingActionButton outputButton = (FloatingActionButton) findViewById(R.id.outputData);
+        outputButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public int getBackGroundColor(CellInfo cellInfo) {
-                if(cellInfo.row%2 ==1) {
-                    return ContextCompat.getColor(PopWindowForListShow.this, R.color.cardview_dark_background);      //需要在 app/res/values 中添加 <color name="tableBackground">#d4d4d4</color>
-                }else{
-                    return TableConfig.INVALID_COLOR;
-                }
+            public void onClick(View v) {
+                pickFile();
+                //outputData();
             }
         });
-        table.getConfig().setMinTableWidth(1024);   //设置最小宽度
+    }
+
+    //获取文件读取权限
+    void pickFile() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                EnumClass.READ_EXTERNAL_STORAGE);
+        int permissionCheck1 = ContextCompat.checkSelfPermission(this,
+                EnumClass.WRITE_EXTERNAL_STORAGE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED || permissionCheck1 != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            EnumClass.READ_EXTERNAL_STORAGE, EnumClass.WRITE_EXTERNAL_STORAGE},
+                    EnumClass.PERMISSION_CODE
+            );
+
+            return;
+        }else {
+            outputData();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode){
+            case StaticVariableEnum.PERMISSION_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    outputData();
+                }else {
+                    Toast.makeText(PopWindowForListShow.this, "请通过所有申请的权限", Toast.LENGTH_LONG).show();
+                }
+                break;
+            default:
+        }
+    }
+
+    public void outputData(){
+        StringBuffer sb = new StringBuffer();
+        sb.append(PopWindowList.titleToString()).append("\n");
+        for (int i = 0; i < codeList.size(); ++i){
+            sb.append(codeList.get(i).toString()).append("\n");
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+
+        try {
+            File file0 = new File(Environment.getExternalStorageDirectory() + "/ZRZY");
+            if (!file0.exists() && !file0.isDirectory()){
+                file0.mkdirs();
+            }
+            File file = new File(Environment.getExternalStorageDirectory() + "/ZRZY/" + "/Output");
+            if (!file.exists() && !file.isDirectory()){
+                file.mkdirs();
+            }
+            File file1 = new File(Environment.getExternalStorageDirectory() + "/ZRZY/" + "/Output",  "图表数据" + outputPath + ".txt");
+            Log.w(TAG, "exception: " + file1);
+            if (!file1.exists()) {
+                file1.getParentFile().mkdirs();
+                file1.createNewFile();
+            }
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+            Toast.makeText(PopWindowForListShow.this, "导出成功，文件位于" + "\n" + Environment.getExternalStorageDirectory() + "/ZRZY/" + "/Output/" + "图表数据" + outputPath + ".txt" + "\n" + "请返回上一界面，自行进行图斑截图", Toast.LENGTH_LONG).show();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
     }
 }

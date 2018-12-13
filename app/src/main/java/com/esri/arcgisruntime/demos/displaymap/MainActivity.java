@@ -1375,7 +1375,7 @@ public class MainActivity extends AppCompatActivity {
                                 Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
                                 Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
                                 switch (text){
-                                    case "TDGHDL":
+                                    case "土地规划地类":
                                         for (String key : mQuerryString.keySet()) {
                                             //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
                                             switch (key){
@@ -1430,6 +1430,9 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                         }
                                         break;
+                                    case "JBNTBHQ":
+
+                                        break;
                                     default:
                                         for (String key : mQuerryString.keySet()) {
                                             Log.w(TAG, "行政区: " + key);
@@ -1454,7 +1457,7 @@ public class MainActivity extends AppCompatActivity {
                         wholeArea = GeometryEngine.areaGeodetic(geometry1, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                         keyAndValues = new ArrayList<>();
 
-                        if (text.equals("TDGHDL")) {
+                        if (text.equals("土地规划地类")) {
                             for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                 if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                     keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getTypename(), Double.toString(queryTaskInfos.get(i).getArea())));
@@ -1503,21 +1506,24 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                         inMap = true;
-                        if (text.equals("TDGHDL")) {
+                        if (text.equals("土地规划地类")) {
                             isQueryTDGHDL = true;
-                            data = "图层:TDGHDL," + data;
+                            data = "图层:土地规划地类," + data;
                         }
-                        else if (text.equals("09TDGHDL")) {
-                            isQuery09TDGHDL = true;
-                            data = "图层:09TDGHDL," + data;
+                        else if (text.equals("09地类图斑")) {
+                            isQuery09DLTB = true;
+                            data = "图层:09地类图斑," + data;
                         }
-                        else if (text.equals("16TDGHDL")) {
-                            isQuery16TDGHDL = true;
-                            data = "图层:16TDGHDL," + data;
+                        else if (text.equals("16地类图斑")) {
+                            isQuery16DLTB = true;
+                            data = "图层:16地类图斑," + data;
                         }
-                        else if (text.equals("17TDGHDL")) {
-                            isQuery17TDGHDL = true;
-                            data = "图层:17TDGHDL," + data;
+                        else if (text.equals("17地类图斑")) {
+                            isQuery17DLTB = true;
+                            data = "图层:17地类图斑," + data;
+                        }else if (text.equals("JBNTBHQ")) {
+                            isQueryJBNTBHQ = true;
+                            data = "图层:JBNTBHQ," + "基本农田保护区:" + decimalFormat.format(wholeArea);
                         }
                         Log.w(TAG, "onCreate: " + data);
                         isOkForPopWindow(data);
@@ -1532,9 +1538,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean isQueryTDGHDL;
-    boolean isQuery09TDGHDL;
-    boolean isQuery16TDGHDL;
-    boolean isQuery17TDGHDL;
+    boolean isQuery09DLTB;
+    boolean isQuery16DLTB;
+    boolean isQuery17DLTB;
+    boolean isQueryJBNTBHQ;
+
     private void queryAllTaskForPolygon(final QueryParameters query, final Polygon polygon){
         try {
             //行政区层
@@ -1543,13 +1551,15 @@ public class MainActivity extends AppCompatActivity {
             //querySingleTaskForPolygon(query, polygon, PTuBanFeatureLayer.getFeatureTable());
 
             //土地规划地类层
-            querySingleTaskForPolygon(query, polygon, TDGHDLFeatureLayer.getFeatureTable(), "TDGHDL");
+            querySingleTaskForPolygon(query, polygon, TDGHDLFeatureLayer.getFeatureTable(), "土地规划地类");
             //09年土地规划地类层
-            querySingleTaskForPolygon(query, polygon, DLTB2009FeatureLayer.getFeatureTable(), "09TDGHDL");
+            querySingleTaskForPolygon(query, polygon, DLTB2009FeatureLayer.getFeatureTable(), "09地类图斑");
             //16年土地规划地类层
-            querySingleTaskForPolygon(query, polygon, DLTB2016FeatureLayer.getFeatureTable(), "16TDGHDL");
+            querySingleTaskForPolygon(query, polygon, DLTB2016FeatureLayer.getFeatureTable(), "16地类图斑");
             //17年土地规划地类层
-            querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "17TDGHDL");
+            querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "17地类图斑");
+            //基本农田保护区
+            querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
         } catch (ArcGISRuntimeException e) {
             Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
         }
@@ -1557,10 +1567,10 @@ public class MainActivity extends AppCompatActivity {
 
     List<String> PopWindowData;
     private void isOkForPopWindow(String data){
-        Log.w(TAG, "isOkForPopWindow: " + isQueryTDGHDL + isQuery09TDGHDL + isQuery16TDGHDL + isQuery17TDGHDL);
+        Log.w(TAG, "isOkForPopWindow: " + isQueryTDGHDL + isQuery09DLTB + isQuery16DLTB + isQuery17DLTB + isQueryJBNTBHQ);
         PopWindowData.add(data);
-        if (isQueryTDGHDL && isQuery09TDGHDL && isQuery16TDGHDL && isQuery17TDGHDL){
-            isQueryTDGHDL = isQuery09TDGHDL = isQuery16TDGHDL = isQuery17TDGHDL = false;
+        if (isQueryTDGHDL && isQuery09DLTB && isQuery16DLTB && isQuery17DLTB && isQueryJBNTBHQ){
+            isQueryTDGHDL = isQuery09DLTB = isQuery16DLTB = isQuery17DLTB = isQueryJBNTBHQ = false;
             showPopWindowForListShow();
         }
     }
