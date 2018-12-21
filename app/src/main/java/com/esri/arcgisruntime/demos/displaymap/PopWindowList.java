@@ -4,7 +4,10 @@ public class PopWindowList {
     private String name;
     private Double jbnt;
     private Double hd;
+    private Double yld;
+    private Double qtld;
     private Double ld;
+    private Double gmld;
     private Double ncjmdyd;
     private Double zrbld;
     private Double yd;
@@ -30,6 +33,7 @@ public class PopWindowList {
 
     public PopWindowList(String data) {
         String[] keyAndValue = data.split(",");
+        ld = 0.0;
         for (int i = 0; i < keyAndValue.length; ++i){
             String[] keyAndValue1 = keyAndValue[i].split(":");
             switch (keyAndValue1[0]){
@@ -44,6 +48,18 @@ public class PopWindowList {
                     break;
                 case "林地":
                     ld = Double.valueOf(keyAndValue1[1]);
+                    break;
+                case "有林地":
+                    yld = Double.valueOf(keyAndValue1[1]);
+                    ld += yld;
+                    break;
+                case "灌木林地":
+                    gmld = Double.valueOf(keyAndValue1[1]);
+                    ld += gmld;
+                    break;
+                case "其他林地":
+                    qtld = Double.valueOf(keyAndValue1[1]);
+                    ld += qtld;
                     break;
                 case "农村居民点用地":
                     ncjmdyd = Double.valueOf(keyAndValue1[1]);
@@ -117,6 +133,9 @@ public class PopWindowList {
                 ",基本农田（亩）" +
                 ",旱地（亩）" +
                 ",林地（亩）" +
+                ",有林地（亩）" +
+                ",其他林地（亩）" +
+                ",灌木林地（亩）" +
                 ",农村居民点用地（亩）" +
                 ",自然保留地（亩）" +
                 ", 园地（亩）" +
@@ -146,7 +165,10 @@ public class PopWindowList {
         return name +
                 "," + jbnt +
                 "," + hd +
-                "," + ld +
+                "," + (ld+yld+qtld+gmld) +
+                "," + yld +
+                "," + qtld +
+                "," + gmld +
                 "," + ncjmdyd +
                 "," + zrbld +
                 "," + yd +
@@ -169,6 +191,30 @@ public class PopWindowList {
                 "," + myjcyd +
                 "," + gkmtyd +
                 "," + hpsm;
+    }
+
+    public Double getYld() {
+        return yld;
+    }
+
+    public void setYld(Double yld) {
+        this.yld = yld;
+    }
+
+    public Double getQtld() {
+        return qtld;
+    }
+
+    public void setQtld(Double qtld) {
+        this.qtld = qtld;
+    }
+
+    public Double getGmld() {
+        return gmld;
+    }
+
+    public void setGmld(Double gmld) {
+        this.gmld = gmld;
     }
 
     public String getName() {

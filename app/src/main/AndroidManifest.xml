@@ -56,7 +56,10 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity android:name=".PopWindowForListShow"></activity>
+        <activity android:name=".PopWindowForListShow"
+            android:screenOrientation="landscape">
+
+        </activity>
     </application>
 
 </manifest>

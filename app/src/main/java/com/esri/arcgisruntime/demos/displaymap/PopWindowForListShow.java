@@ -2,6 +2,9 @@ package com.esri.arcgisruntime.demos.displaymap;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -16,7 +19,9 @@ import com.bin.david.form.core.SmartTable;
 import com.bin.david.form.core.TableConfig;
 import com.bin.david.form.data.CellInfo;
 import com.bin.david.form.data.column.Column;
+import com.bin.david.form.data.format.bg.BaseBackgroundFormat;
 import com.bin.david.form.data.format.bg.BaseCellBackgroundFormat;
+import com.bin.david.form.data.format.bg.IBackgroundFormat;
 import com.bin.david.form.data.format.draw.ImageResDrawFormat;
 import com.bin.david.form.data.style.FontStyle;
 import com.bin.david.form.data.table.TableData;
@@ -51,6 +56,7 @@ public class PopWindowForListShow extends AppCompatActivity {
                 String[] mstr = str1[i].split(",");
                 jbntStr = mstr[1];
                 mnum = i;
+                break;
             }
         }
         for (int i = 0; i < str1.length; ++i){
@@ -61,7 +67,10 @@ public class PopWindowForListShow extends AppCompatActivity {
         Column<String> name = new Column<>("图层名", "name");
         Column<Double> jbnt = new Column<>("基本农田（亩）", "jbnt");
         Column<Double> hd = new Column<>("旱地（亩）", "hd");
-        Column<Double> ld = new Column<>("林地（亩）", "ld");
+        Column<Double> zld = new Column<>("总林地（亩）", "ld");
+        Column<Double> yld = new Column<>("有林地（亩）", "yld");
+        Column<Double> qtld = new Column<>("其他林地（亩）", "qtld");
+        Column<Double> gmld = new Column<>("灌木林地（亩）", "gmld");
         Column<Double> ncjmdyd = new Column<>("农村居民点用地（亩）", "ncjmdyd");
         Column<Double> zrbld = new Column<>("自然保留地（亩）", "zrbld");
         Column<Double> yd = new Column<>("园地（亩）", "yd");
@@ -85,12 +94,15 @@ public class PopWindowForListShow extends AppCompatActivity {
         Column<Double> gkmtyd = new Column<>("港口码头用地（亩）", "gkmtyd");
         Column<Double> hpsm = new Column<>("湖泊水面（亩）", "hpsm");
 
+        //组合列
+        Column ld = new Column("林地",zld,yld,qtld,gmld);
+
         final TableData<PopWindowList> tableData = new TableData<>("测试标题",codeList, name, jbnt, hd, ld, ncjmdyd, zrbld, yd, st
                 , ktsm, tt, ssnyd, ckyd, tsyd, czyd, sgjzyd, glyd, sjd, hlsm, qtdljsyd, fjmsssyd, sksm, ncdl, mcd, myjcyd, gkmtyd, hpsm);
         table.getConfig().setShowTableTitle(false);
-
+        table.getConfig().setColumnTitleBackground(new BaseBackgroundFormat(getResources().getColor(R.color.colorAccent)));
         table.setTableData(tableData);
-
+        table.setZoom(true);
         FloatingActionButton outputButton = (FloatingActionButton) findViewById(R.id.outputData);
         outputButton.setOnClickListener(new View.OnClickListener() {
             @Override

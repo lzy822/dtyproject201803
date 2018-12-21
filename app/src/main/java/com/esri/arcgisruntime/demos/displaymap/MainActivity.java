@@ -2900,8 +2900,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPopWindowForListShow(){
-        FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
-        popListShow.setVisibility(View.VISIBLE);
+        final FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                popListShow.setVisibility(View.VISIBLE);
+            }
+        });
         popListShow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2959,12 +2964,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (QueryProcessType == DisplayEnum.INQUERY) {
                     //final Polygon polygon = new Polygon(pointCollection);
-                    QueryParameters query = new QueryParameters();
+                    final QueryParameters query = new QueryParameters();
                     query.setGeometry(mPolygon);// 设置空间几何对象
 
                     PopWindowData = new ArrayList<>();
-                    //查询所有的图层内容
-                    queryAllTaskForPolygon(query, (Polygon) mPolygon);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //查询所有的图层内容
+                            queryAllTaskForPolygon(query, (Polygon) mPolygon);
+                        }
+                    }).start();
+
                     if (isFileExist(StaticVariableEnum.PGDBROOTPATH) & MapQuery) {
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                         DrawType = DisplayEnum.DRAW_NONE;
