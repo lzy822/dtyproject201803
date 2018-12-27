@@ -29,6 +29,8 @@ import com.bin.david.form.listener.OnColumnItemClickListener;
 import com.bin.david.form.utils.DensityUtils;
 import com.github.clans.fab.FloatingActionButton;
 
+import org.litepal.LitePal;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,6 +46,37 @@ public class PopWindowForListShow extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pop_window_for_list_show);
+
+        resumeTable();
+        FloatingActionButton outputButton = (FloatingActionButton) findViewById(R.id.outputData);
+        outputButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pickFile();
+                //outputData();
+            }
+        });
+
+        FloatingActionButton saveButton = (FloatingActionButton) findViewById(R.id.saveData);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //TODO 存储图斑信息
+                saveTbData();
+            }
+        });
+    }
+
+    private void saveTbData(){
+        String name = "图斑" + LitePal.findAll(my_tb.class).size();
+        my_tb my_tb = new my_tb();
+        my_tb.setPointCollection(getIntent().getStringExtra("pointCollection"));
+        my_tb.setMdata(getIntent().getStringExtra("data"));
+        my_tb.setName(name);
+        my_tb.save();
+    }
+
+    private void resumeTable(){
         String data = getIntent().getStringExtra("data");
         String[] str1 = data.split(";");
         Log.w(TAG, "onCreate: " + data);
@@ -103,14 +136,6 @@ public class PopWindowForListShow extends AppCompatActivity {
         table.getConfig().setColumnTitleBackground(new BaseBackgroundFormat(getResources().getColor(R.color.colorAccent)));
         table.setTableData(tableData);
         table.setZoom(true);
-        FloatingActionButton outputButton = (FloatingActionButton) findViewById(R.id.outputData);
-        outputButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pickFile();
-                //outputData();
-            }
-        });
     }
 
     //获取文件读取权限

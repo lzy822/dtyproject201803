@@ -25,4 +25,19 @@
         app:fab_elevationCompat="6dp"
         app:fab_shadowColor="#000"
         app:fab_size="mini" />
+
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/saveData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@+id/outputData"
+        android:src="@drawable/ic_save_white_24dp"
+        android:visibility="visible"
+        app:fab_colorNormal="#F50057"
+        app:fab_colorPressed="#E8004A"
+        app:fab_colorRipple="#C20024"
+        app:fab_elevationCompat="6dp"
+        app:fab_shadowColor="#000"
+        app:fab_size="mini" />
 </RelativeLayout>

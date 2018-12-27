@@ -2919,6 +2919,15 @@ public class MainActivity extends AppCompatActivity {
                         data = PopWindowData.get(i);
                 }
                 intent.putExtra("data", data);
+                String mStrPointCollection = "";
+                for (int i = 0; i < pointCollection.size(); ++i){
+                    Log.w(TAG, "onClick: " + pointCollection.get(i).getX() + ";" + pointCollection.get(i).getY());
+                    mStrPointCollection = mStrPointCollection + pointCollection.get(i).getX() + "," + pointCollection.get(i).getY();
+                    if (i != pointCollection.size() - 1)
+                        mStrPointCollection = mStrPointCollection + ";";
+                }
+                intent.putExtra("pointCollection", mStrPointCollection);
+                Log.w(TAG, "onClick: " + pointCollection.getSpatialReference().toString());
                 startActivity(intent);
             }
         });
@@ -3033,9 +3042,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void drawPoiAndWhiteBlank(){
+
+        removeGraphicsOverlayers();
         for (int i = 0; i < graphics.size(); ++i){
-        graphicsOverlay_10.getGraphics().remove(graphics.get(i));
-    }
+            graphicsOverlay_10.getGraphics().remove(graphics.get(i));
+        }
         graphics.clear();
 
 
@@ -3870,7 +3881,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         mMapView.resume();
-        drawPoiAndWhiteBlank();
+
+        //drawPoiAndWhiteBlank();
         //setRecyclerView();
         //setRecyclerViewForP();
         //注册传感器监听器
@@ -3878,7 +3890,24 @@ public class MainActivity extends AppCompatActivity {
         sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);
         //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
         //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
+        //hasMTuban = hasMyTuban();
+        drawOperationalLayer();
     }
+
+    private void drawOperationalLayer(){
+        drawPoiAndWhiteBlank();
+        if (hasMyTuban() && hasMyTuban())
+            drawMyTuban();
+    }
+
+    private boolean showMTuban;
+    private boolean hasMyTuban(){
+        return LitePal.findAll(my_tb.class).size() >= 1;
+    }
+    private void drawMyTuban(){
+
+    }
+
     @Override
     protected void onDestroy() {
         SharedPreferences.Editor editor = getSharedPreferences("xzq", MODE_PRIVATE).edit();
