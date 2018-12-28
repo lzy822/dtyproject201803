@@ -11,7 +11,7 @@ public class StaticVariableEnum {
     public static final int PERMISSION_CODE = 42042;
     public static final int PERMISSION_CODE_1 = 42043;
     public static final int PERMISSION_CODE_2 = 42044;
-    public static final String JBNTGDBROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/基本农田test.geodatabase";
+    public static final String JBNTGDBROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/基本农田保护区.geodatabase";
     public static final String GDBROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市5309省标准乡级土地利用总体规划及基本农田数据库2000.geodatabase";
     public static final String MMPKROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市土地利用规划和基本农田数据.mmpk";
     public static final String PGDBROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市地类图斑p图斑数据库.geodatabase";

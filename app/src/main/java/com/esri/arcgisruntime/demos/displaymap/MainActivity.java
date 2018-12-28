@@ -1343,9 +1343,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private double jbntArea;
     private void querySingleTaskForPolygon(final QueryParameters query, final Polygon polygon, FeatureTable mTable, final String text){
         //TODO 查询逻辑
         try {
+            Log.w(TAG, "querySingleTaskForPolygon: " + text);
             final ListenableFuture<FeatureQueryResult> featureQueryResult
                     = mTable.queryFeaturesAsync(query);
             featureQueryResult.addDoneListener(new Runnable() {
@@ -1364,7 +1367,7 @@ public class MainActivity extends AppCompatActivity {
                                 geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
                                 boolean isOK = false;
                                 QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
-                                Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
+                                Log.w(TAG, "geometry2type: " + text + queryTaskInfo.getArea());
                                 Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
                                 switch (text){
                                     case "土地规划地类":
@@ -1423,7 +1426,7 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                         break;
                                     case "JBNTBHQ":
-
+                                        isOK = true;
                                         break;
                                     default:
                                         for (String key : mQuerryString.keySet()) {
@@ -1467,7 +1470,10 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 }
                             }
-                        } else {
+                        }else if (text.equals("JBNTBHQ")){
+
+                        }
+                        else {
                             for (int i = 0; i < queryTaskInfos.size(); ++i) {
                                 if (i == 0 && queryTaskInfos.get(i).getArea() != 0)
                                     keyAndValues.add(new KeyAndValue(queryTaskInfos.get(i).getXzq(), Double.toString(queryTaskInfos.get(i).getArea())));
@@ -1513,9 +1519,15 @@ public class MainActivity extends AppCompatActivity {
                         else if (text.equals("17地类图斑")) {
                             isQuery17DLTB = true;
                             data = "图层:17地类图斑," + data;
-                        }else if (text.equals("JBNTBHQ")) {
+                        }else if (text.contains("JBNTBHQ")) {
                             isQueryJBNTBHQ = true;
-                            data = "图层:JBNTBHQ," + "基本农田保护区:" + decimalFormat.format(wholeArea);
+                            jbntArea = 0;
+                            for (int i = 0; i < queryTaskInfos.size(); ++i){
+                                jbntArea += queryTaskInfos.get(i).getArea();
+                                Log.w(TAG, "run: " + queryTaskInfos.get(i).getArea());
+                            }
+                            Log.w(TAG, "run: " + "lzy");
+                            data = "图层:JBNTBHQ," + "基本农田保护区:" + decimalFormat.format(jbntArea);
                         }
                         Log.w(TAG, "onCreate: " + data);
                         isOkForPopWindow(data);
@@ -1542,6 +1554,8 @@ public class MainActivity extends AppCompatActivity {
             //P图斑层
             //querySingleTaskForPolygon(query, polygon, PTuBanFeatureLayer.getFeatureTable());
 
+            //基本农田保护区
+            //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
             //土地规划地类层
             querySingleTaskForPolygon(query, polygon, TDGHDLFeatureLayer.getFeatureTable(), "土地规划地类");
             //09年土地规划地类层
@@ -1550,8 +1564,6 @@ public class MainActivity extends AppCompatActivity {
             querySingleTaskForPolygon(query, polygon, DLTB2016FeatureLayer.getFeatureTable(), "16地类图斑");
             //17年土地规划地类层
             querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "17地类图斑");
-            //基本农田保护区
-            querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
         } catch (ArcGISRuntimeException e) {
             Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
         }
@@ -1563,7 +1575,12 @@ public class MainActivity extends AppCompatActivity {
         PopWindowData.add(data);
         if (isQueryTDGHDL && isQuery09DLTB && isQuery16DLTB && isQuery17DLTB && isQueryJBNTBHQ){
             isQueryTDGHDL = isQuery09DLTB = isQuery16DLTB = isQuery17DLTB = isQueryJBNTBHQ = false;
-            showPopWindowForListShow();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    showPopWindowForListShow();
+                }
+            });
         }
     }
 
@@ -1761,6 +1778,12 @@ public class MainActivity extends AppCompatActivity {
                                 str = str + ",占比: " + decimalFormat.format(Double.valueOf(keyAndValues.get(j).getValue()) / wholeArea * 100) + "%";
                             }
                         }
+                        //TODO 基本农田
+                        if (str == null || str.isEmpty())
+                            str =  "基本农田保护区: " + decimalFormat1.format(jbntArea) + "亩,占比: " + decimalFormat.format(jbntArea / wholeArea * 100) + "%";
+                        else
+                            str = str + "\n" + "基本农田保护区: " + decimalFormat1.format(jbntArea) + "亩,占比: " + decimalFormat.format(jbntArea / wholeArea * 100) + "%";
+
                         calloutContent.setText(str);
                         // get callout, set content and show
                         mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
@@ -2611,7 +2634,7 @@ public class MainActivity extends AppCompatActivity {
                     JBNTFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("基本农田保护区"));
                 }
             });
-            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+            Log.w(TAG, "run: " + localGdb.getPath() + localGdb.getLoadStatus().toString());
         } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
     }
 
@@ -2820,11 +2843,23 @@ public class MainActivity extends AppCompatActivity {
                         if (QueryProcessType == DisplayEnum.INQUERY) {
                             if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3) {
                                 final Polygon polygon = new Polygon(pointCollection);
-                                QueryParameters query = new QueryParameters();
+                                final QueryParameters query = new QueryParameters();
                                 query.setGeometry(polygon);// 设置空间几何对象
                                 PopWindowData = new ArrayList<>();
-                                //查询所有的图层内容
-                                queryAllTaskForPolygon(query, polygon);
+                                try {
+                                    //基本农田保护区
+                                    querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
+                                }catch (ArcGISRuntimeException e){
+                                    Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                                }
+
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        //查询所有的图层内容
+                                        queryAllTaskForPolygon(query, polygon);
+                                    }
+                                }).start();
 
                                 if (isFileExist(StaticVariableEnum.GDBROOTPATH) & MapQuery) {
                                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
@@ -2925,12 +2960,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showPopWindowForListShow(){
         final FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                popListShow.setVisibility(View.VISIBLE);
-            }
-        });
+        popListShow.setVisibility(View.VISIBLE);
         popListShow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -3002,6 +3032,15 @@ public class MainActivity extends AppCompatActivity {
                     query.setGeometry(mPolygon);// 设置空间几何对象
 
                     PopWindowData = new ArrayList<>();
+
+                    try {
+                        //基本农田保护区
+                        querySingleTaskForPolygon(query, (Polygon) mPolygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
+                    }catch (ArcGISRuntimeException e){
+                        Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                    }
+
+
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
