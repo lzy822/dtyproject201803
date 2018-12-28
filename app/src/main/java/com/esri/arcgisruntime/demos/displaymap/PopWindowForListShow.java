@@ -74,6 +74,12 @@ public class PopWindowForListShow extends AppCompatActivity {
         my_tb.setMdata(getIntent().getStringExtra("data"));
         my_tb.setName(name);
         my_tb.save();
+        Toast.makeText(PopWindowForListShow.this, name + "已经保存", Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean hasRepeatedTuban(){
+
+        return false;
     }
 
     private void resumeTable(){

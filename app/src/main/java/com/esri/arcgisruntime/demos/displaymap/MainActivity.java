@@ -486,7 +486,7 @@ public class MainActivity extends AppCompatActivity {
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 mMapView.getGraphicsOverlays().add(graphicsOverlay_10);*/
                 LitePal.deleteAll(whiteblank.class);
-                drawPoiAndWhiteBlank();
+                drawGraphicsOverlayer();
                 Toast.makeText(MainActivity.this, R.string.EraseFinish, Toast.LENGTH_SHORT).show();
                 /*}catch (Exception e){
                     Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
@@ -1883,7 +1883,7 @@ public class MainActivity extends AppCompatActivity {
             MapQuery = false;
             mCallout.dismiss();
             mMapView.getGraphicsOverlays().clear();
-            drawPoiAndWhiteBlank();
+            drawGraphicsOverlayer();
             ScaleShow.setText("当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
             pieChartView.setVisibility(View.GONE);
             Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
@@ -2073,7 +2073,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                         //TODO queryPOI
                         if (!queryPoi(mMapView.locationToScreen(clickPoint)))
-                            queryTB(clickPoint, mapPoint);
+                            if (!inTuban(clickPoint))
+                                queryTB(clickPoint, mapPoint);
                             //queryPTuBan(clickPoint, mapPoint);
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                     } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
@@ -2513,7 +2514,7 @@ public class MainActivity extends AppCompatActivity {
                     setRecyclerView();
                     mMapView.setMap(map);
                     initSurfaceCenterPoint(mainMobileMapPackage);
-                    drawPoiAndWhiteBlank();
+                    drawGraphicsOverlayer();
                     //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
 
                 }else mainMobileMapPackage.loadAsync();
@@ -2731,7 +2732,7 @@ public class MainActivity extends AppCompatActivity {
                     mapQueryBtEvent();
                 else {
                     mMapView.getGraphicsOverlays().clear();
-                    drawPoiAndWhiteBlank();
+                    drawGraphicsOverlayer();
                 }
                 setTitle(R.string.app_name);
                 RunningAnalyseFunction = DisplayEnum.ANA_NONE;
@@ -2859,7 +2860,7 @@ public class MainActivity extends AppCompatActivity {
                             DrawType = DisplayEnum.DRAW_NONE;
                             mCallout.dismiss();
                             mMapView.getGraphicsOverlays().clear();
-                            drawPoiAndWhiteBlank();
+                            drawGraphicsOverlayer();
                         }
                         break;
                     case ANA_DISTANCE:
@@ -2891,7 +2892,7 @@ public class MainActivity extends AppCompatActivity {
                             DrawType = DisplayEnum.DRAW_NONE;
                             mCallout.dismiss();
                             mMapView.getGraphicsOverlays().clear();
-                            drawPoiAndWhiteBlank();
+                            drawGraphicsOverlayer();
                             }
                         break;
                 }
@@ -2959,7 +2960,7 @@ public class MainActivity extends AppCompatActivity {
                     mapQueryBtEvent();
                 else {
                     mMapView.getGraphicsOverlays().clear();
-                    drawPoiAndWhiteBlank();
+                    drawGraphicsOverlayer();
                 }
                 setTitle(R.string.app_name);
                 RunningAnalyseFunction = DisplayEnum.ANA_NONE;
@@ -3041,41 +3042,108 @@ public class MainActivity extends AppCompatActivity {
         finish.setVisibility(View.GONE);
     }
 
-    public void drawPoiAndWhiteBlank(){
+    private boolean showMTuban;
 
-        removeGraphicsOverlayers();
+    private boolean hasMyTuban(){
+        return LitePal.findAll(my_tb.class).size() >= 1;
+    }
+
+    private void updateMyTuban(){
+        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+        for (int i = 0; i < currentMyTuban.size(); ++i){
+            Polygon polygon = new Polygon(currentMyTuban.get(i));
+            Graphic g = new Graphic(polygon, lineSymbol);
+            graphics.add(g);
+        }
+    }
+
+    List<PointCollection> currentMyTuban = new ArrayList<>();
+
+    private void parseAndUpdateMyTuban(){
+        queryMyTuban();
+        updateMyTuban();
+    }
+
+    private void queryMyTuban(){
+        List<my_tb> myTbs = LitePal.findAll(my_tb.class);
+        List<PointCollection> pointCollectionList = new ArrayList<>();
+        for (int i = 0; i < myTbs.size(); ++i){
+            String mpointCollection = myTbs.get(i).getPointCollection();
+            PointCollection pointCollection = new PointCollection(SpatialReference.create(4521));
+            Log.w(TAG, "queryMyTuban: " + mpointCollection);
+            String[] mPoint = mpointCollection.split(";");
+            for (int j = 0; j < mPoint.length; ++j){
+                String[] mPoint1 = mPoint[j].split(",");
+                pointCollection.add(new Point(Double.valueOf(mPoint1[0]), Double.valueOf(mPoint1[1])));
+            }
+            pointCollectionList.add(pointCollection);
+        }
+        currentMyTuban = pointCollectionList;
+    }
+
+    private boolean inTuban(Point pt){
+        for (int i = 0; i < currentMyTuban.size(); ++i){
+            Polygon polygon = new Polygon(currentMyTuban.get(i));
+            if (GeometryEngine.within(pt, polygon)){
+                //TODO 完善查询逻辑
+                RunningFunction = DisplayEnum.FUNC_ANA;
+                if (!MapQuery)
+                    mapQueryBtEvent();
+                DrawType = DisplayEnum.DRAW_POLYGON;
+                pointCollection = currentMyTuban.get(i);
+                RunningAnalyseFunction = DisplayEnum.ANA_NEED;
+                showQueryWidget();
+                removeStandardWidget();
+                QueryProcessType = DisplayEnum.INQUERY;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void drawGraphicsOverlayer(){
+        initialiseGraphics();
+        updatePoiAndWhiteBlank();
+        parseAndUpdateMyTuban();
+        updateGraphicsOverlayer();
+    }
+
+    public void initialiseGraphics(){
         for (int i = 0; i < graphics.size(); ++i){
             graphicsOverlay_10.getGraphics().remove(graphics.get(i));
         }
         graphics.clear();
+    }
 
-
+    public void updatePoiAndWhiteBlank(){
         List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
         List<POI> pois = LitePal.findAll(POI.class);
         int wbsize = whiteblanks.size();
         int psize = pois.size();
         int size = wbsize + psize;
 
-
-        graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
         if (size > 0){
-            if (wbsize > 0) drawWhiteBlank(whiteblanks, wbsize);
-            if (psize > 0) drawpoi(pois, psize);
-            if (graphics.size() > 0) {
-                for (int j = 0; j < graphics.size(); ++j){
-                    try {
-                        graphicsOverlay_10.getGraphics().add(graphics.get(j));
-                    }catch (ArcGISRuntimeException e){
-                        Log.w(TAG, "drawPoiAndWhiteBlank: " + e.toString());
-                    }
-                }
-            }
-            if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
-            mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+            if (wbsize > 0) updateWhiteBlank(whiteblanks, wbsize);
+            if (psize > 0) updatepoi(pois, psize);
         }
     }
 
-    public void drawWhiteBlank(List<whiteblank> whiteblanks, int size){
+    public void updateGraphicsOverlayer(){
+        graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+        if (graphics.size() > 0) {
+            for (int j = 0; j < graphics.size(); ++j){
+                try {
+                    graphicsOverlay_10.getGraphics().add(graphics.get(j));
+                }catch (ArcGISRuntimeException e){
+                    Log.w(TAG, "drawGraphicsOverlayer: " + e.toString());
+                }
+            }
+        }
+        if (mMapView.getGraphicsOverlays().size() != 0) mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+        mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+    }
+
+    public void updateWhiteBlank(List<whiteblank> whiteblanks, int size){
         for (int i = 0; i < size; ++i){
             points.clear();
             //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
@@ -3163,7 +3231,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }*/
 
-    public void drawpoi(List<POI> pois, int size){
+    public void updatepoi(List<POI> pois, int size){
         Log.w(TAG, "drawpoi: " + size);
         for (int i = 0; i < size; ++i){
             SimpleMarkerSymbol makerSymbol;
@@ -3882,7 +3950,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         mMapView.resume();
 
-        //drawPoiAndWhiteBlank();
+        //drawGraphicsOverlayer();
         //setRecyclerView();
         //setRecyclerViewForP();
         //注册传感器监听器
@@ -3895,17 +3963,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void drawOperationalLayer(){
-        drawPoiAndWhiteBlank();
-        if (hasMyTuban() && hasMyTuban())
-            drawMyTuban();
-    }
-
-    private boolean showMTuban;
-    private boolean hasMyTuban(){
-        return LitePal.findAll(my_tb.class).size() >= 1;
-    }
-    private void drawMyTuban(){
-
+        drawGraphicsOverlayer();
+        /*if (hasMyTuban() && hasMyTuban())
+            parseAndUpdateMyTuban();*/
     }
 
     @Override
