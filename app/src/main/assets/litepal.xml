@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <litepal>
     <dbname value="impulseManage"></dbname>
-    <version value="9"></version>
+    <version value="10"></version>
     <list>
         <mapping class="com.esri.arcgisruntime.demos.displaymap.whiteblank"></mapping>
         <mapping class="com.esri.arcgisruntime.demos.displaymap.xzq"></mapping>

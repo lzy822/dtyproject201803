@@ -1,5 +1,7 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
+import com.esri.arcgisruntime.geometry.PointCollection;
+
 import org.litepal.LitePal;
 import org.litepal.crud.LitePalSupport;
 
@@ -7,6 +9,15 @@ public class my_tb extends LitePalSupport {
     private String name;
     private String pointCollection;
     private String mdata;
+    private PointCollection points;
+
+    public PointCollection getPoints() {
+        return points;
+    }
+
+    public void setPoints(PointCollection points) {
+        this.points = points;
+    }
 
     public String getMdata() {
         return mdata;

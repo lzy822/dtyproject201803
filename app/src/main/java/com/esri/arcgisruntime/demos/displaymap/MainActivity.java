@@ -676,15 +676,7 @@ public class MainActivity extends AppCompatActivity {
         bt_polygon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                RunningFunction = DisplayEnum.FUNC_ANA;
-                if (!MapQuery)
-                    mapQueryBtEvent();
-                DrawType = DisplayEnum.DRAW_POLYGON;
-                pointCollection = new PointCollection(SpatialReference.create(4521));
-                RunningAnalyseFunction = DisplayEnum.ANA_NEED;
-                showQueryWidget();
-                removeStandardWidget();
-                QueryProcessType = DisplayEnum.INQUERY;
+                analyseFunction();
                 popupWindow.dismiss();
             }
         });
@@ -2649,6 +2641,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        queriedMyTuban = new my_tb();
         requestAuthority();
         ic = "自然资源监管系统";
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
@@ -2711,6 +2704,22 @@ public class MainActivity extends AppCompatActivity {
 
     private DisplayEnum RunningAnalyseFunction = DisplayEnum.ANA_NONE;
 
+    private void cancelBtFunction(){
+        queriedMyTuban = new my_tb();
+        QueryProcessType = DisplayEnum.NOQUERY;
+        removeQueryWidget();
+        showStandardWidget();
+        DrawType = DisplayEnum.DRAW_NONE;
+        if (RunningAnalyseFunction == DisplayEnum.ANA_NEED)
+            mapQueryBtEvent();
+        else {
+            mMapView.getGraphicsOverlays().clear();
+            drawGraphicsOverlayer();
+        }
+        setTitle(R.string.app_name);
+        RunningAnalyseFunction = DisplayEnum.ANA_NONE;
+    }
+
     private void showQueryWidget(){
         FloatingActionButton cancel = (FloatingActionButton) findViewById(R.id.CancelQuery);
         cancel.setVisibility(View.VISIBLE);
@@ -2724,18 +2733,31 @@ public class MainActivity extends AppCompatActivity {
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                QueryProcessType = DisplayEnum.NOQUERY;
-                removeQueryWidget();
-                showStandardWidget();
-                DrawType = DisplayEnum.DRAW_NONE;
-                if (RunningAnalyseFunction == DisplayEnum.ANA_NEED)
-                    mapQueryBtEvent();
-                else {
-                    mMapView.getGraphicsOverlays().clear();
-                    drawGraphicsOverlayer();
+                if (queriedMyTuban.getName() != null && pointCollection.size() < 3){
+                    //TODO 删除图斑逻辑
+                    AlertDialog.Builder dialog1 = new AlertDialog.Builder(MainActivity.this);
+                    dialog1.setTitle("提示");
+                    dialog1.setMessage("你确定要删除该图斑吗？");
+                    dialog1.setCancelable(false);
+                    dialog1.setPositiveButton("重置该图斑", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(MainActivity.this, "该图斑已恢复", Toast.LENGTH_LONG).show();
+                            cancelBtFunction();
+                        }
+                    });
+                    dialog1.setNegativeButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(MainActivity.this, queriedMyTuban.getName() + "已删除", Toast.LENGTH_LONG).show();
+                            LitePal.deleteAll(my_tb.class, "name = ?", queriedMyTuban.getName());
+                            cancelBtFunction();
+                        }
+                    });
+                    dialog1.show();
+                }else {
+                    cancelBtFunction();
                 }
-                setTitle(R.string.app_name);
-                RunningAnalyseFunction = DisplayEnum.ANA_NONE;
             }
         });
         back.setOnClickListener(new View.OnClickListener() {
@@ -2823,6 +2845,7 @@ public class MainActivity extends AppCompatActivity {
                             } else
                                 Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
                         } else if (QueryProcessType == DisplayEnum.FINISHQUERY) {
+                            queriedMyTuban = new my_tb();
                             QueryProcessType = DisplayEnum.NOQUERY;
                             removeQueryWidgetFinishLater();
                             showStandardWidget();
@@ -2928,6 +2951,7 @@ public class MainActivity extends AppCompatActivity {
                         mStrPointCollection = mStrPointCollection + ";";
                 }
                 intent.putExtra("pointCollection", mStrPointCollection);
+                intent.putExtra("name", queriedMyTuban.getName());
                 Log.w(TAG, "onClick: " + pointCollection.getSpatialReference().toString());
                 startActivity(intent);
             }
@@ -3051,22 +3075,24 @@ public class MainActivity extends AppCompatActivity {
     private void updateMyTuban(){
         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
         for (int i = 0; i < currentMyTuban.size(); ++i){
-            Polygon polygon = new Polygon(currentMyTuban.get(i));
+            Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
             Graphic g = new Graphic(polygon, lineSymbol);
             graphics.add(g);
         }
     }
 
-    List<PointCollection> currentMyTuban = new ArrayList<>();
+    List<my_tb> currentMyTuban = new ArrayList<>();
 
     private void parseAndUpdateMyTuban(){
         queryMyTuban();
         updateMyTuban();
     }
 
+    private my_tb queriedMyTuban;
+
     private void queryMyTuban(){
         List<my_tb> myTbs = LitePal.findAll(my_tb.class);
-        List<PointCollection> pointCollectionList = new ArrayList<>();
+        currentMyTuban = myTbs;
         for (int i = 0; i < myTbs.size(); ++i){
             String mpointCollection = myTbs.get(i).getPointCollection();
             PointCollection pointCollection = new PointCollection(SpatialReference.create(4521));
@@ -3076,25 +3102,53 @@ public class MainActivity extends AppCompatActivity {
                 String[] mPoint1 = mPoint[j].split(",");
                 pointCollection.add(new Point(Double.valueOf(mPoint1[0]), Double.valueOf(mPoint1[1])));
             }
-            pointCollectionList.add(pointCollection);
+            //pointCollectionList.add(pointCollection);
+            currentMyTuban.get(i).setPoints(pointCollection);
         }
-        currentMyTuban = pointCollectionList;
+    }
+
+    private void analyseFunction(){
+        RunningFunction = DisplayEnum.FUNC_ANA;
+        if (!MapQuery)
+            mapQueryBtEvent();
+        DrawType = DisplayEnum.DRAW_POLYGON;
+        pointCollection = new PointCollection(SpatialReference.create(4521));
+        RunningAnalyseFunction = DisplayEnum.ANA_NEED;
+        showQueryWidget();
+        removeStandardWidget();
+        QueryProcessType = DisplayEnum.INQUERY;
+    }
+
+    private void analyseFunction(PointCollection pc){
+        removeGraphicsOverlayers();
+        RunningFunction = DisplayEnum.FUNC_ANA;
+        if (!MapQuery)
+            mapQueryBtEvent();
+        DrawType = DisplayEnum.DRAW_POLYGON;
+        pointCollection = pc;
+        drawGeometry(new Polygon(pointCollection, SpatialReference.create(4521)));
+        RunningAnalyseFunction = DisplayEnum.ANA_NEED;
+        showQueryWidget();
+        removeStandardWidget();
+        QueryProcessType = DisplayEnum.INQUERY;
+    }
+
+    private void drawGeometry(Geometry geometry){
+        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+        Graphic fillGraphic;
+        fillGraphic = new Graphic(geometry, lineSymbol);
+        graphicsOverlay_1.getGraphics().add(fillGraphic);
+        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
     }
 
     private boolean inTuban(Point pt){
         for (int i = 0; i < currentMyTuban.size(); ++i){
-            Polygon polygon = new Polygon(currentMyTuban.get(i));
+            Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
             if (GeometryEngine.within(pt, polygon)){
                 //TODO 完善查询逻辑
-                RunningFunction = DisplayEnum.FUNC_ANA;
-                if (!MapQuery)
-                    mapQueryBtEvent();
-                DrawType = DisplayEnum.DRAW_POLYGON;
-                pointCollection = currentMyTuban.get(i);
-                RunningAnalyseFunction = DisplayEnum.ANA_NEED;
-                showQueryWidget();
-                removeStandardWidget();
-                QueryProcessType = DisplayEnum.INQUERY;
+                queriedMyTuban = currentMyTuban.get(i);
+                analyseFunction(queriedMyTuban.getPoints());
                 return true;
             }
         }

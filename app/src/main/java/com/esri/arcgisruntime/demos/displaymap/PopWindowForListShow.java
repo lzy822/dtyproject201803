@@ -57,14 +57,27 @@ public class PopWindowForListShow extends AppCompatActivity {
             }
         });
 
+
         FloatingActionButton saveButton = (FloatingActionButton) findViewById(R.id.saveData);
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //TODO 存储图斑信息
-                saveTbData();
+                isSaveOrUpdate();
             }
         });
+    }
+
+    private void isSaveOrUpdate(){
+        String name = getIntent().getStringExtra("name");
+        if (name == null)
+        {
+            saveTbData();
+        }
+        else
+        {
+            updateTbData(name);
+        }
     }
 
     private void saveTbData(){
@@ -75,6 +88,16 @@ public class PopWindowForListShow extends AppCompatActivity {
         my_tb.setName(name);
         my_tb.save();
         Toast.makeText(PopWindowForListShow.this, name + "已经保存", Toast.LENGTH_SHORT).show();
+    }
+
+    private void updateTbData(String name){
+        //String name = "图斑" + LitePal.findAll(my_tb.class).size();
+        my_tb my_tb = new my_tb();
+        my_tb.setPointCollection(getIntent().getStringExtra("pointCollection"));
+        my_tb.setMdata(getIntent().getStringExtra("data"));
+        my_tb.setName(name);
+        my_tb.updateAll("name = ?", name);
+        Toast.makeText(PopWindowForListShow.this, name + "已经更新", Toast.LENGTH_SHORT).show();
     }
 
     private boolean hasRepeatedTuban(){
