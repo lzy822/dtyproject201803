@@ -74,6 +74,7 @@ import com.esri.arcgisruntime.data.Geodatabase;
 import com.esri.arcgisruntime.data.GeodatabaseFeatureTable;
 import com.esri.arcgisruntime.data.QueryParameters;
 import com.esri.arcgisruntime.data.ServiceFeatureTable;
+import com.esri.arcgisruntime.data.ShapefileFeatureTable;
 import com.esri.arcgisruntime.geometry.AreaUnit;
 import com.esri.arcgisruntime.geometry.AreaUnitId;
 import com.esri.arcgisruntime.geometry.Envelope;
@@ -98,6 +99,7 @@ import com.esri.arcgisruntime.layers.ArcGISVectorTiledLayer;
 import com.esri.arcgisruntime.layers.FeatureCollectionLayer;
 import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.layers.Layer;
+import com.esri.arcgisruntime.layers.RasterLayer;
 import com.esri.arcgisruntime.layers.SublayerList;
 import com.esri.arcgisruntime.loadable.LoadStatus;
 import com.esri.arcgisruntime.location.LocationDataSource;
@@ -105,6 +107,7 @@ import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.LayerList;
 import com.esri.arcgisruntime.mapping.MobileMapPackage;
+import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.popup.Popup;
 import com.esri.arcgisruntime.mapping.view.Callout;
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener;
@@ -119,6 +122,7 @@ import com.esri.arcgisruntime.mapping.view.MapRotationChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedEvent;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.raster.Raster;
 import com.esri.arcgisruntime.symbology.SimpleFillSymbol;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
@@ -1564,8 +1568,8 @@ public class MainActivity extends AppCompatActivity {
             querySingleTaskForPolygon(query, polygon, DLTB2016FeatureLayer.getFeatureTable(), "16地类图斑");
             //17年土地规划地类层
             querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "17地类图斑");
-        } catch (ArcGISRuntimeException e) {
-            Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(MainActivity.this, e.getMessage() + "\n" + "请重启app", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1582,6 +1586,80 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private String buildRasterPath() {
+        // get sdcard resource name
+        File extStorDir = Environment.getExternalStorageDirectory();
+        // get the directory
+        String extSDCardDirName = "临沧市基本农田/201912无人机影像";
+        // get raster filename
+        String filename = "DOM_CGCS";
+        // create the full path to the raster file
+        return extStorDir.getAbsolutePath()
+                + File.separator
+                + extSDCardDirName
+                + File.separator
+                + filename
+                + ".tif";
+    }
+
+    private void loadRaster() {
+        // create a raster from a local raster file
+        Raster raster = new Raster(buildRasterPath());
+        // create a raster layer
+        final RasterLayer rasterLayer = new RasterLayer(raster);
+
+        // create a Map with imagery basemap
+        //ArcGISMap map = new ArcGISMap(Basemap.createImagery());
+        // add the map to a map view
+        //mMapView.setMap(map);
+        // add the raster as an operational layer
+        rasterLayer.setVisible(true);
+        map.getOperationalLayers().add(rasterLayer);
+        // set viewpoint on the raster
+        rasterLayer.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                //mMapView.setViewpointGeometryAsync(rasterLayer.getFullExtent(), 50);
+                Toast.makeText(MainActivity.this, "TIFF 已经显示", Toast.LENGTH_LONG).show();
+                Log.w(TAG, "initLayerList: " + map.getOperationalLayers().size());
+                initLayerList();
+            }
+        });
+    }
+
+    private void featureLayerShapefile() {
+        // load the shapefile with a local path
+        final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(
+                Environment.getExternalStorageDirectory() + "/临沧市基本农田/1229基本农田保护区shp/基本农田保护区.shp");
+
+        shapefileFeatureTable.loadAsync();
+        shapefileFeatureTable.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                if (shapefileFeatureTable.getLoadStatus() == LoadStatus.LOADED) {
+
+                    // create a feature layer to display the shapefile
+                    FeatureLayer shapefileFeatureLayer = new FeatureLayer(shapefileFeatureTable);
+
+                    shapefileFeatureLayer.setVisible(true);
+                    // add the feature layer to the map
+                    //mMapView.getMap().getOperationalLayers().add(shapefileFeatureLayer);
+                    map.getOperationalLayers().add(shapefileFeatureLayer);
+                    Log.w(TAG, "initLayerList: " + map.getOperationalLayers().size());
+                    // zoom the map to the extent of the shapefile
+
+                    initLayerList();
+                    Toast.makeText(MainActivity.this, "Shapefile 已经显示", Toast.LENGTH_LONG).show();
+                    //mMapView.setViewpointAsync(new Viewpoint(shapefileFeatureLayer.getFullExtent()));
+                } else {
+                    String error = "Shapefile feature table failed to load: " + shapefileFeatureTable.getLoadError().toString();
+                    Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+                    Log.e(TAG, error);
+                }
+            }
+        });
     }
 
     private void queryTaskForPolygon(final QueryParameters query, final Polygon polygon){
@@ -1911,6 +1989,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initWidget(){
+        FloatingActionButton InputDataBt = findViewById(R.id.InputData);
+        InputDataBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(MainActivity.this);
+                builder1.setTitle("提示");
+                builder1.setMessage("请选择你要添加的文件类型:" + "\n" + "（将在下次启动时生效）");
+                builder1.setNegativeButton("SHP文件", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        InputDataForShp();
+                    }
+                });
+                builder1.setPositiveButton("TIF文件", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        InputDataForTif();
+                    }
+                });
+                builder1.show();
+            }
+        });
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         pieChartView = (PieChartView) findViewById(R.id.chart);
         //按钮添加要素
@@ -2475,6 +2575,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void initLayerList(){
         int size = map.getOperationalLayers().size();
+        layers.clear();
+        layerList.clear();
         Log.w(TAG, "size: " + size);
         for (int i = size - 1; i > -1; i--){
             Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
@@ -2523,13 +2625,13 @@ public class MainActivity extends AppCompatActivity {
                 if (mainLoadStatus == LoadStatus.LOADED) {
                     List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
                     map = mainArcGISMapL.get(0);
-                    initLayerList();
-                    Log.w(TAG, "initLayerList: " + TPKlayers.size());
-                    Log.w(TAG, "initLayerList: " + layerList.size());
                     setRecyclerView();
                     mMapView.setMap(map);
                     initSurfaceCenterPoint(mainMobileMapPackage);
                     drawGraphicsOverlayer();
+                    initLayerList();
+                    loadRaster();
+                    featureLayerShapefile();
                     //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
 
                 }else mainMobileMapPackage.loadAsync();
@@ -2664,6 +2766,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         queriedMyTuban = new my_tb();
         requestAuthority();
         ic = "自然资源监管系统";
@@ -2673,6 +2776,19 @@ public class MainActivity extends AppCompatActivity {
             actionBar.setHomeAsUpIndicator(R.drawable.ic_list_black_24dp);
         }
 
+    }
+
+    private void InputDataForTif(){
+        Intent intent = new Intent(MainActivity.this, Activity_FileManage.class);
+        intent.putExtra("type", ".tif");
+        //intent.putExtra("type", ".shp");
+        startActivityForResult(intent, EnumClass.GET_TIF_FILE);
+    }
+    private void InputDataForShp(){
+        Intent intent = new Intent(MainActivity.this, Activity_FileManage.class);
+        intent.putExtra("type", ".shp");
+        //intent.putExtra("type", ".shp");
+        startActivityForResult(intent, EnumClass.GET_SHP_FILE);
     }
 
     @Override
@@ -4099,28 +4215,30 @@ public class MainActivity extends AppCompatActivity {
     //获取文件管理器的返回信息
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK && requestCode == EnumClass.REQUEST_CODE_PHOTO) {
-            theNum = 0;
-            final Uri uri = data.getData();
-            Log.w(TAG, "onActivityResult: " + DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri));
-            final float[] latandlong = new float[2];
-            try {
-                ExifInterface exifInterface = new ExifInterface(DataUtil.getRealPathFromUriForPhoto(this, uri));
-                exifInterface.getLatLong(latandlong);
-                if (latandlong[0] != 0) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setTitle("提示");
-                    builder.setMessage("请选择你要添加的图层");
-                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            AddPhoto(uri, latandlong, 0);
-                        }
-                    });
-                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            AddPhoto(uri, latandlong, 1);
+        if (resultCode == RESULT_OK){
+            switch (requestCode){
+                case EnumClass.REQUEST_CODE_PHOTO:
+                    theNum = 0;
+                    final Uri uri = data.getData();
+                    Log.w(TAG, "onActivityResult: " + DataUtil.getRealPathFromUriForPhoto(MainActivity.this, uri));
+                    final float[] latandlong = new float[2];
+                    try {
+                        ExifInterface exifInterface = new ExifInterface(DataUtil.getRealPathFromUriForPhoto(this, uri));
+                        exifInterface.getLatLong(latandlong);
+                        if (latandlong[0] != 0) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                            builder.setTitle("提示");
+                            builder.setMessage("请选择你要添加的图层");
+                            builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    AddPhoto(uri, latandlong, 0);
+                                }
+                            });
+                            builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    AddPhoto(uri, latandlong, 1);
                             /*else {
                                 dmbzList = LitePal.findAll(DMBZ.class);
                                 int size = dmbzList.size();
@@ -4133,36 +4251,36 @@ public class MainActivity extends AppCompatActivity {
                                 dmbz.save();
                                 getDMBZBitmap();
                             }*/
-                        }
-                    });
-                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                                }
+                            });
+                            builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    AddPhoto(uri, latandlong, 2);
+                                }
+                            });
+                            builder.show();
+                        } else
+                            Toast.makeText(MainActivity.this, R.string.LocError1, Toast.LENGTH_LONG).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case EnumClass.REQUEST_CODE_TAPE:
+                    final Uri uri1 = data.getData();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("提示");
+                    builder.setMessage("请选择你要添加的图层");
+                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            AddPhoto(uri, latandlong, 2);
+                            AddTape(uri1, 0);
                         }
                     });
-                    builder.show();
-                } else
-                    Toast.makeText(MainActivity.this, R.string.LocError1, Toast.LENGTH_LONG).show();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (resultCode == RESULT_OK && requestCode == EnumClass.REQUEST_CODE_TAPE) {
-            final Uri uri = data.getData();
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle("提示");
-            builder.setMessage("请选择你要添加的图层");
-            builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    AddTape(uri, 0);
-                }
-            });
-            builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    AddTape(uri, 1);
+                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AddTape(uri1, 1);
                     /*else {
                         dmbzList = LitePal.findAll(DMBZ.class);
                         int size = dmbzList.size();
@@ -4175,48 +4293,48 @@ public class MainActivity extends AppCompatActivity {
                         dmbz.save();
                         getDMBZBitmap();
                     }*/
-                }
-            });
-            builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    AddTape(uri, 2);
-                }
-            });
-            builder.show();
-        }
-        if (resultCode == RESULT_OK && requestCode == EnumClass.TAKE_PHOTO) {
-            theNum = 0;
-            final String imageuri;
-            if (Build.VERSION.SDK_INT >= 24) {
-                imageuri = DataUtil.getRealPath(imageUri.toString());
-            } else {
-                imageuri = imageUri.toString().substring(7);
-            }
-            File file = new File(imageuri);
-            if (file.exists()) {
-                final float[] latandlong = new float[2];
-                try {
-                    MediaStore.Images.Media.insertImage(getContentResolver(), imageuri, "title", "description");
-                    // 最后通知图库更新
-                    MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + imageuri)));
-                    ExifInterface exifInterface = new ExifInterface(imageuri);
-                    exifInterface.getLatLong(latandlong);
-                    //List<POI> POIs = LitePal.where("ic = ?", ic).find(POI.class);
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setTitle("提示");
-                    builder.setMessage("请选择你要添加的图层");
-                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            AddTakePhoto(imageuri, latandlong, 0);
                         }
                     });
-                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            AddTakePhoto(imageuri, latandlong, 1);
+                            AddTape(uri1, 2);
+                        }
+                    });
+                    builder.show();
+                    break;
+                case EnumClass.TAKE_PHOTO:
+                    theNum = 0;
+                    final String imageuri;
+                    if (Build.VERSION.SDK_INT >= 24) {
+                        imageuri = DataUtil.getRealPath(imageUri.toString());
+                    } else {
+                        imageuri = imageUri.toString().substring(7);
+                    }
+                    File file = new File(imageuri);
+                    if (file.exists()) {
+                        final float[] latandlong1 = new float[2];
+                        try {
+                            MediaStore.Images.Media.insertImage(getContentResolver(), imageuri, "title", "description");
+                            // 最后通知图库更新
+                            MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + imageuri)));
+                            ExifInterface exifInterface = new ExifInterface(imageuri);
+                            exifInterface.getLatLong(latandlong1);
+                            //List<POI> POIs = LitePal.where("ic = ?", ic).find(POI.class);
+
+                            AlertDialog.Builder builder1 = new AlertDialog.Builder(MainActivity.this);
+                            builder1.setTitle("提示");
+                            builder1.setMessage("请选择你要添加的图层");
+                            builder1.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    AddTakePhoto(imageuri, latandlong1, 0);
+                                }
+                            });
+                            builder1.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    AddTakePhoto(imageuri, latandlong1, 1);
                             /*else {
                                 dmbzList = LitePal.findAll(DMBZ.class);
                                 int size = dmbzList.size();
@@ -4229,26 +4347,47 @@ public class MainActivity extends AppCompatActivity {
                                 dmbz.save();
                                 getDMBZBitmap();
                             }*/
-                        }
-                    });
-                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            AddTakePhoto(imageuri, latandlong, 2);
-                        }
-                    });
-                    builder.show();
+                                }
+                            });
+                            builder1.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    AddTakePhoto(imageuri, latandlong1, 2);
+                                }
+                            });
+                            builder1.show();
 
-                } catch (Exception e) {
-                    Log.w(TAG, e.toString());
-                }
-            } else {
-                file.delete();
-                Toast.makeText(MainActivity.this, R.string.TakePhotoError, Toast.LENGTH_LONG).show();
+                        } catch (Exception e) {
+                            Log.w(TAG, e.toString());
+                        }
+                    } else {
+                        file.delete();
+                        Toast.makeText(MainActivity.this, R.string.TakePhotoError, Toast.LENGTH_LONG).show();
+                    }
+                    break;
+                case EnumClass.GET_SHP_FILE:
+                    //TODO 处理文件管理器获取SHP文件
+                    final String shp_path = data.getStringExtra("filePath");
+                    Toast.makeText(MainActivity.this, shp_path, Toast.LENGTH_LONG).show();
+                    break;
+                case EnumClass.GET_TIF_FILE:
+                    //TODO 处理文件管理器获取TIF文件
+                    final String tif_path = data.getStringExtra("filePath");
+                    Toast.makeText(MainActivity.this, tif_path, Toast.LENGTH_LONG).show();
+                    break;
             }
+        }
+        /*if (resultCode == RESULT_OK && requestCode == EnumClass.REQUEST_CODE_PHOTO) {
+
+        }else if (resultCode == RESULT_OK && requestCode == EnumClass.REQUEST_CODE_TAPE) {
+
+        }else if (resultCode == RESULT_OK && requestCode == EnumClass.TAKE_PHOTO) {
+
             //String imageuri = getRealPathFromUriForPhoto(this, imageUri);
 
-        }
+        }else if (resultCode == RESULT_OK && requestCode == EnumClass.GET_FILE){
+
+        }*/
     }
 
     private void takePhoto() {

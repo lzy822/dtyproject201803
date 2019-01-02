@@ -43,6 +43,8 @@ public class EnumClass {
     public final static int REQUEST_CODE_TAPE = 43;
     public static final int TAKE_PHOTO = 119;
     public static final int PERMISSION_CODE = 42042;
+    public static final int GET_TIF_FILE = 17;
+    public static final int GET_SHP_FILE = 18;
 
     //记录当前pdf文件的读取类型
     public static final int NONE_FILE_TYPE = 0;
