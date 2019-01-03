@@ -170,6 +170,13 @@ public class MainActivity extends AppCompatActivity {
     private List<layer> layerList = new ArrayList<>();
     private List<layer1> layers = new ArrayList<>();
     private DrawerLayout mDrawerLayout;
+
+    String[] items;
+    boolean isLoc = false;
+    List<layer1> TPKlayers = new ArrayList<>();
+    //初始化传感器管理器
+    private SensorManager sensorManager;
+    double OriginScale;
     //private layerAdapter adapter;
     //private RecyclerView recyclerView;
     String[] strings;
@@ -261,13 +268,6 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
-
-    String[] items;
-    boolean isLoc = false;
-    List<layer1> TPKlayers = new ArrayList<>();
-    //初始化传感器管理器
-    private SensorManager sensorManager;
-    double OriginScale;
 
     @Override
     public void onBackPressed() {
@@ -1097,7 +1097,7 @@ public class MainActivity extends AppCompatActivity {
                     mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case XZQ_FEATURE:
-                    mTable = XZQFeatureLayer.getFeatureTable();//得到查询属性表
+                    mTable = XZCAreaFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case PTB_FEATURE:
                     mTable = PTuBanFeatureLayer.getFeatureTable();//得到查询属性表
@@ -1629,10 +1629,67 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void loadRaster(final String path) {
+        // create a raster from a local raster file
+        Raster raster = new Raster(path);
+        // create a raster layer
+        final RasterLayer rasterLayer = new RasterLayer(raster);
+
+        // create a Map with imagery basemap
+        //ArcGISMap map = new ArcGISMap(Basemap.createImagery());
+        // add the map to a map view
+        //mMapView.setMap(map);
+        // add the raster as an operational layer
+        rasterLayer.setVisible(true);
+        map.getOperationalLayers().add(rasterLayer);
+        // set viewpoint on the raster
+        rasterLayer.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                //mMapView.setViewpointGeometryAsync(rasterLayer.getFullExtent(), 50);
+                Toast.makeText(MainActivity.this, "TIFF 已经显示", Toast.LENGTH_LONG).show();
+                Log.w(TAG, "initLayerList: " + map.getOperationalLayers().size());
+                initLayerList(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")));
+            }
+        });
+    }
+
     private void featureLayerShapefile() {
         // load the shapefile with a local path
         final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(
                 Environment.getExternalStorageDirectory() + "/临沧市基本农田/1229基本农田保护区shp/基本农田保护区.shp");
+
+        shapefileFeatureTable.loadAsync();
+        shapefileFeatureTable.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                if (shapefileFeatureTable.getLoadStatus() == LoadStatus.LOADED) {
+
+                    // create a feature layer to display the shapefile
+                    FeatureLayer shapefileFeatureLayer = new FeatureLayer(shapefileFeatureTable);
+
+                    shapefileFeatureLayer.setVisible(true);
+                    // add the feature layer to the map
+                    //mMapView.getMap().getOperationalLayers().add(shapefileFeatureLayer);
+                    map.getOperationalLayers().add(shapefileFeatureLayer);
+                    Log.w(TAG, "initLayerList: " + map.getOperationalLayers().size());
+                    // zoom the map to the extent of the shapefile
+
+                    initLayerList();
+                    Toast.makeText(MainActivity.this, "Shapefile 已经显示", Toast.LENGTH_LONG).show();
+                    //mMapView.setViewpointAsync(new Viewpoint(shapefileFeatureLayer.getFullExtent()));
+                } else {
+                    String error = "Shapefile feature table failed to load: " + shapefileFeatureTable.getLoadError().toString();
+                    Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+                    Log.e(TAG, error);
+                }
+            }
+        });
+    }
+
+    private void featureLayerShapefile(String path) {
+        // load the shapefile with a local path
+        final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
 
         shapefileFeatureTable.loadAsync();
         shapefileFeatureTable.addDoneLoadingListener(new Runnable() {
@@ -1670,7 +1727,7 @@ public class MainActivity extends AppCompatActivity {
                     mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case XZQ_FEATURE:
-                    mTable = XZQFeatureLayer.getFeatureTable();//得到查询属性表
+                    mTable = XZCAreaFeatureLayer.getFeatureTable();//得到查询属性表
                     break;
                 case PTB_FEATURE:
                     mTable = PTuBanFeatureLayer.getFeatureTable();//得到查询属性表
@@ -2578,11 +2635,17 @@ public class MainActivity extends AppCompatActivity {
         layers.clear();
         layerList.clear();
         Log.w(TAG, "size: " + size);
-        for (int i = size - 1; i > -1; i--){
+        for (int i = size - 1, j = 0; i > -1; i--){
             Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
             if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
                 layers.add(new layer1(map.getOperationalLayers().get(i), i));
-                layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
+                if (map.getOperationalLayers().get(i).getName().isEmpty()){
+                    List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
+                    layerList.add(new layer(tifList.get(j).getName(), true));
+                    ++j;
+                }
+                else
+                    layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
                 if (map.getOperationalLayers().get(i).getName().contains("土地规划地类")) {
                     //ArcGISVectorTiledLayer mVectorTiledLayer = (ArcGISVectorTiledLayer) map.getOperationalLayers().get(i);
                     //Log.w(TAG, "initLayerList: " + "omg");
@@ -2601,6 +2664,41 @@ public class MainActivity extends AppCompatActivity {
         }
         layerList.add(new layer("影像", true));
         isOK1 = true;
+        setRecyclerView();
+    }
+
+    private void initLayerList(String name){
+        int size = map.getOperationalLayers().size();
+        layers.clear();
+        layerList.clear();
+        Log.w(TAG, "size: " + size);
+        for (int i = size - 1; i > -1; i--){
+            Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
+            if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
+                layers.add(new layer1(map.getOperationalLayers().get(i), i));
+                if (map.getOperationalLayers().get(i).getName().isEmpty())
+                    layerList.add(new layer(name, true));
+                else
+                    layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
+                if (map.getOperationalLayers().get(i).getName().contains("土地规划地类")) {
+                    //ArcGISVectorTiledLayer mVectorTiledLayer = (ArcGISVectorTiledLayer) map.getOperationalLayers().get(i);
+                    //Log.w(TAG, "initLayerList: " + "omg");
+                }
+            }else {
+                //Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
+                hasTPK = true;
+                if (!map.getOperationalLayers().get(i).getName().contains("临沧市中心城区影像"))
+                    TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
+                else{
+                    layers.add(new layer1(map.getOperationalLayers().get(i), i));
+                    layerList.add(new layer(map.getOperationalLayers().get(i).getName(), true));
+                }
+
+            }
+        }
+        layerList.add(new layer("影像", true));
+        isOK1 = true;
+        setRecyclerView();
     }
 
     private void initSurfaceCenterPoint(final MobileMapPackage mainMobileMapPackage){
@@ -2625,13 +2723,14 @@ public class MainActivity extends AppCompatActivity {
                 if (mainLoadStatus == LoadStatus.LOADED) {
                     List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
                     map = mainArcGISMapL.get(0);
-                    setRecyclerView();
                     mMapView.setMap(map);
                     initSurfaceCenterPoint(mainMobileMapPackage);
                     drawGraphicsOverlayer();
                     initLayerList();
-                    loadRaster();
-                    featureLayerShapefile();
+                    useUserLayer();
+                    //setRecyclerView();
+                    /*loadRaster();
+                    featureLayerShapefile();*/
                     //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
 
                 }else mainMobileMapPackage.loadAsync();
@@ -2670,12 +2769,33 @@ public class MainActivity extends AppCompatActivity {
         readJBNTGDB();
         readGDB();
         readPGDB();
+        readXZCAreaGDB();
     }
 
     FeatureLayer PTuBanFeatureLayer;
     FeatureLayer DLTB2009FeatureLayer;
     FeatureLayer DLTB2016FeatureLayer;
     FeatureLayer DLTB2017FeatureLayer;
+    FeatureLayer XZCAreaFeatureLayer;
+
+    private void readXZCAreaGDB(){
+        if (isFileExist(StaticVariableEnum.XZCAreaROOTPATH)) {
+            final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(StaticVariableEnum.XZCAreaROOTPATH);
+            shapefileFeatureTable.loadAsync();
+            shapefileFeatureTable.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    if (shapefileFeatureTable.getLoadStatus() == LoadStatus.LOADED) {
+                        XZCAreaFeatureLayer = new FeatureLayer(shapefileFeatureTable);
+                    } else {
+                        String error = "Shapefile feature table failed to load: " + shapefileFeatureTable.getLoadError().toString();
+                        Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+                        Log.e(TAG, error);
+                    }
+                }
+            });
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+    }
 
     private void readPGDB(){
         if (isFileExist(StaticVariableEnum.PGDBROOTPATH)) {
@@ -2717,6 +2837,22 @@ public class MainActivity extends AppCompatActivity {
                     XZQFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
                     DMPointFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
                     //mMapView.setViewpointCenterAsync();
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+    }
+
+    private void readKSTest(){
+        if (isFileExist(StaticVariableEnum.KSTestROOTPATH)) {
+            final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.KSTestROOTPATH);
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    TDGHDLFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
+                    XZQFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
+                    DMPointFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("地名点"));
                 }
             });
             Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
@@ -4368,11 +4504,20 @@ public class MainActivity extends AppCompatActivity {
                 case EnumClass.GET_SHP_FILE:
                     //TODO 处理文件管理器获取SHP文件
                     final String shp_path = data.getStringExtra("filePath");
+                    UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE);
+                    userLayer.save();
+                    //useUserLayer();
+                    showUserLayer(userLayer);
                     Toast.makeText(MainActivity.this, shp_path, Toast.LENGTH_LONG).show();
+                    //Toast.makeText(MainActivity.this, shp_path.substring(shp_path.lastIndexOf("/") + 1), Toast.LENGTH_LONG).show();
                     break;
                 case EnumClass.GET_TIF_FILE:
                     //TODO 处理文件管理器获取TIF文件
                     final String tif_path = data.getStringExtra("filePath");
+                    UserLayer userLayer1 = new UserLayer(tif_path.substring(tif_path.lastIndexOf("/") + 1, tif_path.lastIndexOf(".")), tif_path, UserLayer.TIF_FILE);
+                    userLayer1.save();
+                    showUserLayer(userLayer1);
+                    //useUserLayer();
                     Toast.makeText(MainActivity.this, tif_path, Toast.LENGTH_LONG).show();
                     break;
             }
@@ -4388,6 +4533,66 @@ public class MainActivity extends AppCompatActivity {
         }else if (resultCode == RESULT_OK && requestCode == EnumClass.GET_FILE){
 
         }*/
+    }
+
+    private void useUserLayer(){
+        List<UserLayer> userLayerList = LitePal.findAll(UserLayer.class);
+        checkUserLayerFile(userLayerList);
+        showUserLayer(userLayerList);
+    }
+
+    private void checkUserLayerFile(List<UserLayer> userLayerList){
+        try {
+            int size = userLayerList.size();
+            for (int i = 0 ; i < size; ++i){
+                String path = userLayerList.get(i).getPath();
+                File file = new File(path);
+                if (!file.exists()) {
+                    LitePal.deleteAll(UserLayer.class, "path = ?", path);
+                    userLayerList.remove(i);
+                    --i;
+                }
+            }
+        }catch (Exception e){
+            Log.w(TAG, "checkUserLayer: " + e.toString());
+        }
+    }
+
+    private void showUserLayer(List<UserLayer> userLayerList){
+        try {
+            int size = userLayerList.size();
+            for (int i = 0 ; i < size; ++i){
+                String path = userLayerList.get(i).getPath();
+                //TODO 完成用户图层使用逻辑
+                switch (userLayerList.get(i).getType()){
+                    case UserLayer.TIF_FILE:
+                        loadRaster(path);
+                        break;
+                    case UserLayer.SHP_FILE:
+                        featureLayerShapefile(path);
+                        break;
+                }
+            }
+        }catch (Exception e){
+            Log.w(TAG, "checkUserLayer: " + e.toString());
+        }
+    }
+
+    private void showUserLayer(UserLayer userLayer){
+        try {
+                String path = userLayer.getPath();
+                //TODO 完成用户图层使用逻辑
+                switch (userLayer.getType()){
+                    case UserLayer.TIF_FILE:
+                        loadRaster(path);
+                        break;
+                    case UserLayer.SHP_FILE:
+                        featureLayerShapefile(path);
+                        break;
+                }
+        }catch (Exception e){
+            Log.w(TAG, "checkUserLayer: " + e.toString());
+        }
     }
 
     private void takePhoto() {

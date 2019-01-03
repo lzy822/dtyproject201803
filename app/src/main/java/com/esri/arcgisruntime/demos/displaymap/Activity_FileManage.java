@@ -130,6 +130,10 @@ public class Activity_FileManage extends AppCompatActivity {
         adapter.setOnItemClickListener(new FileManageAdapter.OnRecyclerItemClickListener() {
             @Override
             public void onItemClick(View view, String RootPath, int position) {
+                File file = new File(RootPath);
+                String HZ = "";
+                if (!file.isDirectory())
+                    HZ = RootPath.substring(RootPath.lastIndexOf("."));
                 if (!RootPath.contains(type)) {
                     fileManages.clear();
                     fileManage = new FileManage(RootPath, RootPath.substring(0, RootPath.lastIndexOf("/")), type);
@@ -143,7 +147,7 @@ public class Activity_FileManage extends AppCompatActivity {
                         }
                     }
                     refreshRecycler();
-                }else {
+                }else if (HZ.contains(".shp") || HZ.contains(".tif")){
                     Intent i = new Intent();
                     i.putExtra("filePath", RootPath);
                     setResult(RESULT_OK, i);

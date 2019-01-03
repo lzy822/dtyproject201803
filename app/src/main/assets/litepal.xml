@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <litepal>
     <dbname value="impulseManage"></dbname>
-    <version value="10"></version>
+    <version value="11"></version>
     <list>
         <mapping class="com.esri.arcgisruntime.demos.displaymap.whiteblank"></mapping>
         <mapping class="com.esri.arcgisruntime.demos.displaymap.xzq"></mapping>
@@ -13,5 +13,6 @@
         <mapping class="com.esri.arcgisruntime.demos.displaymap.MTAPE"></mapping>
         <mapping class="com.esri.arcgisruntime.demos.displaymap.POI"></mapping>
         <mapping class="com.esri.arcgisruntime.demos.displaymap.my_tb"></mapping>
+        <mapping class="com.esri.arcgisruntime.demos.displaymap.UserLayer"></mapping>
     </list>
 </litepal>

@@ -1,6 +1,6 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
-public class layer {
+public class layer{
     private String type;
     private String path;
     private String name;
