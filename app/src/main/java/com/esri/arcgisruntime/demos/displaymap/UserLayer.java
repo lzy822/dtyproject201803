@@ -11,6 +11,7 @@ public class UserLayer extends LitePalSupport {
     private String path;
     private boolean loadstatus;
     private int type;
+    private String queriedKey;
 
     public UserLayer() {
     }
@@ -26,6 +27,14 @@ public class UserLayer extends LitePalSupport {
         this.path = path;
         this.loadstatus = loadstatus;
         this.type = type;
+    }
+
+    public String getQueriedKey() {
+        return queriedKey;
+    }
+
+    public void setQueriedKey(String queriedKey) {
+        this.queriedKey = queriedKey;
     }
 
     public String getName() {

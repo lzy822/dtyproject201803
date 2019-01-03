@@ -85,6 +85,7 @@ import com.esri.arcgisruntime.geometry.GeometryEngine;
 import com.esri.arcgisruntime.geometry.LinearUnit;
 import com.esri.arcgisruntime.geometry.LinearUnitId;
 import com.esri.arcgisruntime.geometry.Part;
+import com.esri.arcgisruntime.geometry.PartCollection;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.PointCollection;
 import com.esri.arcgisruntime.geometry.Polygon;
@@ -246,6 +247,9 @@ public class MainActivity extends AppCompatActivity {
     boolean hasTPK = false;
     boolean MapQuery = false;
     private DisplayEnum QueryProcessType = DisplayEnum.NOQUERY;
+
+    //FeatureLayer QueriedFeatureLayer;
+
     //private static final int INQUERY = -1;
     //private static final int FINISHQUERY = -2;
     //private static final int NOQUERY = -3;
@@ -976,7 +980,6 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("POIC", poic);
         startActivity(intent);*/
         Log.w(TAG, "updateMapPage: ");
-        // TODO LM
         GoNormalSinglePOIPage(poic);
     }
 
@@ -1347,10 +1350,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private double jbntArea;
     private void querySingleTaskForPolygon(final QueryParameters query, final Polygon polygon, FeatureTable mTable, final String text){
-        //TODO 查询逻辑
         try {
             Log.w(TAG, "querySingleTaskForPolygon: " + text);
             final ListenableFuture<FeatureQueryResult> featureQueryResult
@@ -1550,6 +1551,7 @@ public class MainActivity extends AppCompatActivity {
     boolean isQuery16DLTB;
     boolean isQuery17DLTB;
     boolean isQueryJBNTBHQ;
+    boolean isQueryUserLayer;
 
     private void queryAllTaskForPolygon(final QueryParameters query, final Polygon polygon){
         try {
@@ -2146,6 +2148,30 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mapQueryBtEvent();
+                if (MapQuery) {
+                    if (LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class).size() > 0) {
+                        //TODO 201913点选查询
+                        AlertDialog.Builder dialog1 = new AlertDialog.Builder(MainActivity.this);
+                        dialog1.setTitle("提示");
+                        dialog1.setMessage("你想查询什么内容");
+                        dialog1.setCancelable(false);
+                        dialog1.setPositiveButton("UserLayer", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                isQueryUserLayer = true;
+                            }
+                        });
+                        dialog1.setNegativeButton("普通查询", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                isQueryUserLayer = false;
+                            }
+                        });
+                        dialog1.show();
+                    }
+                    else
+                        isQueryUserLayer = false;
+                }
             }
         });
         whiteBlank_fab = (FloatingActionButton) findViewById(R.id.whiteBlank);
@@ -2243,10 +2269,22 @@ public class MainActivity extends AppCompatActivity {
                         Log.w(TAG, "onSingleTapConfirmed: ");
 
                         Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
-                        //TODO queryPOI
-                        if (!queryPoi(mMapView.locationToScreen(clickPoint)))
-                            if (!inTuban(clickPoint))
-                                queryTB(clickPoint, mapPoint);
+
+                        if (!isQueryUserLayer){
+                            if (!queryPoi(mMapView.locationToScreen(clickPoint)))
+                                if (!inTuban(clickPoint))
+                                    queryTB(clickPoint, mapPoint);
+                        }else {
+                            List<UserLayer> userLayerList = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
+                            int size = userLayerList.size();
+                            for (int i = 0; i < size; ++i){
+                                String path = userLayerList.get(i).getPath();
+                                ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
+                                if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
+                                    break;
+                                }
+                            }
+                        }
                             //queryPTuBan(clickPoint, mapPoint);
                         //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
                     } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
@@ -2324,7 +2362,6 @@ public class MainActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             CreatePOI = true;
                             POIType = 0;
-                            // TODO LM
                             GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 0));
                             POIType = -1;
                             CreatePOI = false;
@@ -2336,7 +2373,6 @@ public class MainActivity extends AppCompatActivity {
                             CreatePOI = true;
                             POIType = 1;
 
-                            // TODO LM
                             GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 1));
 
                             POIType = -1;
@@ -2348,7 +2384,6 @@ public class MainActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             CreatePOI = true;
                             POIType = 2;
-                            // TODO LM
                             GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 2));
                             POIType = -1;
                             CreatePOI = false;
@@ -2447,6 +2482,81 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         } else return false;
+    }
+
+    private boolean queryUserTB(String path, FeatureLayer featureLayer, final Point clickPoint, final Point mapPoint){
+        QueryParameters query = new QueryParameters();
+        query.setGeometry(clickPoint);// 设置空间几何对象
+        if (isFileExist(path) & MapQuery) {
+            //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+            try {
+                FeatureTable mTable = featureLayer.getFeatureTable();//得到查询属性表
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            removeGraphicsOverlayers();
+                            FeatureQueryResult featureResul = featureQueryResult.get();
+                            for (Object element : featureResul) {
+                                if (element instanceof Feature) {
+                                    Feature mFeatureGrafic = (Feature) element;
+                                    Geometry geometry = mFeatureGrafic.getGeometry();
+                                    analyseFunction((Polygon) geometry);
+                                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                    SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 5);
+                                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                                    Graphic pointGraphic = new Graphic(clickPoint, pointSymbol);
+                                    Graphic fillGraphic = new Graphic(geometry, lineSymbol);
+                                    graphicsOverlay_1.getGraphics().add(pointGraphic);
+                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                    Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                    TextView calloutContent = new TextView(getApplicationContext());
+                                    calloutContent.setTextColor(Color.BLACK);
+                                    //calloutContent.setSingleLine();
+                                    // format coordinates to 4 decimal places
+                                    String str = "";
+                                    List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                    for (String key : mQuerryString.keySet()) {
+                                        //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                        //if (key.contains("GHDLMC") || key.contains("GHDLBM") || key.contains("GHDLMJ") || key.contains("PDJB") || key.contains("XZQMC") || key.contains("XZQDM")) {
+                                            keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                        //}
+                                    }
+                                    //keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                    KeyAndValue.parseList(keyAndValues);
+                                    for (int i = 0; i < keyAndValues.size(); ++i) {
+                                        if (i == keyAndValues.size() - 1){
+                                            str = str + keyAndValues.get(i).getName() + " : " + keyAndValues.get(i).getValue();
+                                        }else
+                                            str = str + keyAndValues.get(i).getName() + " : " + keyAndValues.get(i).getValue() + "\n";
+                                    }
+                                    calloutContent.setText(str);
+                                    // get callout, set content and show
+                                    mCallout.setLocation(mapPoint);
+                                    mCallout.setContent(calloutContent);
+                                    mCallout.show();
+                                    Log.w(TAG, "run: callout" + mCallout.isShowing());
+                                    inMap = true;
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                return inMap;
+            } catch (ArcGISRuntimeException e) {
+                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        } else{
+            Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+        }
+        if (!inMap) mCallout.dismiss();
+        return false;
     }
 
     private void queryTB(final Point clickPoint, final Point mapPoint){
@@ -2920,6 +3030,7 @@ public class MainActivity extends AppCompatActivity {
         //intent.putExtra("type", ".shp");
         startActivityForResult(intent, EnumClass.GET_TIF_FILE);
     }
+
     private void InputDataForShp(){
         Intent intent = new Intent(MainActivity.this, Activity_FileManage.class);
         intent.putExtra("type", ".shp");
@@ -3424,6 +3535,21 @@ public class MainActivity extends AppCompatActivity {
         QueryProcessType = DisplayEnum.INQUERY;
     }
 
+    private void analyseFunction(Polygon polygon){
+        removeGraphicsOverlayers();
+        RunningFunction = DisplayEnum.FUNC_ANA;
+        if (!MapQuery)
+            mapQueryBtEvent();
+        DrawType = DisplayEnum.DRAW_POLYGON;
+        PartCollection parts = new PartCollection(polygon.getParts(), SpatialReference.create(4521));
+        pointCollection = new PointCollection(parts.getPartsAsPoints());
+        drawGeometry(polygon);
+        RunningAnalyseFunction = DisplayEnum.ANA_NEED;
+        showQueryWidget();
+        removeStandardWidget();
+        QueryProcessType = DisplayEnum.INQUERY;
+    }
+
     private void drawGeometry(Geometry geometry){
         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
@@ -3437,7 +3563,6 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < currentMyTuban.size(); ++i){
             Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
             if (GeometryEngine.within(pt, polygon)){
-                //TODO 完善查询逻辑
                 queriedMyTuban = currentMyTuban.get(i);
                 analyseFunction(queriedMyTuban.getPoints());
                 return true;
@@ -3702,7 +3827,8 @@ public class MainActivity extends AppCompatActivity {
                             //行政区数据入库
                             LitePal.deleteAll(xzq.class);
                             readXZQ();
-                        }
+                        }else
+                            Toast.makeText(MainActivity.this, "缺少必要文件，无法打开行政区查询", Toast.LENGTH_LONG).show();
                         return true;
                     }
 
@@ -3874,6 +4000,135 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showListPopupWindowforListView(View view, String searchString) {
+        queryInfos.clear();
+        final View popView = View.inflate(this, R.layout.popupwindow_listview,null);
+        searchString = searchString.trim();
+        DMPointFeatureLayer.clearSelection();
+        popView.setX(view.getX());
+        popView.setY(view.getY() + view.getHeight());
+        final PopupWindow popupWindow = new PopupWindow(popView, view.getWidth(), 800);
+
+        //popupWindow.setAnimationStyle(R.style.anim_popup_dir);
+        popupWindow.setFocusable(true);
+        //点击外部popueWindow消失
+        popupWindow.setOutsideTouchable(true);
+        // create objects required to do a selection with a query
+        QueryParameters query = new QueryParameters();
+        //make search case insensitive
+        query.setWhereClause("upper(图上名称) LIKE '%" + searchString.toUpperCase() + "%'");
+        Log.w(TAG, "searchForState: " );
+        // call select features
+        if (mMapView.getMap().getOperationalLayers().size() != 0) {
+
+            //Log.w(TAG, "searchForState: getAttribution" + mMapView.getMap().getOperationalLayers().get(3).getAttribution());
+            //Log.w(TAG, "searchForState: getDescription" + mMapView.getMap().getOperationalLayers().get(3).getDescription());
+            //DMPointFeatureLayer = (FeatureLayer) mMapView.getMap().getOperationalLayers().get(11);
+            try {
+                final String string = searchString;
+                FeatureTable mTable = DMPointFeatureLayer.getFeatureTable();//得到查询属性表
+                //Log.w(TAG, "searchForState: " + mTable.getFields().get(0) );
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            FeatureCollectionTable featureCollectionTable = new FeatureCollectionTable(featureQueryResult.get());
+                            Iterator<Feature> featureIterator = featureCollectionTable.iterator();
+                            while (featureIterator.hasNext()) {
+                                Feature feature = featureIterator.next();
+                                Log.w(TAG, "run: " + feature.getAttributes().get("图上名称"));
+                                Envelope envelope = feature.getGeometry().getExtent();
+                                String name = feature.getAttributes().get("图上名称").toString();
+                                boolean hasSame = false;
+                                for (int i = 0; i < queryInfos.size(); ++i){
+                                    if (name.equals(queryInfos.get(i).getName())) hasSame = true;
+                                }
+                                if (!hasSame) {
+                                    Log.w(TAG, "run: " + "hasSame");
+                                    QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                    queryInfos.add(queryInfo);
+                                }
+                            }
+                            Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
+                            items = new String[queryInfos.size()];
+                            for (int i = 0; i < queryInfos.size(); ++i){
+                                items[i] = queryInfos.get(i).getName();
+                            }
+
+                            RecyclerView recyclerView1 = (RecyclerView) popView.findViewById(R.id.listview_recycler_view);
+                            //GridLayoutManager layoutManager1 = new GridLayoutManager(popView.getContext(),1);
+                            LinearLayoutManager layoutManager1 = new LinearLayoutManager(popView.getContext());
+                            recyclerView1.setLayoutManager(layoutManager1);
+                            listviewAdapter adapter1 = new listviewAdapter(queryInfos);
+                            adapter1.setOnItemClickListener(new listviewAdapter.OnRecyclerItemClickListener() {
+                                @Override
+                                public void onItemClick(View view, String xzqdm, int position) {
+                                    mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
+
+                                    //Select the feature
+                                    DMPointFeatureLayer.selectFeature(queryInfos.get(position).getFeature());
+                                    Log.w(TAG, "run: " + mMapView.getMapScale());
+                                    mMapView.setViewpointScaleAsync(3000);
+                                    popupWindow.dismiss();
+                                }
+                            });
+                            recyclerView1.setAdapter(adapter1);
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Feature search failed for: " + string + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(getResources().getString(R.string.app_name), "Feature search failed for: " + string + ". Error=" + e.getMessage());
+                        }
+                    }
+                });
+            }catch (ArcGISRuntimeException e){
+                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        //final List<QueryInfo> pois = new ArrayList<>();
+
+
+
+        /*listviewAdapter adapter1 = new listviewAdapter(queryInfos);
+        adapter1.setOnItemClickListener(new listviewAdapter.OnRecyclerItemClickListener() {
+            @Override
+            public void onItemClick(View view, String xzqdm, int position) {
+                mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
+
+                //Select the feature
+                DMPointFeatureLayer.selectFeature(queryInfos.get(position).getFeature());
+                Log.w(TAG, "run: " + mMapView.getMapScale());
+                mMapView.setViewpointScaleAsync(3000);
+                popupWindow.dismiss();
+            }
+        });
+        recyclerView1.setAdapter(adapter1);*/
+
+        // ListView适配器
+        //listPopupWindow.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, items));
+
+        // 选择item的监听事件
+
+        // 对话框的宽高
+
+        // ListPopupWindow的锚,弹出框的位置是相对当前View的位置
+
+        //popupWindow消失屏幕变为不透明
+        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.alpha = 1.0f;
+                getWindow().setAttributes(lp);
+            }
+        });
+        //popupWindow出现屏幕变为半透明
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.alpha = 0.5f;
+        getWindow().setAttributes(lp);
+        popupWindow.showAtLocation(popView, Gravity.TOP, 0, 50);
+    }
+
+    public void showListPopupWindowforListViewForUserLayer(View view, String searchString) {
         queryInfos.clear();
         final View popView = View.inflate(this, R.layout.popupwindow_listview,null);
         searchString = searchString.trim();
@@ -4342,7 +4597,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onValueDeselected() {
-            // TODO Auto-generated method stub
 
         }
 
@@ -4505,6 +4759,7 @@ public class MainActivity extends AppCompatActivity {
                     //TODO 处理文件管理器获取SHP文件
                     final String shp_path = data.getStringExtra("filePath");
                     UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE);
+
                     userLayer.save();
                     //useUserLayer();
                     showUserLayer(userLayer);
