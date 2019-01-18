@@ -1570,8 +1570,13 @@ public class MainActivity extends AppCompatActivity {
             querySingleTaskForPolygon(query, polygon, DLTB2016FeatureLayer.getFeatureTable(), "16地类图斑");
             //17年土地规划地类层
             querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "17地类图斑");
-        } catch (Exception e) {
-            Toast.makeText(MainActivity.this, e.getMessage() + "\n" + "请重启app", Toast.LENGTH_SHORT).show();
+        } catch (final Exception e) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, e.getMessage() + "\n" + "请重启app", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
@@ -1719,6 +1724,45 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void changeFeatureLayer(final QueryParameters query, final Polygon polygon){
+        switch (QueriedFeature){
+            case TDGHDL_FEATURE:
+                QueriedFeature = DisplayEnum.XZQ_FEATURE;
+                setTitle("行政区查询");
+                Toast.makeText(MainActivity.this, "行政区查询", Toast.LENGTH_LONG).show();
+                break;
+            case XZQ_FEATURE:
+                QueriedFeature = DisplayEnum.PTB_FEATURE;
+                setTitle("批图斑查询");
+                Toast.makeText(MainActivity.this, "批图斑查询", Toast.LENGTH_LONG).show();
+                break;
+            case PTB_FEATURE:
+                QueriedFeature = DisplayEnum.DLTB09_FEATURE;
+                setTitle("09年地类图斑查询");
+                Toast.makeText(MainActivity.this, "09年地类图斑查询", Toast.LENGTH_LONG).show();
+                break;
+            case DLTB09_FEATURE:
+                QueriedFeature = DisplayEnum.DLTB16_FEATURE;
+                setTitle("16年地类图斑查询");
+                Toast.makeText(MainActivity.this, "16年地类图斑查询", Toast.LENGTH_LONG).show();
+                break;
+            case DLTB16_FEATURE:
+                QueriedFeature = DisplayEnum.DLTB17_FEATURE;
+                setTitle("17年地类图斑查询");
+                Toast.makeText(MainActivity.this, "17年地类图斑查询", Toast.LENGTH_LONG).show();
+                break;
+            case DLTB17_FEATURE:
+                QueriedFeature = DisplayEnum.TDGHDL_FEATURE;
+                setTitle("土地规划地类查询");
+                Toast.makeText(MainActivity.this, "土地规划地类查询", Toast.LENGTH_LONG).show();
+                break;
+        }
+        keyAndValues.clear();
+        mCallout.dismiss();
+        pieChartView.setVisibility(View.GONE);
+        queryTaskForPolygon(query, polygon);
     }
 
     private void queryTaskForPolygon(final QueryParameters query, final Polygon polygon){
@@ -1940,42 +1984,7 @@ public class MainActivity extends AppCompatActivity {
                         change.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                switch (QueriedFeature){
-                                    case TDGHDL_FEATURE:
-                                        QueriedFeature = DisplayEnum.XZQ_FEATURE;
-                                        setTitle("行政区查询");
-                                        Toast.makeText(MainActivity.this, "行政区查询", Toast.LENGTH_LONG).show();
-                                        break;
-                                    case XZQ_FEATURE:
-                                        QueriedFeature = DisplayEnum.PTB_FEATURE;
-                                        setTitle("批图斑查询");
-                                        Toast.makeText(MainActivity.this, "批图斑查询", Toast.LENGTH_LONG).show();
-                                        break;
-                                    case PTB_FEATURE:
-                                        QueriedFeature = DisplayEnum.DLTB09_FEATURE;
-                                        setTitle("09年地类图斑查询");
-                                        Toast.makeText(MainActivity.this, "09年地类图斑查询", Toast.LENGTH_LONG).show();
-                                        break;
-                                    case DLTB09_FEATURE:
-                                        QueriedFeature = DisplayEnum.DLTB16_FEATURE;
-                                        setTitle("16年地类图斑查询");
-                                        Toast.makeText(MainActivity.this, "16年地类图斑查询", Toast.LENGTH_LONG).show();
-                                        break;
-                                    case DLTB16_FEATURE:
-                                        QueriedFeature = DisplayEnum.DLTB17_FEATURE;
-                                        setTitle("17年地类图斑查询");
-                                        Toast.makeText(MainActivity.this, "17年地类图斑查询", Toast.LENGTH_LONG).show();
-                                        break;
-                                    case DLTB17_FEATURE:
-                                        QueriedFeature = DisplayEnum.TDGHDL_FEATURE;
-                                        setTitle("土地规划地类查询");
-                                        Toast.makeText(MainActivity.this, "土地规划地类查询", Toast.LENGTH_LONG).show();
-                                        break;
-                                }
-                                keyAndValues.clear();
-                                mCallout.dismiss();
-                                pieChartView.setVisibility(View.GONE);
-                                queryTaskForPolygon(query, polygon);
+                                changeFeatureLayer(query, polygon);
                             }
                         });
                             /*pieChartView.setOnLongClickListener(new View.OnLongClickListener() {
@@ -1989,13 +1998,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             });
-        } catch (ArcGISRuntimeException e) {
-            Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+        } catch (NullPointerException e) {
+            changeFeatureLayer(query, polygon);
+        }catch (Exception e) {
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     private void readXZQ(){
-
         File file1 = new File(Environment.getExternalStorageDirectory().toString() + "/临沧市行政区.txt");
         try {
             FileInputStream in = new FileInputStream(file1);
@@ -3078,6 +3088,8 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setVisibility(View.VISIBLE);
         LocHereBT.setVisibility(View.VISIBLE);
         ResetBT.setVisibility(View.VISIBLE);
+        FloatingActionButton InputDataBt = findViewById(R.id.InputData);
+        InputDataBt.setVisibility(View.VISIBLE);
     }
 
     private void removeStandardWidget(){
@@ -3086,6 +3098,8 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setVisibility(View.GONE);
         LocHereBT.setVisibility(View.GONE);
         ResetBT.setVisibility(View.GONE);
+        FloatingActionButton InputDataBt = findViewById(R.id.InputData);
+        InputDataBt.setVisibility(View.GONE);
     }
 
     private DisplayEnum RunningAnalyseFunction = DisplayEnum.ANA_NONE;
