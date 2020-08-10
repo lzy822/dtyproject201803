@@ -144,7 +144,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -158,6 +160,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import lecho.lib.hellocharts.listener.PieChartOnValueSelectListener;
 import lecho.lib.hellocharts.model.PieChartData;
@@ -2131,6 +2135,7 @@ public class MainActivity extends AppCompatActivity {
                 if (mMapView.getMapRotation() != 0) {
                     isNorth = false;
                     mMapView.setViewpointRotationAsync(0);
+                    //Log.w(TAG, "Exception: " + );
                 }
                 else isNorth = true;
             }
@@ -2141,12 +2146,15 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //Log.w(TAG, "onClick: " + OriginLocation.getX() + " ; " + OriginLocation.getY());
                 if (OriginLocation != null) {
-                    mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+                    //mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+                    mMapView.setViewpointCenterAsync(OriginLocation, 2000000);
                     //mMapView.setViewpointScaleAsync(1200000);
                     //North.setRotation(0);
                     mMapView.setViewpointRotationAsync(0);
                 }else {
-                    mMapView.setViewpointCenterAsync(new Point(102.715507, 25.038112, 0.000000, SpatialReference.create(4326)), 65000);
+                    //mMapView.setViewpointCenterAsync(new Point(102.715507, 25.038112, 0.000000, SpatialReference.create(4326)), 2000000);
+                    mMapView.setViewpointCenterAsync(new Point(99.9478, 24.9860, 0.000000, SpatialReference.create(4326)), 2000000);
+                    // TODO
                     //North.setRotation(0);
                     mMapView.setViewpointRotationAsync(0);
                 }
@@ -2284,6 +2292,7 @@ public class MainActivity extends AppCompatActivity {
                             if (!queryPoi(mMapView.locationToScreen(clickPoint)))
                                 if (!inTuban(clickPoint))
                                     queryTB(clickPoint, mapPoint);
+                                    //queryUserTB(StaticVariableEnum.DLLCROOTPATH, LCRAFeatureLayer, clickPoint, mapPoint);
                         }else {
                             List<UserLayer> userLayerList = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
                             int size = userLayerList.size();
@@ -2432,6 +2441,173 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        FloatingActionButton outputbt = (FloatingActionButton) findViewById(R.id.OutputData);
+        outputbt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+
+
+                            List<POI> pois = LitePal.findAll(POI.class);
+                            List<String> types = new ArrayList<>();
+                            Log.w(TAG, "runlzy: " + pois.size());
+                            for (int i = 0; i < pois.size(); ++i){
+                                String temp = pois.get(i).getType();
+                                Log.w(TAG, "runlzy: " + temp);
+                                if (temp != null) {
+                                    if (!temp.isEmpty()) {
+                                        if (types.size() > 0) {
+                                            for (int j = 0; j < types.size(); ++j) {
+                                                if (temp.equals(types.get(j))) break;
+                                                else {
+                                                    if (j == types.size() - 1) types.add(temp);
+                                                    else continue;
+                                                }
+                                            }
+                                        }else types.add(temp);
+                                    }
+                                }
+                            }
+                            DataUtil.makeKML();
+                            Log.w(TAG, "runlzy: " + types.size());
+                            if (types.size() > 0) {
+                                for (int i = 0; i < types.size(); ++i) {
+                                    DataUtil.makeTxt(types.get(i));
+                                }
+                            }else DataUtil.makeTxt("");
+                            DataUtil.makeTxt1();
+                            //DataUtil.makeWhiteBlankKML();
+                            List<File> files = new ArrayList<File>();
+                            StringBuffer sb = new StringBuffer();
+                            int size_POI = pois.size();
+                            sb = sb.append("<POI>").append("\n");
+                            for (int i = 0; i < size_POI; ++i){
+                                sb.append("<id>").append(pois.get(i).getId()).append("</id>").append("\n");
+                                sb.append("<ic>").append(pois.get(i).getIc()).append("</ic>").append("\n");
+                                sb.append("<name>").append(pois.get(i).getName()).append("</name>").append("\n");
+                                sb.append("<POIC>").append(pois.get(i).getPoic()).append("</POIC>").append("\n");
+                                sb.append("<type>").append(pois.get(i).getType()).append("</type>").append("\n");
+                                sb.append("<photonum>").append(pois.get(i).getPhotonum()).append("</photonum>").append("\n");
+                                sb.append("<description>").append(pois.get(i).getDescription()).append("</description>").append("\n");
+                                sb.append("<tapenum>").append(pois.get(i).getTapenum()).append("</tapenum>").append("\n");
+                                sb.append("<x>").append(pois.get(i).getX()).append("</x>").append("\n");
+                                sb.append("<y>").append(pois.get(i).getY()).append("</y>").append("\n");
+                                sb.append("<time>").append(pois.get(i).getTime()).append("</time>").append("\n");
+                            }
+                            sb.append("</POI>").append("\n");
+                            List<MPHOTO> mphotos = LitePal.findAll(MPHOTO.class);
+                            int size_mphoto = mphotos.size();
+                            sb = sb.append("<MPHOTO>").append("\n");
+                            for (int i = 0; i < size_mphoto; ++i){
+                                sb.append("<id>").append(mphotos.get(i).getId()).append("</id>").append("\n");
+                                sb.append("<pdfic>").append(mphotos.get(i).getPdfic()).append("</pdfic>").append("\n");
+                                sb.append("<POIC>").append(mphotos.get(i).getPoic()).append("</POIC>").append("\n");
+                                String path = mphotos.get(i).getPath();
+                                sb.append("<path>").append(path).append("</path>").append("\n");
+                                files.add(new File(path));
+                                sb.append("<time>").append(mphotos.get(i).getTime()).append("</time>").append("\n");
+                            }
+                            sb.append("</MPHOTO>").append("\n");
+                            List<MTAPE> mtapes = LitePal.findAll(MTAPE.class);
+                            int size_mtape = mtapes.size();
+                            sb = sb.append("<MTAPE>").append("\n");
+                            for (int i = 0; i < size_mtape; ++i){
+                                sb.append("<id>").append(mtapes.get(i).getId()).append("</id>").append("\n");
+                                sb.append("<pdfic>").append(mtapes.get(i).getPdfic()).append("</pdfic>").append("\n");
+                                sb.append("<POIC>").append(mtapes.get(i).getPoic()).append("</POIC>").append("\n");
+                                String path = mtapes.get(i).getPath();
+                                sb.append("<path>").append(path).append("</path>").append("\n");
+                                files.add(new File(path));
+                                sb.append("<time>").append(mtapes.get(i).getTime()).append("</time>").append("\n");
+                            }
+                            sb.append("</MTAPE>").append("\n");
+                            File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+                            if (!file.exists() && !file.isDirectory()){
+                                file.mkdirs();
+                            }
+                            final String outputPath = Long.toString(System.currentTimeMillis());
+                            File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".dtdb");
+                            try {
+                                FileOutputStream of = new FileOutputStream(file1);
+                                of.write(sb.toString().getBytes());
+                                of.close();
+                                files.add(file1);
+                            }catch (IOException e){
+                                Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.OpenFileError) + "_2", Toast.LENGTH_SHORT).show();
+                            }
+                            try {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.PackingData).toString() + R.string.QSH, Toast.LENGTH_LONG).show();
+                                        //toolbar.setTitle("数据打包中");
+                                    }
+                                });
+                                File zipFile = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".zip");
+                                //InputStream inputStream = null;
+                                ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFile));
+                                zipOut.setComment("test");
+                                int size = files.size();
+                                Log.w(TAG, "run: " + size);
+                                for (int i = 0; i < size; ++i){
+                                    Log.w(TAG, "run: " + i);
+                                    Log.w(TAG, "run: " + files.get(i).getPath());
+                                    boolean isOK = false;
+                                    for (int k = 0; k < i; ++k) {
+                                        if (files.get(i).getPath().equals(files.get(k).getPath())) break;
+                                        if ((k == i - 1 & !files.get(i).getPath().equals(files.get(k).getPath()) & files.get(i).exists())) isOK = true;
+                                    }
+                                    Log.w(TAG, "aa");
+                                    if (i == 0 & files.get(i).exists()) isOK = true;
+                                    if (isOK){
+                                        Log.w(TAG, "aa");
+                                        InputStream inputStream = new FileInputStream(files.get(i));
+                                        Log.w(TAG, "aa");
+                                        zipOut.putNextEntry(new ZipEntry(files.get(i).getName()));
+                                        Log.w(TAG, "aa");
+                                        //int temp = 0;
+                                        //while ((temp = inputStream.read()) != -1){
+                                        //    zipOut.write(temp);
+                                        //}
+                                        byte buffer[] = new byte[4096];
+                                        int realLength;
+                                        while ((realLength = inputStream.read(buffer)) > 0) {
+                                            zipOut.write(buffer, 0, realLength);
+                                        }
+                                        inputStream.close();
+                                    }
+                                }
+                                zipOut.close();
+                                file1.delete();
+                                files.clear();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.PackingOk), Toast.LENGTH_LONG).show();
+                                        //toolbar.setTitle(MainActivity.this.getResources().getText(R.string.MapList));
+                                    }
+                                });
+                            }catch (IOException e){
+                                Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.OpenFileError) + "_2", Toast.LENGTH_SHORT).show();
+                                Log.w(TAG, "run: " + e.toString());
+                                Log.w(TAG, "run: " + e.getMessage());
+                            }
+
+
+                        }
+
+                    }).start();
+                }catch (Exception e)
+                {
+                    Log.w(TAG, "error: " + e.toString());
+                }
+                //setFAMVisible(false);
+            }
+        });
     }
 
     private boolean queryPoi(android.graphics.Point point){
@@ -2570,8 +2746,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void queryTB(final Point clickPoint, final Point mapPoint){
-        QueryParameters query = new QueryParameters();
+        final QueryParameters query = new QueryParameters();
         query.setGeometry(clickPoint);// 设置空间几何对象
+        // TODO
+        query.setSpatialRelationship(QueryParameters.SpatialRelationship.WITHIN);
         if (isFileExist(StaticVariableEnum.GDBROOTPATH) & MapQuery) {
             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
             try {
@@ -2634,8 +2812,82 @@ public class MainActivity extends AppCompatActivity {
             } catch (ArcGISRuntimeException e) {
                 Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
             }
-        } else
+        }
+        else if(isFileExist(StaticVariableEnum.DLLCROOTPATH) & MapQuery){
+            try {
+                FeatureTable mTable = LCRAFeatureLayer.getFeatureTable();//得到查询属性表
+                final ListenableFuture<FeatureQueryResult> featureQueryResult
+                        = mTable.queryFeaturesAsync(query);
+                featureQueryResult.addDoneListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            removeGraphicsOverlayers();
+                            FeatureQueryResult featureResul = featureQueryResult.get();
+                            for (Object element : featureResul) {
+                                if (element instanceof Feature) {
+                                    Feature mFeatureGrafic = (Feature) element;
+                                    Geometry geometry = mFeatureGrafic.getGeometry();
+
+                                    //if(GeometryEngine.within(mapPoint, geometry))
+                                    {
+                                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                                        SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 5);
+                                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                                        Graphic pointGraphic = new Graphic(clickPoint, pointSymbol);
+                                        Graphic fillGraphic = new Graphic(geometry, lineSymbol);
+                                        graphicsOverlay_1.getGraphics().add(pointGraphic);
+                                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                        Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
+                                        TextView calloutContent = new TextView(getApplicationContext());
+                                        calloutContent.setTextColor(Color.BLACK);
+                                        //calloutContent.setSingleLine();
+                                        // format coordinates to 4 decimal places
+                                        String str = "";
+                                        List<KeyAndValue> keyAndValues = new ArrayList<>();
+                                        for (String key : mQuerryString.keySet()) {
+                                            //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
+                                            //if (key.contains("GHDLMC") || key.contains("GHDLBM") || key.contains("GHDLMJ") || key.contains("PDJB") || key.contains("XZQMC") || key.contains("XZQDM")) {
+                                            if (key.contains("NAME")) {
+                                                keyAndValues.add(new KeyAndValue(key, String.valueOf(mQuerryString.get(key))));
+                                            }
+                                        }
+                                        //keyAndValues = KeyAndValue.parseList(keyAndValues);
+                                        KeyAndValue.parseList(keyAndValues);
+                                        for (int i = 0; i < keyAndValues.size(); ++i) {
+                                            if (i == keyAndValues.size() - 1) {
+                                                str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue();
+                                            } else
+                                                str = str + keyAndValues.get(i).getNickname() + " : " + keyAndValues.get(i).getValue() + "\n";
+                                        }
+                                        calloutContent.setText(str);
+                                        // get callout, set content and show
+                                        mCallout.setLocation(mapPoint);
+                                        mCallout.setContent(calloutContent);
+                                        mCallout.show();
+                                        Log.w(TAG, "run: callout" + mCallout.isShowing());
+                                        inMap = true;
+                                        //Toast.makeText(MainActivity.this, mapPoint.getSpatialReference().getWkid() + geometry.getSpatialReference().getWkid(), Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(MainActivity.this, GeometryEngine.within(mapPoint, GeometryEngine.project(geometry, SpatialReference.create(4521))) + "", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                                break;
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(MainActivity.this, "lzy" + e.toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            } catch (ArcGISRuntimeException e) {
+                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        else
+        {
             Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+        }
         if (!inMap) mCallout.dismiss();
     }
 
@@ -2825,10 +3077,15 @@ public class MainActivity extends AppCompatActivity {
         OriginScale = mMapView.getMapScale();
         if (mainMobileMapPackage.getPath().toString().contains("临沧")) {
             Log.w(TAG, "run: " + mainMobileMapPackage.getPath().toString());
-            OriginLocation = new Point(99.626302, 23.928384, 0, SpatialReference.create(4326));
+            // TODO 初始比例尺
+            //OriginLocation = new Point(99.626302, 23.928384, 0, SpatialReference.create(4326));
+            //新版本
+            OriginLocation = new Point(99.9478, 24.9860, 0, SpatialReference.create(4326));
+
             //mMapView.setViewpointCenterAsync(OriginLocation);
             //mMapView.setViewpointScaleAsync(1200000);
-            mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+            //mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
+            mMapView.setViewpointCenterAsync(OriginLocation, 2000000);
         }else mMapView.setViewpointScaleAsync(100000);
     }
 
@@ -2886,10 +3143,67 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-        readJBNTGDB();
+        //readDLLCGDBForShape();
+        readDLLCGDBForGdb();
+        /*readJBNTGDB();
         readGDB();
         readPGDB();
-        readXZCAreaGDB();
+        readXZCAreaGDB();*/
+    }
+
+    private void readDLLCGDBForShape(){
+        try {
+            if (isFileExist(StaticVariableEnum.DLLCROOTPATH)) {
+                final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(StaticVariableEnum.DLLCROOTPATH);
+                shapefileFeatureTable.loadAsync();
+                shapefileFeatureTable.addDoneLoadingListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (shapefileFeatureTable.getLoadStatus() == LoadStatus.LOADED) {
+                            //XZCAreaFeatureLayer = new FeatureLayer(shapefileFeatureTable);
+                            //Toast.makeText(MainActivity.this, "可以正常打开Geodatabase " + XZCAreaFeatureLayer.getFeatureTable().getField("NAME").getAlias(), Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "可以正常打开Geodatabase ", Toast.LENGTH_LONG).show();
+                        } else {
+                            String error = "无法使用ShapeFile方式读取： " + shapefileFeatureTable.getLoadError().toString();
+                            Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+                            Log.e(TAG, error);
+                        }
+                    }
+                });
+            } else
+                Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+        }
+        catch (Exception e) {
+            Toast.makeText(MainActivity.this, "无法使用ShapeFile方式读取： " + e.toString(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    //记录LCRA层的FeatureLayer
+    FeatureLayer LCRAFeatureLayer;
+    //读取LCRA层
+    private void readDLLCGDBForGdb(){
+        if (isFileExist(StaticVariableEnum.DLLCROOTPATH)) {
+            final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.DLLCROOTPATH);
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+
+                     for(int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
+                        Log.w(TAG, "exception: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
+                         LCRAFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTables().get(i));
+                    }
+                    //FeatureLayer featureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("P图斑"));
+                   // Log.w(TAG, "run: " + featureLayer.getFeatureTable().);
+                    /*PTuBanFeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("P图斑"));
+                    queryPTB();
+                    DLTB2009FeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("DLTB2009"));
+                    DLTB2016FeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("DLTB2016"));
+                    DLTB2017FeatureLayer = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("DLTB2017"));*/
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
     }
 
     FeatureLayer PTuBanFeatureLayer;
@@ -3855,7 +4169,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case I_NOQUREY:
                 pieChartView.setVisibility(View.GONE);
-                menu.findItem(R.id.search).setVisible(true);
+                //老版本
+                //menu.findItem(R.id.search).setVisible(true);
+                //新版本
+                menu.findItem(R.id.search).setVisible(false);
                 menu.findItem(R.id.cancel).setVisible(false);
                 menu.findItem(R.id.action_search).setVisible(false);
                 break;

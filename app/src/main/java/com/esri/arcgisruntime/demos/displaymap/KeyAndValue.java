@@ -48,6 +48,9 @@ public class KeyAndValue {
         else if (name.equals("BZPZWH")) {
             nickname = "标准批准文号";
         }
+        else if (name.equals("NAME")) {
+            nickname = "地类类型";
+        }
         else nickname = "其他";
     }
 

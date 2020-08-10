@@ -12,9 +12,15 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.litepal.LitePal;
+
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -311,5 +317,541 @@ public class DataUtil {
         bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height,
                 ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
         return bitmap;
+    }
+
+    public static void makeKML(){
+        List<File> files = new ArrayList<File>();
+        //POI
+        List<POI> pois = LitePal.findAll(POI.class);
+        if (pois.size() > 0) {
+            files.add(makePOIKML(pois));
+        }
+        //Trail
+        //List<Trail> trails = LitePal.findAll(Trail.class);
+        //if (trails.size() > 0) files.add(makeTrailKML(trails));
+        //Lines_WhiteBlank
+        //List<Lines_WhiteBlank> whiteBlanks = LitePal.findAll(Lines_WhiteBlank.class);
+        //if (whiteBlanks.size() > 0) files.add(makeWhiteBlankKML(whiteBlanks));
+    }
+
+    public static String plusID(int num){
+        String str = "";
+        if (num >= 0 & num < 10) str = "0000" + String.valueOf(num);
+        else if (num >= 10 & num < 100) str = "000" + String.valueOf(num);
+        else if (num >= 100 & num < 1000) str = "00" + String.valueOf(num);
+        else if (num >= 1000 & num < 10000) str = "0" + String.valueOf(num);
+        else str = String.valueOf(num);
+        return str;
+    }
+
+    public static StringBuffer makeKMLHead(StringBuffer sb, String str){
+        sb = sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>").append("\n");
+        sb = sb.append("<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"").append("\n");
+        sb = sb.append(" xsi:schemaLocation=\"http://www.opengis.net/kml/2.2 http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd http://www.google.com/kml/ext/2.2 http://code.google.com/apis/kml/schema/kml22gx.xsd\">").append("\n");
+        sb = sb.append("<Document id=\"" + str + "\">").append("\n");
+        sb = sb.append("  ").append("<name>" + str + "</name>").append("\n");
+        sb = sb.append("  ").append("<Snippet></Snippet>").append("\n");
+        if (str.equals("WhiteBlank")) sb.append("  ").append("<description><![CDATA[界线]]></description>");
+        sb = sb.append("  ").append("<Folder id=\"FeatureLayer0\">").append("\n");
+        sb = sb.append("    ").append("<name>" + str + "</name>").append("\n");
+        sb = sb.append("    ").append("<Snippet></Snippet>").append("\n");
+        if (str.equals("WhiteBlank")) sb.append("    ").append("<description><![CDATA[界线]]></description>");
+        return sb;
+    }
+
+    public static StringBuffer makeCDATAHead(StringBuffer sb){
+        sb.append("      ").append("<description><![CDATA[<html xmlns:fo=\"http://www.w3.org/1999/XSL/Format\" xmlns:msxsl=\"urn:schemas-microsoft-com:xslt\">").append("\n");
+        sb.append("\n");
+        sb.append("<head>").append("\n");
+        sb.append("\n");
+        sb.append("<META http-equiv=\"Content-Type\" content=\"text/html\">").append("\n");
+        sb.append("\n");
+        sb.append("<meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\">").append("\n");
+        sb.append("\n");
+        sb.append("</head>").append("\n");
+        sb.append("\n");
+        sb.append("<body style=\"margin:0px 0px 0px 0px;overflow:auto;background:#FFFFFF;\">").append("\n");
+        sb.append("\n");
+        sb.append("<table style=\"font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-collapse:collapse;padding:3px 3px 3px 3px\">").append("\n");
+        sb.append("\n");
+        sb.append("<tr style=\"text-align:center;font-weight:bold;background:#9CBCE2\">").append("\n");
+        sb.append("\n");
+        return sb;
+    }
+
+    public static StringBuffer makeCDATATail(StringBuffer sb){
+        sb.append("</table>").append("\n");
+        sb.append("\n");
+        sb.append("</td>").append("\n");
+        sb.append("\n");
+        sb.append("</tr>").append("\n");
+        sb.append("\n");
+        sb.append("</table>").append("\n");
+        sb.append("\n");
+        sb.append("</body>").append("\n");
+        sb.append("\n");
+        sb.append("</html>").append("\n");
+        sb.append("\n");
+        sb.append("]]></description>").append("\n");
+        return sb;
+    }
+
+    public static StringBuffer makeKMLTail(StringBuffer sb){
+        sb.append("  ").append("</Folder>").append("\n");
+        sb.append("  ").append("<Style id=\"IconStyle00\">").append("\n");
+        sb.append("    ").append("<IconStyle>").append("\n");
+        sb.append("      ").append("<Icon><href>Layer0_Symbol_2017ee40_0.png</href></Icon>").append("\n");
+        sb.append("      ").append("<scale>0.250000</scale>").append("\n");
+        sb.append("    ").append("</IconStyle>").append("\n");
+        sb.append("    ").append("<LabelStyle>").append("\n");
+        sb.append("      ").append("<color>00000000</color>").append("\n");
+        sb.append("      ").append("<scale>0.000000</scale>").append("\n");
+        sb.append("    ").append("</LabelStyle>").append("\n");
+        sb.append("    ").append("<PolyStyle>").append("\n");
+        sb.append("      ").append("<color>ff000000</color>").append("\n");
+        sb.append("      ").append("<outline>0</outline>").append("\n");
+        sb.append("    ").append("</PolyStyle>").append("\n");
+        sb.append("  ").append("</Style>").append("\n");
+        sb.append("</Document>").append("\n");
+        sb.append("</kml>").append("\n");
+        return sb;
+    }
+
+    public static StringBuffer makeKMLTailForLine(StringBuffer sb){
+        sb.append("  ").append("</Folder>").append("\n");
+        sb.append("  ").append("<Style id=\"LineStyle00\">").append("\n");
+        sb.append("    ").append("<LabelStyle>").append("\n");
+        sb.append("      ").append("<color>00000000</color>").append("\n");
+        sb.append("      ").append("<scale>0.000000</scale>").append("\n");
+        sb.append("    ").append("</LabelStyle>").append("\n");
+        sb.append("    ").append("<LabelStyle>").append("\n");
+        sb.append("      ").append("<color>00000000</color>").append("\n");
+        sb.append("      ").append("<scale>0.000000</scale>").append("\n");
+        sb.append("    ").append("</LabelStyle>").append("\n");
+        sb.append("    ").append("<LineStyle>").append("\n");
+        sb.append("      ").append("<color>ff005aad</color>").append("\n");
+        sb.append("      ").append("<width>1.000000</width>").append("\n");
+        sb.append("    ").append("</LineStyle>").append("\n");
+        sb.append("  ").append("</Style>").append("\n");
+        sb.append("</Document>").append("\n");
+        sb.append("</kml>").append("\n");
+        return sb;
+    }
+
+    public static File makePOIKML(final List<POI> pois){
+        StringBuffer sb = new StringBuffer();
+        int size_POI = pois.size();
+        makeKMLHead(sb, "POI");
+        for (int i = 0; i < size_POI; ++i){
+            sb.append("    ").append("<Placemark id=\"ID_").append(plusID(i)).append("\">").append("\n");
+            sb.append("      ").append("<name>").append(pois.get(i).getPoic()).append("</name>").append("\n");
+            sb.append("      ").append("<Snippet></Snippet>").append("\n");
+            //属性表内容
+            sb = makeCDATAHead(sb);
+            sb.append("<td>").append(pois.get(i).getPoic()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            sb.append("<tr>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("\n");
+            sb.append("\n");
+            sb.append("<table style=\"font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-spacing:0px; padding:3px 3px 3px 3px\">").append("\n");
+            sb.append("\n");
+            //
+            sb.append("<tr>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("id").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getId()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("name").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getName()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("ic").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getIc()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("type").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getType()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("POIC").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getPoic()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("photoStr").append("</td>").append("\n");
+            sb.append("\n");
+            List<MPHOTO> mphotos = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MPHOTO.class);
+            String photoStr = "";
+            for (int j = 0; j < mphotos.size(); ++j){
+                if (j == 0){
+                    photoStr = mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/"), mphotos.get(j).getPath().length());
+                }else photoStr = photoStr + "|" + mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+            }
+            sb.append("<td>").append(photoStr).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("description").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getDescription()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("tapeStr").append("</td>").append("\n");
+            sb.append("\n");
+            List<MTAPE> mtapes = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MTAPE.class);
+            String tapeStr = "";
+            for (int j = 0; j < mtapes.size(); ++j){
+                if (j == 0){
+                    tapeStr = mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/"), mtapes.get(j).getPath().length());
+                }else tapeStr = tapeStr + "|" + mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+            }
+            sb.append("<td>").append(tapeStr).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("time").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getTime()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("x").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getX()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("y").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getY()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            sb = makeCDATATail(sb);
+            sb.append("      ").append("<styleUrl>#IconStyle00</styleUrl>").append("\n");
+            sb.append("      ").append("<Point>").append("\n");
+            sb.append("        ").append("<altitudeMode>clampToGround</altitudeMode>").append("\n");
+            sb.append("        ").append("<coordinates>").append(" ").append(pois.get(i).getY()).append(",").append(pois.get(i).getX()).append(",").append(0).append("</coordinates>").append("\n");
+            sb.append("      ").append("</Point>").append("\n");
+            sb.append("    ").append("</Placemark>").append("\n");
+            //
+        }
+        sb = makeKMLTail(sb);
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".kml");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
+        return file1;
+    }
+
+    public static File makeTapeKML(final List<MTAPE> mtapes, List<File> files){
+        StringBuffer sb = new StringBuffer();
+        int size_mtape = mtapes.size();
+        makeKMLHead(sb, "MTAPE");
+        for (int i = 0; i < size_mtape; ++i){
+            sb.append("<id>").append(mtapes.get(i).getId()).append("</id>").append("\n");
+            sb.append("<pdfic>").append(mtapes.get(i).getPdfic()).append("</pdfic>").append("\n");
+            sb.append("<POIC>").append(mtapes.get(i).getPoic()).append("</POIC>").append("\n");
+            String path = mtapes.get(i).getPath();
+            sb.append("<path>").append(path).append("</path>").append("\n");
+            files.add(new File(path));
+            sb.append("<time>").append(mtapes.get(i).getTime()).append("</time>").append("\n");
+        }
+        sb.append("</MTAPE>").append("\n");
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".dtdb");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
+        return file1;
+    }
+
+    public static File makePhotoKML(final List<MPHOTO> mphotos, List<File> files){
+        StringBuffer sb = new StringBuffer();
+        int size_mphoto = mphotos.size();
+        makeKMLHead(sb, "MPHOTO");
+        for (int i = 0; i < size_mphoto; ++i){
+            sb.append("<id>").append(mphotos.get(i).getId()).append("</id>").append("\n");
+            sb.append("<pdfic>").append(mphotos.get(i).getPdfic()).append("</pdfic>").append("\n");
+            sb.append("<POIC>").append(mphotos.get(i).getPoic()).append("</POIC>").append("\n");
+            String path = mphotos.get(i).getPath();
+            sb.append("<path>").append(path).append("</path>").append("\n");
+            files.add(new File(path));
+            sb.append("<time>").append(mphotos.get(i).getTime()).append("</time>").append("\n");
+        }
+        sb.append("</MPHOTO>").append("\n");
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".dtdb");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
+        return file1;
+    }
+
+    public static StringBuffer makeTxtHead(StringBuffer sb){
+        sb = sb.append("ic").append(";");
+        sb = sb.append("name").append(";");
+        sb = sb.append("poic").append(";");
+        sb = sb.append("photo").append(";");
+        sb = sb.append("tape").append(";");
+        sb = sb.append("description").append(";");
+        sb = sb.append("time").append(";");
+        sb = sb.append("type").append(";");
+        sb = sb.append("x").append(";");
+        sb = sb.append("y").append("\n");
+        return sb;
+    }
+
+    public static StringBuffer makeTxtHead1(StringBuffer sb){
+        sb = sb.append("XH").append(";");
+        sb = sb.append("DY").append(";");
+        sb = sb.append("MC").append(";");
+        sb = sb.append("BZMC").append(";");
+        sb = sb.append("XZQMC").append(";");
+        sb = sb.append("XZQDM").append(";");
+        sb = sb.append("SZDW").append(";");
+        sb = sb.append("SCCJ").append(";");
+        sb = sb.append("GG").append(";");
+        sb = sb.append("IMGPATH").append(";");
+        sb = sb.append("x").append(";");
+        sb = sb.append("y").append("\n");
+        return sb;
+    }
+
+    public static StringBuffer makeTxtHeadDMP(StringBuffer sb){
+        sb = sb.append("xh").append(";");
+        sb = sb.append("qydm").append(";");
+        sb = sb.append("lbdm").append(";");
+        sb = sb.append("bzmc").append(";");
+        sb = sb.append("cym").append(";");
+        sb = sb.append("jc").append(";");
+        sb = sb.append("bm").append(";");
+        sb = sb.append("dfyz").append(";");
+        sb = sb.append("zt").append(";");
+        sb = sb.append("dmll").append(";");
+        sb = sb.append("dmhy").append(";");
+        sb = sb.append("lsyg").append(";");
+        sb = sb.append("dlstms").append(";");
+        sb = sb.append("zlly").append(";");
+        sb = sb.append("lat").append(";");
+        sb = sb.append("lng").append(";");
+        sb = sb.append("tapepath").append(";");
+        sb = sb.append("imgpath").append("\n");
+        return sb;
+    }
+
+    public static void makeTxt(String type){
+        try {
+            final List<POI> pois = LitePal.where("type = ?", type).find(POI.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHead(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getIc()).append(";").append(pois.get(i).getName()).append(";").append(pois.get(i).getPoic()).append(";");
+                List<MPHOTO> mphotos = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MPHOTO.class);
+                String photoStr = "";
+                for (int j = 0; j < mphotos.size(); ++j) {
+                    if (j == 0) {
+                        photoStr = mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+                    } else
+                        photoStr = photoStr + "|" + mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+                }
+                photoStr = URLDecoder.decode(photoStr, "utf-8");
+                sb.append(photoStr).append(";");
+                List<MTAPE> mtapes = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MTAPE.class);
+                String tapeStr = "";
+                for (int j = 0; j < mtapes.size(); ++j) {
+                    if (j == 0) {
+                        tapeStr = mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+                    } else
+                        tapeStr = tapeStr + "|" + mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+                }
+                tapeStr = URLDecoder.decode(tapeStr, "utf-8");
+                sb.append(tapeStr).append(";").append(pois.get(i).getDescription()).append(";").append(pois.get(i).getTime()).append(";").append(pois.get(i).getType()).append(";").append(pois.get(i).getY()).append(";").append(pois.get(i).getX()).append("\n");
+            }
+            makeFile(sb, type);
+        }catch (UnsupportedEncodingException e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeTxt1(){
+        try {
+            final List<DMBZ> pois = LitePal.findAll(DMBZ.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHeadDMP(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getXH()).append(";").append(pois.get(i).getDY()).append(";").append(pois.get(i).getMC()).append(";").append(pois.get(i).getBZMC()).append(";").append(pois.get(i).getXZQMC()).append(";").append(pois.get(i).getXZQDM()).append(";").append(pois.get(i).getSZDW()).append(";").append(pois.get(i).getSCCJ()).append(";").append(pois.get(i).getGG()).append(";").append(pois.get(i).getIMGPATH()).append(";").append(pois.get(i).getLng()).append(";");
+                sb.append(pois.get(i).getLat()).append("\n");
+            }
+            makeFileDMP(sb);
+        }catch (Exception e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeTxtDMP(){
+        try {
+            final List<DMPoint> pois = LitePal.findAll(DMPoint.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHeadDMP(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getXh()).append(";").append(pois.get(i).getQydm()).append(";").append(pois.get(i).getLbdm()).append(";").append(pois.get(i).getBzmc()).append(";").append(pois.get(i).getCym()).append(";").append(pois.get(i).getJc()).append(";").append(pois.get(i).getBm()).append(";").append(pois.get(i).getDfyz()).append(";").append(pois.get(i).getZt()).append(";").append(pois.get(i).getDmll()).append(";").append(pois.get(i).getDmhy()).append(";").append(pois.get(i).getLsyg()).append(";").append(pois.get(i).getDlstms()).append(";").append(pois.get(i).getZlly()).append(";").append(pois.get(i).getLat()).append(";").append(pois.get(i).getLng()).append(";").append(pois.get(i).getTapepath());
+                sb.append(pois.get(i).getImgpath()).append("\n");
+            }
+            makeFileDMP(sb);
+        }catch (Exception e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeFile(StringBuffer sb, String type){
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()) {
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output", "DMBZ" + type + outputPath + ".txt");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        } catch (IOException e) {
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeFile1(StringBuffer sb){
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()) {
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output", "DMBZ" + outputPath + ".txt");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        } catch (IOException e) {
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeFileDMP(StringBuffer sb){
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()) {
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output", "DMP" + outputPath + ".txt");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        } catch (IOException e) {
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static String[] bubbleSort(String[] arr) {
+        int len = arr.length;
+        for (int i = 0; i < len - 1; ++i) {
+            for (int j = 0; j < len - 1 - i; ++j) {
+                if (arr[j].toUpperCase().charAt(0) > arr[j + 1].toUpperCase().charAt(0)) {        // 相邻元素两两对比
+                    String temp = arr[j+1];        // 元素交换
+                    arr[j+1] = arr[j];
+                    arr[j] = temp;
+                }
+            }
+        }
+        return arr;
     }
 }
