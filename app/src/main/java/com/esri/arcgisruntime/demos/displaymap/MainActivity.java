@@ -3337,15 +3337,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        queriedMyTuban = new my_tb();
+        // TODO 暂时删除
+        /*queriedMyTuban = new my_tb();
         requestAuthority();
         ic = "自然资源监管系统";
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         if (actionBar != null){
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_list_black_24dp);
-        }
+        }*/
 
+        /*Toast.makeText(MainActivity.this, DeviceUtil.GetAndroidID(this), Toast.LENGTH_LONG).show();
+        Log.w(TAG, "onCreate: " + DeviceUtil.GetAndroidID(this));*/
     }
 
     private void InputDataForTif(){
@@ -4127,7 +4130,8 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        switch (isQurey){
+        // TODO 暂时删除
+        /*switch (isQurey){
             case I_QUREY:
                 pieChartView.setVisibility(View.GONE);
                 menu.findItem(R.id.search).setVisible(false);
@@ -4177,7 +4181,8 @@ public class MainActivity extends AppCompatActivity {
                 menu.findItem(R.id.action_search).setVisible(false);
                 break;
         }
-        return super.onPrepareOptionsMenu(menu);
+        return super.onPrepareOptionsMenu(menu);*/
+        return false;
     }
 
     public void showListPopupWindow(View view, String searchString) {
@@ -4879,18 +4884,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        mMapView.resume();
+        // TODO 暂时删除
+        //mMapView.resume();
 
         //drawGraphicsOverlayer();
         //setRecyclerView();
         //setRecyclerViewForP();
+
+        // TODO 暂时删除
         //注册传感器监听器
-        Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
-        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);
+        /*Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);*/
         //Log.w(TAG, "getMapScale: " + mMapView.getMapScale());
         //Log.w(TAG, "getVisibleArea: " + mMapView.getVisibleArea().getExtent().getCenter());
         //hasMTuban = hasMyTuban();
-        drawOperationalLayer();
+        // TODO 暂时删除
+        //drawOperationalLayer();
     }
 
     private void drawOperationalLayer(){
