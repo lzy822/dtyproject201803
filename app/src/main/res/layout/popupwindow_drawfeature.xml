@@ -17,8 +17,7 @@
             android:layout_height="45dp"
             android:text="按需查询"
             android:background="#ffff"
-            android:textSize="18sp"
-            android:visibility="gone"/>
+            android:textSize="18sp"/>
 
         <Button
             android:id="@+id/btn_pop_xzq"

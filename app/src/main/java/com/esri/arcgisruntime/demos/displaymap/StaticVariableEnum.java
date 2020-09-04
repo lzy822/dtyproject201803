@@ -18,5 +18,6 @@ public class StaticVariableEnum {
     public static final String XZCAreaROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/1229村委会界线/行政区_村委会.shp";
     public static final String KSTestROOTPATH = Environment.getExternalStorageDirectory().toString() + "/20190102矿山测试数据/临沧市砂石料粘土矿点数据.geodatabase";
     public static final String DLLCROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧大理过程稿.geodatabase";
+    public static final String LCDKYROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市级外业踏勘数据.geodatabase";
 
 }

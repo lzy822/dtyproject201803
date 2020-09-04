@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.media.ThumbnailUtils;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,9 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.esri.arcgisruntime.mapping.ArcGISMap;
 
 import java.util.List;
 
@@ -26,6 +30,8 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
     private Context mContext;
 
     private List<layer> layerList;
+
+    private ArcGISMap map;//用于判断某个图层当前的可视状态
 
     private layerAdapter.OnRecyclerItemLongListener mOnItemLong;
 
@@ -47,8 +53,9 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
 
         }
     }
-    public layerAdapter(List<layer> layerList) {
+    public layerAdapter(List<layer> layerList, ArcGISMap map) {
         this.layerList = layerList;
+        this.map = map;
     }
 
     @Override
@@ -89,9 +96,19 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
     @Override
     public void onBindViewHolder(final layerAdapter.ViewHolder holder, int position) {
         layer mlayer = layerList.get(position);
-        if (mlayer.isStatus()) holder.checkBox.setChecked(true);
-        else holder.checkBox.setChecked(false);
-        holder.checkBox.setText(mlayer.getName());
+        if (mlayer.isStatus())
+            holder.checkBox.setChecked(true);
+        else
+            holder.checkBox.setChecked(false);
+
+        /*for (int i = 0; i < layerList.size(); i++) {
+            Log.w(TAG, "onBindViewHolder: 200902" + map.getOperationalLayers().get(layerList.get(i).getNum()).getName() + ",visible: " + map.getOperationalLayers().get(mlayer.getNum()).isVisible());
+        }
+        if (map.getOperationalLayers().get(mlayer.getNum()).isVisible())
+            holder.checkBox.setChecked(true);
+        else
+            holder.checkBox.setChecked(false);*/
+        holder.checkBox.setText(getAliasName(mlayer.getName()));
         holder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -110,6 +127,39 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
     @Override
     public int getItemCount() {
         return layerList.size();
+    }
+
+    private String getAliasName(String name) {
+        switch (name){
+            case "DGX":
+                name = "等高线";
+                break;
+            case "STBHHX":
+                name = "生态保护红线";
+                break;
+            case "YJJBNT":
+                name = "永久基本农田";
+                break;
+            case "XZQ":
+                name = "乡镇级行政区";
+                break;
+            case "PDT":
+                name = "坡度图";
+                break;
+            case "DLTB_3diao":
+                name = "三调地类图斑";
+                break;
+            case "DLTB_2diao":
+                name = "二调地类图斑";
+                break;
+            case "DK":
+                name = "农村土地承包经营权";
+                break;
+            case "CJDCQ":
+                name = "村级调查区";
+                break;
+        }
+        return name;
     }
 
 
