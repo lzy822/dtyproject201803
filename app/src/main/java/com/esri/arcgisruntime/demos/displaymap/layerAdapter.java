@@ -84,8 +84,18 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
                 if (mOnItemLong != null){
                     int position = holder.getAdapterPosition();
                     layer layer = layerList.get(position);
-                    mOnItemLong.onItemLongClick(v, layer.getName());
-                    holder.cardView.setCardBackgroundColor(Color.GRAY);
+                    mOnItemLong.onItemLongClick(holder, layer.getName());
+                }
+                return true;
+            }
+        });
+        holder.checkBox.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (mOnItemLong != null){
+                    int position = holder.getAdapterPosition();
+                    layer layer = layerList.get(position);
+                    mOnItemLong.onItemLongClick(holder, layer.getName());
                 }
                 return true;
             }
@@ -129,7 +139,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
         return layerList.size();
     }
 
-    private String getAliasName(String name) {
+    public static String getAliasName(String name) {
         switch (name){
             case "DGX":
                 name = "等高线";
@@ -165,7 +175,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
 
 
     public interface OnRecyclerItemLongListener{
-        void onItemLongClick(View view, String path);
+        void onItemLongClick(layerAdapter.ViewHolder holder, String name);
     }
     public void setOnItemLongClickListener(layerAdapter.OnRecyclerItemLongListener listener){
         //Log.w(TAG, "setOnItemLongClickListener: " );

@@ -226,7 +226,7 @@
             android:layout_alignParentBottom="true"
             android:layout_toStartOf="@+id/FinishQuery"
             android:adjustViewBounds="false"
-            android:src="@drawable/ic_assignment_white_24dp"
+            android:src="@drawable/ic_save_white_24dp"
             android:visibility="gone"
             app:fab_colorNormal="#F50057"
             app:fab_colorPressed="#E8004A"
