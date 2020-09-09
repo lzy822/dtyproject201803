@@ -2961,9 +2961,11 @@ public class MainActivity extends AppCompatActivity {
                                     int size = userLayerList.size();
                                     for (int i = 0; i < size; ++i) {
                                         String path = userLayerList.get(i).getPath();
-                                        ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
-                                        if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
-                                            break;
+                                        if (QueriedLayerIndex != -1 && path.equals(LayerFieldsSheetList.get(QueriedLayerIndex).getLayerPath())) {
+                                            ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
+                                            if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -4083,7 +4085,9 @@ public class MainActivity extends AppCompatActivity {
         }else mMapView.setViewpointScaleAsync(100000);
     }
 
+    private List<Layer> BaseMMPKLayer;
     private void readMMPKData(){
+        BaseMMPKLayer = new ArrayList<>();
         Log.w(TAG, "readMMPKData: " + StaticVariableEnum.MMPKROOTPATH );
         final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(StaticVariableEnum.MMPKROOTPATH);
         mainMobileMapPackage.loadAsync();
@@ -4099,6 +4103,7 @@ public class MainActivity extends AppCompatActivity {
                     drawGraphicsOverlayer();
                     for (int i = 0; i < map.getOperationalLayers().size(); i++) {
                         BaseLayerForMMPK.add(layerAdapter.getAliasName(map.getOperationalLayers().get(i).getName()));
+                        BaseMMPKLayer.add(map.getOperationalLayers().get(i));
                     }
                     initLayerList();
                     useUserLayer();
@@ -4672,13 +4677,22 @@ public class MainActivity extends AppCompatActivity {
                     case ANA_AREA:
                         if (QueryProcessType == DisplayEnum.INQUERY) {
                             if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3) {
+                                DrawType = DisplayEnum.DRAW_NONE;
                                 final Polygon polygon = new Polygon(pointCollection);
                                 DecimalFormat df = new DecimalFormat("0.0");
                                 double area = GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC);
                                 String str = df.format(area);
                                 TextView calloutContent = new TextView(getApplicationContext());
                                 calloutContent.setTextColor(Color.BLACK);
-                                calloutContent.setText(str + getResources().getString(R.string.SQUARE_KILOMETERS));
+                                if (area < 0.1)
+                                {
+                                    area = GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_METERS), GeodeticCurveType.GEODESIC);
+                                    str = df.format(area);
+                                    calloutContent.setText(str + "平方米");
+                                }
+                                else {
+                                    calloutContent.setText(str + getResources().getString(R.string.SQUARE_KILOMETERS));
+                                }
                                 //calloutContent.setText(str);
                                 // get callout, set content and show
                                 mCallout.setLocation(new Point(polygon.getExtent().getCenter().getX(), polygon.getExtent().getYMax(), SpatialReference.create(4521)));
@@ -4687,6 +4701,7 @@ public class MainActivity extends AppCompatActivity {
                                 //if (!inMap) mCallout.dismiss();
                                 removeQueryWidgetFinish();
                                 QueryProcessType = DisplayEnum.FINISHQUERY;
+
                                 //change.setVisibility(View.VISIBLE);
                             } else
                                 Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
@@ -4703,6 +4718,7 @@ public class MainActivity extends AppCompatActivity {
                     case ANA_DISTANCE:
                         if (QueryProcessType == DisplayEnum.INQUERY) {
                             if (DrawType == DisplayEnum.DRAW_POLYLINE && pointCollection.size() >= 2) {
+                                DrawType = DisplayEnum.DRAW_NONE;
                                 final Polyline polyline = new Polyline(pointCollection);
                                 DecimalFormat df = new DecimalFormat("0.0");
                                 double length = GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC);
@@ -6707,11 +6723,20 @@ public class MainActivity extends AppCompatActivity {
                             Log.w(TAG, "RemoveUserLayer: " + map.getOperationalLayers().size());
                             for (int k = 0; k < map.getOperationalLayers().size(); k++) {
                                 Log.w(TAG, "RemoveUserLayer: " + k + "," + map.getOperationalLayers().get(k).getName() + ", " + name);
-                                if (map.getOperationalLayers().get(k).getName().equals(name)) {
+                                /*if (map.getOperationalLayers().get(k).getName().equals(name)) {
                                     map.getOperationalLayers().remove(k);
                                     k--;
-                                    //Log.w(TAG, "RemoveUserLayer: " + name);
+                                }*/
+                                for (int l = 0; l < list.size(); l++) {
+                                    if (map.getOperationalLayers().get(k).getName().equals(list.get(l).getName())) {
+                                        map.getOperationalLayers().remove(k);
+                                        k--;
+                                    }
                                 }
+                            }
+                            map.getOperationalLayers().clear();
+                            for (int k = 0; k < BaseMMPKLayer.size(); k++) {
+                                map.getOperationalLayers().add(BaseMMPKLayer.get(k));
                             }
                             initLayerList();
                         }
@@ -6736,10 +6761,20 @@ public class MainActivity extends AppCompatActivity {
                             if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
                                 LayerFieldsSheetList.remove(j);
                                 for (int k = 0; k < map.getOperationalLayers().size(); k++) {
-                                    if (map.getOperationalLayers().get(k).getName().equals(name)) {
+                                    /*if (map.getOperationalLayers().get(k).getName().equals(name)) {
                                         map.getOperationalLayers().remove(k);
                                         k--;
+                                    }*/
+                                    for (int l = 0; l < list.size(); l++) {
+                                        if (map.getOperationalLayers().get(k).getName().equals(list.get(l).getName())) {
+                                            map.getOperationalLayers().remove(k);
+                                            k--;
+                                        }
                                     }
+                                }
+                                map.getOperationalLayers().clear();
+                                for (int k = 0; k < BaseMMPKLayer.size(); k++) {
+                                    map.getOperationalLayers().add(BaseMMPKLayer.get(k));
                                 }
                                 initLayerList();
                             }
