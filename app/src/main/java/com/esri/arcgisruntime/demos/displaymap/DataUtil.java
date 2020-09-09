@@ -12,6 +12,13 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.esri.arcgisruntime.geometry.GeometryEngine;
+import com.esri.arcgisruntime.geometry.PartCollection;
+import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.geometry.PointCollection;
+import com.esri.arcgisruntime.geometry.Polyline;
+import com.esri.arcgisruntime.geometry.SpatialReference;
+
 import org.litepal.LitePal;
 
 import java.io.File;
@@ -58,6 +65,74 @@ public class DataUtil {
             return true;
         }catch (Exception e){
             return false;
+        }
+    }
+
+    public static void makeWhiteBlankKML(){
+        final List<whiteblank> whiteBlanks = LitePal.findAll(whiteblank.class);
+        int size_whiteBlanks = whiteBlanks.size();
+        List<PointCollection> plist = new ArrayList<>();
+        for (int i = 0; i < size_whiteBlanks; ++i) {
+            PointCollection points = new PointCollection(SpatialReference.create(4521));
+            //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
+            String[] strings = whiteBlanks.get(i).getPts().split("lzy");
+            Log.w(TAG, "drawWhiteBlank1: " + strings.length);
+            for (int kk = 0; kk < strings.length; ++kk) {
+                String[] strings1 = strings[kk].split(",");
+                if (strings1.length == 2) {
+                    Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
+                    com.esri.arcgisruntime.geometry.Point wgs84Point = (com.esri.arcgisruntime.geometry.Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                    points.add(wgs84Point);
+                }
+            }
+            Polyline polyline = (Polyline)GeometryEngine.project(new Polyline(points), SpatialReference.create(4490));
+            PartCollection parts = new PartCollection(polyline.getParts());
+            PointCollection pointCollection = new PointCollection(parts.getPartsAsPoints());
+            plist.add(pointCollection);
+        }
+        //PointCollection polyline = GeometryEngine.project(points, SpatialReference.create(4490));
+        StringBuffer sb = new StringBuffer();
+        makeKMLHead(sb, "WhiteBlank");
+        for (int i = 0; i < size_whiteBlanks; ++i){
+            sb.append("    ").append("<Placemark id=\"ID_").append(plusID(i)).append("\">").append("\n");
+            sb.append("      ").append("<name>").append(i).append("</name>").append("\n");
+            sb.append("      ").append("<Snippet></Snippet>").append("\n");
+            //属性表内容
+            sb = makeCDATAHead(sb);
+            sb = makeCDATATail(sb);
+            sb.append("      ").append("<styleUrl>#LineStyle00</styleUrl>").append("\n");
+            sb.append("      ").append("<MultiGeometry>").append("\n");
+            sb.append("        ").append("<LineString>").append("\n");
+            sb.append("          ").append("<extrude>0</extrude>").append("\n");
+            sb.append("          ").append("<tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode>").append("\n");
+            String[] lines_str = whiteBlanks.get(i).getPts().split("lzy");
+            Log.w(TAG, "onClick: 2020/9/7: " + whiteBlanks.get(i).getPts());
+            StringBuffer str = new StringBuffer();
+            /*for (int k = 0; k < lines_str.length; ++k) {
+                str.append(" ").append(lines_str[k]).append(",").append("0");
+            }*/
+            for (int j = 0; j < plist.get(i).size(); j++) {
+                str.append(" ").append(plist.get(i).get(j).getX()).append(",").append(plist.get(i).get(j).getY()).append(",").append("0");
+            }
+            sb.append("          ").append("<coordinates>").append(str).append("</coordinates>").append("\n");
+            sb.append("        ").append("</LineString>").append("\n");
+            sb.append("      ").append("</MultiGeometry>").append("\n");
+            sb.append("    ").append("</Placemark>").append("\n");
+            //
+        }
+        sb = makeKMLTailForLine(sb);
+        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  "白板" + outputPath + ".kml");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
         }
     }
 

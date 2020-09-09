@@ -1,21 +1,13 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.media.ThumbnailUtils;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 
@@ -84,7 +76,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
                 if (mOnItemLong != null){
                     int position = holder.getAdapterPosition();
                     layer layer = layerList.get(position);
-                    mOnItemLong.onItemLongClick(holder, layer.getName());
+                    mOnItemLong.onItemLongClick(holder, layer.getName(), layer.getPath());
                 }
                 return true;
             }
@@ -95,7 +87,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
                 if (mOnItemLong != null){
                     int position = holder.getAdapterPosition();
                     layer layer = layerList.get(position);
-                    mOnItemLong.onItemLongClick(holder, layer.getName());
+                    mOnItemLong.onItemLongClick(holder, layer.getName(), layer.getPath());
                 }
                 return true;
             }
@@ -175,7 +167,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
 
 
     public interface OnRecyclerItemLongListener{
-        void onItemLongClick(layerAdapter.ViewHolder holder, String name);
+        void onItemLongClick(layerAdapter.ViewHolder holder, String name, String path);
     }
     public void setOnItemLongClickListener(layerAdapter.OnRecyclerItemLongListener listener){
         //Log.w(TAG, "setOnItemLongClickListener: " );

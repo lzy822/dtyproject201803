@@ -6,6 +6,7 @@ import java.util.List;
 
 public class LayerFieldsSheet {
     private String LayerShowName;
+    private String LayerPath;
     private FeatureLayer featureLayer;
 
     public String getLayerShowName() {
@@ -35,12 +36,21 @@ public class LayerFieldsSheet {
         FieldNameSheetList = fieldNameSheetList;
     }
 
-    public LayerFieldsSheet(String name, List<FieldNameSheet> fieldNameSheetList) {
+    public LayerFieldsSheet(String name, String path, List<FieldNameSheet> fieldNameSheetList) {
         FieldNameSheetList = fieldNameSheetList;
+        LayerPath = path;
         getLayerShowName(name);
     }
 
-    public LayerFieldsSheet(FeatureLayer featureLayer, List<FieldNameSheet> fieldNameSheetList) {
+    public String getLayerPath() {
+        return LayerPath;
+    }
+
+    public void setLayerPath(String layerPath) {
+        LayerPath = layerPath;
+    }
+
+    public LayerFieldsSheet(FeatureLayer featureLayer, String path, List<FieldNameSheet> fieldNameSheetList) {
         this.featureLayer = featureLayer;
         FieldNameSheetList = fieldNameSheetList;
         getLayerShowName(featureLayer.getName());

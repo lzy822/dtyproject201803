@@ -77,7 +77,7 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
                 if (mOnItemLong != null){
                     int position = holder.getAdapterPosition();
                     LayerFieldsSheet lfs = list.get(position);
-                    mOnItemLong.onItemLongClick(holder, lfs.getLayerShowName());
+                    mOnItemLong.onItemLongClick(holder, lfs.getLayerShowName(), lfs.getLayerPath());
                     holder.cardView.setCardBackgroundColor(Color.RED);
                 }
                 return true;
@@ -89,7 +89,7 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
                 if (mOnItemLong != null){
                     int position = holder.getAdapterPosition();
                     LayerFieldsSheet lfs = list.get(position);
-                    mOnItemLong.onItemLongClick(holder, lfs.getLayerShowName());
+                    mOnItemLong.onItemLongClick(holder, lfs.getLayerShowName(), lfs.getLayerPath());
                     holder.cardView.setCardBackgroundColor(Color.RED);
                 }
                 return true;
@@ -129,7 +129,7 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
     }
 
     public interface OnRecyclerItemLongListener{
-        void onItemLongClick(DynamicChooseFrameAdapter.ViewHolder holder, String name);
+        void onItemLongClick(DynamicChooseFrameAdapter.ViewHolder holder, String name, String path);
     }
     public void setOnItemLongClickListener(DynamicChooseFrameAdapter.OnRecyclerItemLongListener listener){
         //Log.w(TAG, "setOnItemLongClickListener: " );

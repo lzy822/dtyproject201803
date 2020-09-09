@@ -37,8 +37,9 @@ public class layer{
         this.num = num;
     }
 
-    public layer(String name, boolean status) {
+    public layer(String name, String path, boolean status) {
         this.name = name;
+        this.path = path;
         this.status = status;
     }
 
