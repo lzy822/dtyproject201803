@@ -6721,19 +6721,6 @@ public class MainActivity extends AppCompatActivity {
                         if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
                             LayerFieldsSheetList.remove(j);
                             Log.w(TAG, "RemoveUserLayer: " + map.getOperationalLayers().size());
-                            for (int k = 0; k < map.getOperationalLayers().size(); k++) {
-                                Log.w(TAG, "RemoveUserLayer: " + k + "," + map.getOperationalLayers().get(k).getName() + ", " + name);
-                                /*if (map.getOperationalLayers().get(k).getName().equals(name)) {
-                                    map.getOperationalLayers().remove(k);
-                                    k--;
-                                }*/
-                                for (int l = 0; l < list.size(); l++) {
-                                    if (map.getOperationalLayers().get(k).getName().equals(list.get(l).getName())) {
-                                        map.getOperationalLayers().remove(k);
-                                        k--;
-                                    }
-                                }
-                            }
                             map.getOperationalLayers().clear();
                             for (int k = 0; k < BaseMMPKLayer.size(); k++) {
                                 map.getOperationalLayers().add(BaseMMPKLayer.get(k));
@@ -6760,18 +6747,6 @@ public class MainActivity extends AppCompatActivity {
                         for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
                             if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
                                 LayerFieldsSheetList.remove(j);
-                                for (int k = 0; k < map.getOperationalLayers().size(); k++) {
-                                    /*if (map.getOperationalLayers().get(k).getName().equals(name)) {
-                                        map.getOperationalLayers().remove(k);
-                                        k--;
-                                    }*/
-                                    for (int l = 0; l < list.size(); l++) {
-                                        if (map.getOperationalLayers().get(k).getName().equals(list.get(l).getName())) {
-                                            map.getOperationalLayers().remove(k);
-                                            k--;
-                                        }
-                                    }
-                                }
                                 map.getOperationalLayers().clear();
                                 for (int k = 0; k < BaseMMPKLayer.size(); k++) {
                                     map.getOperationalLayers().add(BaseMMPKLayer.get(k));
