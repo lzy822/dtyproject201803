@@ -5392,7 +5392,8 @@ public class MainActivity extends AppCompatActivity {
                         //searchForState(query);
                         pieChartView.setVisibility(View.GONE);
                         mCallout.dismiss();
-                        if (isFileExist(StaticVariableEnum.GDBROOTPATH)) {
+                        //if (isFileExist(StaticVariableEnum.GDBROOTPATH))
+                        {
                             //showListPopupWindow(searchView, query);
                             //showListPopupWindowforListView(searchView, query);
 
@@ -5402,7 +5403,7 @@ public class MainActivity extends AppCompatActivity {
                             showListPopupWindowforListViewFor20200903(searchView, query);
 
                         }
-                        else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+                        //else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
 
 
                         /* // 原版本
