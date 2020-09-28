@@ -3573,6 +3573,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    private Polygon AnalysisUserGeometry;
     private void AnalyseGeometry(final Geometry geometry){
         final Polygon polygon = (Polygon)geometry;
         final FloatingActionButton finish = (FloatingActionButton) findViewById(R.id.FinishQuery);
@@ -3580,8 +3581,9 @@ public class MainActivity extends AppCompatActivity {
         finish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                analyseFunctionForBasePolygon((Polygon) geometry);
-                //NeedQueryForBasePolygon((Polygon) geometry);
+                //analyseFunctionForBasePolygon((Polygon) geometry);
+                AnalysisUserGeometry = (Polygon) geometry;
+                NeedQueryForBasePolygon((Polygon) geometry);
 
                 /*try {
                     //PartCollection parts = new PartCollection(polygon.getParts(), SpatialReference.create(4521));
@@ -4758,6 +4760,8 @@ public class MainActivity extends AppCompatActivity {
         finish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                AnalysisUserGeometry = null;
+
                 queriedMyTuban = new my_tb();
                 QueryProcessType = DisplayEnum.NOQUERY;
                 removeQueryWidgetFinishLater();
@@ -6824,20 +6828,25 @@ public class MainActivity extends AppCompatActivity {
             isQueryUserLayer = false;
         setRecyclerViewForDynamicChooseFrame(position);
         if (QueryProcessType == DisplayEnum.FINISHQUERY){
-            final Polygon polygon = new Polygon(pointCollection);
-            final QueryParameters query = new QueryParameters();
-            query.setGeometry(polygon);// 设置空间几何对象
-            PopWindowData = new ArrayList<>();
-            try {
-                //基本农田保护区 老版本
-                //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
+            if(pointCollection != null){
+                final Polygon polygon = new Polygon(pointCollection);
+                final QueryParameters query = new QueryParameters();
+                query.setGeometry(polygon);// 设置空间几何对象
+                PopWindowData = new ArrayList<>();
+                try {
+                    //基本农田保护区 老版本
+                    //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
 
-                if (QueriedLayerIndex != -1)
-                    queryTaskFor20200904(query, polygon);
-                // TODO 2020/9/4 完成新的按需查询内容
-                //querySingleTaskForPolygon(query, polygon, BaseLayerFieldsSheetList.get(1));
-            } catch (ArcGISRuntimeException e) {
-                Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                    if (QueriedLayerIndex != -1)
+                        queryTaskFor20200904(query, polygon);
+                    // TODO 2020/9/4 完成新的按需查询内容
+                    //querySingleTaskForPolygon(query, polygon, BaseLayerFieldsSheetList.get(1));
+                } catch (ArcGISRuntimeException e) {
+                    Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
+                }
+            }
+            else{
+                NeedQueryForBasePolygon(AnalysisUserGeometry);
             }
         }
     }
