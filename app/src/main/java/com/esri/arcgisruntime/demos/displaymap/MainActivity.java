@@ -124,10 +124,15 @@ import com.esri.arcgisruntime.mapping.view.MapRotationChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedEvent;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.raster.Colormap;
+import com.esri.arcgisruntime.raster.ColormapRenderer;
 import com.esri.arcgisruntime.raster.Raster;
+import com.esri.arcgisruntime.raster.RasterRenderer;
 import com.esri.arcgisruntime.symbology.SimpleFillSymbol;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
+import com.esri.arcgisruntime.symbology.SimpleRenderer;
+import com.esri.arcgisruntime.symbology.UniqueValueRenderer;
 import com.esri.arcgisruntime.util.ListChangedEvent;
 import com.esri.arcgisruntime.util.ListChangedListener;
 import com.flask.colorpicker.ColorPickerView;
@@ -159,6 +164,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -2298,6 +2304,69 @@ public class MainActivity extends AppCompatActivity {
         // create a raster layer
         final RasterLayer rasterLayer = new RasterLayer(raster);
 
+        // TODO 栅格设色
+        /*List<Integer> colors = new ArrayList<>();
+        Random r = new Random();
+        for (int i = 0; i <= 255; i++) {
+            if (i <= 50)
+                colors.add(i, FeaturevalueAndColor.get(i).intValue());
+            else
+                colors.add(i, FeaturevalueAndColor.get(i).intValue());
+        }
+        // create a colormap renderer
+        ColormapRenderer colormapRenderer = new ColormapRenderer(colors);
+        rasterLayer.setRasterRenderer(colormapRenderer);
+*/
+        /*
+        // Override the renderer of the feature layer with a new unique value renderer
+        UniqueValueRenderer uniqueValueRenderer = new UniqueValueRenderer();
+        // Set the field to use for the unique values
+        uniqueValueRenderer.getFieldNames().add(
+                "STATE_ABBR"); //You can add multiple fields to be used for the renderer in the form of a list, in this case
+        // we are only adding a single field
+
+        // Create the symbols to be used in the renderer
+        SimpleFillSymbol defaultFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.BLACK,
+                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GRAY, 2));
+        SimpleFillSymbol californiaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.RED,
+                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 2));
+        SimpleFillSymbol arizonaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.GREEN,
+                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 2));
+        SimpleFillSymbol nevadaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.BLUE,
+                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 2));
+
+        // Set default symbol
+        uniqueValueRenderer.setDefaultSymbol(defaultFillSymbol);
+        uniqueValueRenderer.setDefaultLabel("Other");
+
+        // Set value for california
+        List<Object> californiaValue = new ArrayList<>();
+        // You add values associated with fields set on the unique value renderer.
+        // If there are multiple values, they should be set in the same order as the fields are set
+        californiaValue.add("CA");
+        uniqueValueRenderer.getUniqueValues().add(
+                new UniqueValueRenderer.UniqueValue("California", "State of California", californiaFillSymbol,
+                        californiaValue));
+
+        // Set value for arizona
+        List<Object> arizonaValue = new ArrayList<>();
+        // You add values associated with fields set on the unique value renderer.
+        // If there are multiple values, they should be set in the same order as the fields are set
+        arizonaValue.add("AZ");
+        uniqueValueRenderer.getUniqueValues()
+                .add(new UniqueValueRenderer.UniqueValue("Arizona", "State of Arizona", arizonaFillSymbol, arizonaValue));
+
+        // Set value for nevada
+        List<Object> nevadaValue = new ArrayList<>();
+        // You add values associated with fields set on the unique value renderer.
+        // If there are multiple values, they should be set in the same order as the fields are set
+        nevadaValue.add("NV");
+        uniqueValueRenderer.getUniqueValues()
+                .add(new UniqueValueRenderer.UniqueValue("Nevada", "State of Nevada", nevadaFillSymbol, nevadaValue));
+        */
+
+        // set the ColormapRenderer on the RasterLayer
+
         // create a Map with imagery basemap
         //ArcGISMap map = new ArcGISMap(Basemap.createImagery());
         // add the map to a map view
@@ -2350,7 +2419,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void featureLayerShapefile(String path) {
+
+    private HashMap<Integer, Integer> FeaturevalueAndColor;
+    private void featureLayerShapefile(final String path) {
         // load the shapefile with a local path
         final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
 
@@ -2364,6 +2435,84 @@ public class MainActivity extends AppCompatActivity {
                     // create a feature layer to display the shapefile
                     FeatureLayer shapefileFeatureLayer = new FeatureLayer(shapefileFeatureTable);
 
+                    if (path.contains("云县")) {
+                        // TODO 矢量要素设色
+                        // Override the renderer of the feature layer with a new unique value renderer
+                        UniqueValueRenderer uniqueValueRenderer = new UniqueValueRenderer();
+                        // Set the field to use for the unique values
+
+                        // 设置用于唯一值渲染的字段
+                        uniqueValueRenderer.getFieldNames().add("Value");
+
+                        for (int i = 0; i < uniqueValueRenderer.getFieldNames().size(); i++) {
+                            Log.w(TAG, "20201126lzy: " + uniqueValueRenderer.getFieldNames().get(i));
+                        }
+                        //You can add multiple fields to be used for the renderer in the form of a list, in this case
+                        // we are only adding a single field
+
+                        // Create the symbols to be used in the renderer
+                        Random r = new Random();
+
+                        for (int i = 0; i <= 255; i++) {
+                            /*SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)),
+                                    new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)), 2));*/
+                            SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, FeaturevalueAndColor.get(i).intValue(),
+                                    new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, FeaturevalueAndColor.get(i).intValue(), 2));
+                            if (i == 0) {
+                                // Set default symbol
+                                uniqueValueRenderer.setDefaultSymbol(fillSymbol);
+                                uniqueValueRenderer.setDefaultLabel("Other");
+                            }
+
+                            // Set value for california
+                            List<Object> californiaValue = new ArrayList<>();
+                            // You add values associated with fields set on the unique value renderer.
+                            // If there are multiple values, they should be set in the same order as the fields are set
+                            californiaValue.add(String.valueOf(i));
+                            uniqueValueRenderer.getUniqueValues().add(new UniqueValueRenderer.UniqueValue(String.valueOf(i), String.valueOf(i), fillSymbol, californiaValue));
+                        }
+
+                        /*SimpleFillSymbol defaultFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.BLACK,
+                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GRAY, 2));
+                        SimpleFillSymbol californiaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.RED,
+                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 2));
+                        SimpleFillSymbol arizonaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.GREEN,
+                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 2));
+                        SimpleFillSymbol nevadaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.BLUE,
+                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 2));
+
+                        // Set default symbol
+                        uniqueValueRenderer.setDefaultSymbol(defaultFillSymbol);
+                        uniqueValueRenderer.setDefaultLabel("Other");
+
+                        // Set value for california
+                        List<Object> californiaValue = new ArrayList<>();
+                        // You add values associated with fields set on the unique value renderer.
+                        // If there are multiple values, they should be set in the same order as the fields are set
+                        californiaValue.add("1");
+                        uniqueValueRenderer.getUniqueValues().add(
+                                new UniqueValueRenderer.UniqueValue("California", "State of California", californiaFillSymbol,
+                                        californiaValue));
+
+                        // Set value for arizona
+                        List<Object> arizonaValue = new ArrayList<>();
+                        // You add values associated with fields set on the unique value renderer.
+                        // If there are multiple values, they should be set in the same order as the fields are set
+                        arizonaValue.add("2");
+                        uniqueValueRenderer.getUniqueValues()
+                                .add(new UniqueValueRenderer.UniqueValue("Arizona", "State of Arizona", arizonaFillSymbol, arizonaValue));
+
+                        // Set value for nevada
+                        List<Object> nevadaValue = new ArrayList<>();
+                        // You add values associated with fields set on the unique value renderer.
+                        // If there are multiple values, they should be set in the same order as the fields are set
+                        nevadaValue.add("3");
+                        uniqueValueRenderer.getUniqueValues()
+                                .add(new UniqueValueRenderer.UniqueValue("Nevada", "State of Nevada", nevadaFillSymbol, nevadaValue));*/
+
+                        // override the current renderer with the new renderer defined above
+                        shapefileFeatureLayer.setRenderer(uniqueValueRenderer);
+                    }
                     shapefileFeatureLayer.setVisible(true);
                     // add the feature layer to the map
                     //mMapView.getMap().getOperationalLayers().add(shapefileFeatureLayer);
@@ -4079,11 +4228,9 @@ public class MainActivity extends AppCompatActivity {
             //OriginLocation = new Point(99.9478, 24.9860, 0, SpatialReference.create(4326));
             //新版本2020/9/2
             OriginLocation = new Point(99.6178, 23.9106, 0, SpatialReference.create(4326));
-
-            //mMapView.setViewpointCenterAsync(OriginLocation);
-            //mMapView.setViewpointScaleAsync(1200000);
-            //mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
             mMapView.setViewpointCenterAsync(OriginLocation, 1500000);
+            /*OriginLocation = new Point(103.883, 28.325, 0, SpatialReference.create(4326));
+            mMapView.setViewpointCenterAsync(OriginLocation, 15000);*/
         }else mMapView.setViewpointScaleAsync(100000);
     }
 
@@ -4469,6 +4616,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Random r = new Random();
+
+        FeaturevalueAndColor = new HashMap<>();
+        for (int i = 0; i < 2000; i++) {
+            FeaturevalueAndColor.put(i, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)));
+        }
 
         // TODO 暂时删除
         queriedMyTuban = new my_tb();
