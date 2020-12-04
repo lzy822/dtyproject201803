@@ -2435,6 +2435,7 @@ public class MainActivity extends AppCompatActivity {
                     // create a feature layer to display the shapefile
                     FeatureLayer shapefileFeatureLayer = new FeatureLayer(shapefileFeatureTable);
 
+                    /*
                     if (path.contains("云县")) {
                         // TODO 矢量要素设色
                         // Override the renderer of the feature layer with a new unique value renderer
@@ -2454,8 +2455,6 @@ public class MainActivity extends AppCompatActivity {
                         Random r = new Random();
 
                         for (int i = 0; i <= 255; i++) {
-                            /*SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)),
-                                    new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)), 2));*/
                             SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, FeaturevalueAndColor.get(i).intValue(),
                                     new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, FeaturevalueAndColor.get(i).intValue(), 2));
                             if (i == 0) {
@@ -2471,48 +2470,8 @@ public class MainActivity extends AppCompatActivity {
                             californiaValue.add(String.valueOf(i));
                             uniqueValueRenderer.getUniqueValues().add(new UniqueValueRenderer.UniqueValue(String.valueOf(i), String.valueOf(i), fillSymbol, californiaValue));
                         }
-
-                        /*SimpleFillSymbol defaultFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.BLACK,
-                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GRAY, 2));
-                        SimpleFillSymbol californiaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.RED,
-                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 2));
-                        SimpleFillSymbol arizonaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.GREEN,
-                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 2));
-                        SimpleFillSymbol nevadaFillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.BLUE,
-                                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 2));
-
-                        // Set default symbol
-                        uniqueValueRenderer.setDefaultSymbol(defaultFillSymbol);
-                        uniqueValueRenderer.setDefaultLabel("Other");
-
-                        // Set value for california
-                        List<Object> californiaValue = new ArrayList<>();
-                        // You add values associated with fields set on the unique value renderer.
-                        // If there are multiple values, they should be set in the same order as the fields are set
-                        californiaValue.add("1");
-                        uniqueValueRenderer.getUniqueValues().add(
-                                new UniqueValueRenderer.UniqueValue("California", "State of California", californiaFillSymbol,
-                                        californiaValue));
-
-                        // Set value for arizona
-                        List<Object> arizonaValue = new ArrayList<>();
-                        // You add values associated with fields set on the unique value renderer.
-                        // If there are multiple values, they should be set in the same order as the fields are set
-                        arizonaValue.add("2");
-                        uniqueValueRenderer.getUniqueValues()
-                                .add(new UniqueValueRenderer.UniqueValue("Arizona", "State of Arizona", arizonaFillSymbol, arizonaValue));
-
-                        // Set value for nevada
-                        List<Object> nevadaValue = new ArrayList<>();
-                        // You add values associated with fields set on the unique value renderer.
-                        // If there are multiple values, they should be set in the same order as the fields are set
-                        nevadaValue.add("3");
-                        uniqueValueRenderer.getUniqueValues()
-                                .add(new UniqueValueRenderer.UniqueValue("Nevada", "State of Nevada", nevadaFillSymbol, nevadaValue));*/
-
-                        // override the current renderer with the new renderer defined above
                         shapefileFeatureLayer.setRenderer(uniqueValueRenderer);
-                    }
+                    }*/
                     shapefileFeatureLayer.setVisible(true);
                     // add the feature layer to the map
                     //mMapView.getMap().getOperationalLayers().add(shapefileFeatureLayer);
@@ -2951,17 +2910,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //Log.w(TAG, "onClick: " + OriginLocation.getX() + " ; " + OriginLocation.getY());
                 if (OriginLocation != null) {
-                    //mMapView.setViewpointCenterAsync(OriginLocation, 1200000);
                     mMapView.setViewpointCenterAsync(OriginLocation, 1500000);
-                    //mMapView.setViewpointScaleAsync(1200000);
-                    //North.setRotation(0);
                     mMapView.setViewpointRotationAsync(0);
                 }else {
-                    //mMapView.setViewpointCenterAsync(new Point(102.715507, 25.038112, 0.000000, SpatialReference.create(4326)), 2000000);
-                    mMapView.setViewpointCenterAsync(new Point(99.6178, 23.9106, 0, SpatialReference.create(4326)), 1500000);
-                    // TODO
-                    //North.setRotation(0);
-                    mMapView.setViewpointRotationAsync(0);
+                    ResetMapView();
                 }
             }
         });
@@ -6863,49 +6815,53 @@ public class MainActivity extends AppCompatActivity {
     private void RemoveUserLayer(String pName, String path){
         try {
             Boolean isDeleted = false;
-            List<UserLayer> list = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
-            ;
-            for (int i = 0; i < list.size(); ++i) {
-                String mpath = list.get(i).getPath();
-                String name = list.get(i).getName();
-                Log.w(TAG, "RemoveUserLayer: " + mpath + ", " + name + ", " + pName + ", " + path);
+            if(path.substring(path.length()-4).contains("tif") || path.substring(path.length()-4).contains("TIF")) {
 
+                if (!isDeleted) {
+                    List<UserLayer> list = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
+                    Log.w(TAG, "run 2020/9/2: " + list.get(0).getName());
+                    ;
+                    for (int i = 0; i < list.size(); ++i) {
+                        String mpath = list.get(i).getPath();
+                        String name = list.get(i).getName();
 
-                if (mpath.equals(path)) {
-                    LitePal.deleteAll(UserLayer.class, "path = ?", mpath);
-                    list.remove(i);
-                    --i;
-                    isDeleted = true;
-                    for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
-                        if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
-                            LayerFieldsSheetList.remove(j);
-                            Log.w(TAG, "RemoveUserLayer: " + map.getOperationalLayers().size());
-                            map.getOperationalLayers().clear();
-                            for (int k = 0; k < BaseMMPKLayer.size(); k++) {
-                                map.getOperationalLayers().add(BaseMMPKLayer.get(k));
+                        if (mpath.equals(path)) {
+                            LitePal.deleteAll(UserLayer.class, "path = ?", mpath);
+                            list.remove(i);
+                            --i;
+                            for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
+                                if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
+                                    LayerFieldsSheetList.remove(j);
+                                    map.getOperationalLayers().clear();
+                                    for (int k = 0; k < BaseMMPKLayer.size(); k++) {
+                                        map.getOperationalLayers().add(BaseMMPKLayer.get(k));
+                                    }
+                                    initLayerList();
+                                }
                             }
-                            initLayerList();
+                            break;
                         }
                     }
-                    break;
                 }
             }
-
-            if (!isDeleted) {
-                list = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
-                Log.w(TAG, "run 2020/9/2: " + list.get(0).getName());
+            else {
+                List<UserLayer> list = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
                 ;
                 for (int i = 0; i < list.size(); ++i) {
                     String mpath = list.get(i).getPath();
                     String name = list.get(i).getName();
+                    Log.w(TAG, "RemoveUserLayer: " + mpath + ", " + name + ", " + pName + ", " + path);
+
 
                     if (mpath.equals(path)) {
                         LitePal.deleteAll(UserLayer.class, "path = ?", mpath);
                         list.remove(i);
                         --i;
+                        isDeleted = true;
                         for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
                             if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
                                 LayerFieldsSheetList.remove(j);
+                                Log.w(TAG, "RemoveUserLayer: " + map.getOperationalLayers().size());
                                 map.getOperationalLayers().clear();
                                 for (int k = 0; k < BaseMMPKLayer.size(); k++) {
                                     map.getOperationalLayers().add(BaseMMPKLayer.get(k));
@@ -6918,6 +6874,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             useUserLayer();
+            ResetMapView();
         }
         catch (Exception e){
             Toast.makeText(MainActivity.this, "可能该用户图层和底图图层重名，无法使用该方式移除图层" + "\n" + "请在文件管理器中删除需要移除的图层内容！", Toast.LENGTH_LONG).show();
@@ -7375,6 +7332,7 @@ public class MainActivity extends AppCompatActivity {
                         //useUserLayer();
                         showUserLayer(userLayer);
                         Toast.makeText(MainActivity.this, shp_path, Toast.LENGTH_LONG).show();
+                        ResetMapView();
                     }
                     else
                         Toast.makeText(MainActivity.this, "不能重复添加图层文件！", Toast.LENGTH_LONG).show();
@@ -7398,6 +7356,7 @@ public class MainActivity extends AppCompatActivity {
                         showUserLayer(userLayer1);
                         //useUserLayer();
                         Toast.makeText(MainActivity.this, tif_path, Toast.LENGTH_LONG).show();
+                        ResetMapView();
                     }
                     else
                         Toast.makeText(MainActivity.this, "不能重复添加图层文件！", Toast.LENGTH_LONG).show();
@@ -7463,6 +7422,11 @@ public class MainActivity extends AppCompatActivity {
         }catch (Exception e){
             Log.w(TAG, "checkUserLayer: " + e.toString());
         }
+    }
+
+    private void ResetMapView() {
+        mMapView.setViewpointCenterAsync(new Point(99.6178, 23.9106, 0, SpatialReference.create(4326)), 1500000);
+        mMapView.setViewpointRotationAsync(0);
     }
 
     private void showUserLayer(UserLayer userLayer){
