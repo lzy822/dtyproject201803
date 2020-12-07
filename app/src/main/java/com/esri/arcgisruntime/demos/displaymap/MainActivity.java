@@ -2381,7 +2381,8 @@ public class MainActivity extends AppCompatActivity {
                 //mMapView.setViewpointGeometryAsync(rasterLayer.getFullExtent(), 50);
                 Toast.makeText(MainActivity.this, "TIFF 已经显示", Toast.LENGTH_LONG).show();
                 Log.w(TAG, "initLayerList: " + map.getOperationalLayers().size());
-                initLayerList(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")));
+                //initLayerList(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")));
+                initLayerList();
             }
         });
     }
@@ -4091,6 +4092,11 @@ public class MainActivity extends AppCompatActivity {
         layers.clear();
         layerList.clear();
         Log.w(TAG, "size: " + size);
+        /*List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
+        for (int i = 0; i < tifList.size(); i++) {
+            Log.w(TAG, "onClick: 2020/12/7 For Update: " + tifList.get(i).getPath());
+            layerList.add(new layer(tifList.get(i).getName(), tifList.get(i).getPath(), map.getOperationalLayers().get(i).isVisible()));
+        }*/
         for (int i = size - 1, j = 0; i > -1; i--){
             Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
             if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
@@ -4098,7 +4104,7 @@ public class MainActivity extends AppCompatActivity {
                 if (map.getOperationalLayers().get(i).getName().isEmpty()){
                     List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
                     layerList.add(new layer(tifList.get(j).getName(), tifList.get(j).getPath(), map.getOperationalLayers().get(i).isVisible()));
-                    ++j;
+                    j++;
                 }
                 else
                 {
@@ -4121,7 +4127,7 @@ public class MainActivity extends AppCompatActivity {
             }else {
                 //Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
                 hasTPK = true;
-                if (!map.getOperationalLayers().get(i).getName().contains("临沧市中心城区影像"))
+                if (!map.getOperationalLayers().get(i).getName().equals("临沧市中心城区影像"))
                     TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
                 else{
                     layers.add(new layer1(map.getOperationalLayers().get(i), i));
@@ -4136,7 +4142,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void initLayerList(String name){
+    /*private void initLayerList(String name){
         int size = map.getOperationalLayers().size();
         layers.clear();
         layerList.clear();
@@ -4156,7 +4162,7 @@ public class MainActivity extends AppCompatActivity {
             }else {
                 //Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
                 hasTPK = true;
-                if (!map.getOperationalLayers().get(i).getName().contains("临沧市中心城区影像"))
+                if (!map.getOperationalLayers().get(i).getName().equals("临沧市中心城区影像"))
                     TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
                 else{
                     layers.add(new layer1(map.getOperationalLayers().get(i), i));
@@ -4168,7 +4174,7 @@ public class MainActivity extends AppCompatActivity {
         layerList.add(new layer("影像", "", false));
         isOK1 = true;
         setRecyclerView();
-    }
+    }*/
 
     private void initSurfaceCenterPoint(final MobileMapPackage mainMobileMapPackage){
         OriginScale = mMapView.getMapScale();
@@ -6708,6 +6714,9 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemLongClickListener(new layerAdapter.OnRecyclerItemLongListener() {
             @Override
             public void onItemLongClick(layerAdapter.ViewHolder holder, final String name, final String path) {
+                // TODO 2020/12/7
+                //DynamicLongClickFunction(adapter, holder, name, path);
+                Log.w(TAG, "onClick: 2020/12/7 For LongClick: " + path);
                 LayerAdapterLongClickFunction(holder, name, path);
                 recyclerView.setAdapter(adapter);
             }
@@ -6719,7 +6728,6 @@ public class MainActivity extends AppCompatActivity {
     private void LayerAdapterLongClickFunction(layerAdapter.ViewHolder holder, final String name, final String path){
         Boolean isBaseLayer = IsBasedLayerForMMPK(name);
         if (!isBaseLayer) {
-            Log.w(TAG, "onClick: 2020/9/7: " + name);
             holder.cardView.setCardBackgroundColor(Color.RED);
             new AlertDialog.Builder(MainActivity.this)
                     .setTitle("提示")
@@ -6727,6 +6735,8 @@ public class MainActivity extends AppCompatActivity {
                     .setPositiveButton("删除", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            Log.w(TAG, "onClick: 2020/12/7 For Left: " + name + "; " + path);
+
                             RemoveUserLayer(name, path);
                             setRecyclerViewForDynamicChooseFrame();
                         }
@@ -6916,6 +6926,7 @@ public class MainActivity extends AppCompatActivity {
                     .setPositiveButton("删除", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            Log.w(TAG, "onClick: 2020/12/7 For Right: " + name + "; " + path);
                             RemoveUserLayer(name, path);
                             recyclerViewForP.setAdapter(adapter);
                         }
@@ -7351,6 +7362,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     if (!hasSameFile1) {
+                        Log.w(TAG, "onClick: 2020/12/7 For Input: " + tif_path);
                         UserLayer userLayer1 = new UserLayer(tif_path.substring(tif_path.lastIndexOf("/") + 1, tif_path.lastIndexOf(".")), tif_path, UserLayer.TIF_FILE);
                         userLayer1.save();
                         showUserLayer(userLayer1);
