@@ -714,10 +714,12 @@ public class MainActivity extends AppCompatActivity {
 
         //checkWhiteblankLine(multilines, pt1);
         Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + pt1.x + ", " + pt1.y);
-        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + checkWhiteblankLine(multilines, pt1));
-        if (checkWhiteblankLine(multilines, pt1) != -1) {
+        int AddIndex = checkWhiteblankLine(multilines, pt1);
+        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + AddIndex);
+        if (AddIndex != -1) {
+            AddWhiteblankLineByIndex(AddIndex);
+
             initialiseGraphics();
-            PointCollection points = new PointCollection(SpatialReference.create(4521));;
             if (ShowPoi)
                 updatePoi();
             if (ShowTrail)
@@ -726,24 +728,48 @@ public class MainActivity extends AppCompatActivity {
                 parseAndUpdateMyTuban();
             if (ShowWhiteBlank)
                 updateWhiteBlank();
-            String[] strings = whiteblanks.get(checkWhiteblankLine(multilines, pt1)).getPts().split("lzy");
-            Log.w(TAG, "drawWhiteBlank1: " + strings.length);
-            for (int kk = 0; kk < strings.length; ++kk) {
-                String[] strings1 = strings[kk].split(",");
-                if (strings1.length == 2) {
-                    Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
-                    points.add(wgs84Point);
+            for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
+                PointCollection points = new PointCollection(SpatialReference.create(4521));;
+                String[] strings = whiteblanks.get(ChoosedWhiteblankLines.get(i)).getPts().split("lzy");
+                Log.w(TAG, "drawWhiteBlank1: " + strings.length);
+                for (int kk = 0; kk < strings.length; ++kk) {
+                    String[] strings1 = strings[kk].split(",");
+                    if (strings1.length == 2) {
+                        Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
+                        Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                        points.add(wgs84Point);
+                    }
                 }
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+                Polyline polyline = new Polyline(points);
+                Graphic g = new Graphic(polyline, lineSymbol);
+                graphics.add(g);
             }
-            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
-            Polyline polyline = new Polyline(points);
-            Graphic g = new Graphic(polyline, lineSymbol);
-            graphics.add(g);
 
             updateGraphicsOverlayer();
         }
     }
+
+    private void AddWhiteblankLineByIndex(int index){
+        Boolean hasSameIndex = false;
+        for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
+            if (ChoosedWhiteblankLines.get(i) == index)
+            {
+                ChoosedWhiteblankLines.remove(i);
+                i--;
+                hasSameIndex = true;
+                break;
+            }
+        }
+        if (!hasSameIndex)
+            ChoosedWhiteblankLines.add(index);
+    }
+
+    private List<Integer> ChoosedWhiteblankLines = new ArrayList<>();
+    private List<Integer> ChoosedPois = new ArrayList<>();
+    private List<Integer> ChoosedTrails = new ArrayList<>();
+    private List<Integer> ChoosedMyTubans = new ArrayList<>();
+
 
     private int checkWhiteblankLine(List<String> multilines, PointF pt1){
         /*com.esri.arcgisruntime.geometry.Point point = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
