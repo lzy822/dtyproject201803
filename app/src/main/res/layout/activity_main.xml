@@ -65,6 +65,24 @@
             app:fab_size="mini" />
 
         <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/StartTrail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="310dp"
+            android:adjustViewBounds="false"
+            android:scaleType="fitEnd"
+            android:src="@drawable/ic_subway"
+            app:fab_colorNormal="#F50057"
+            app:fab_colorPressed="#E8004A"
+            app:fab_colorRipple="#C20024"
+            app:fab_elevationCompat="6dp"
+            app:fab_shadowColor="#000"
+            app:fab_size="mini" />
+
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/OutputData"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -298,13 +316,13 @@
     </RelativeLayout>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/recyclerViewForP"
+        android:id="@+id/RightRecyclerView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:translationZ="5dp"/>
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/recyclerView"
+        android:id="@+id/LeftRecyclerView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="start"

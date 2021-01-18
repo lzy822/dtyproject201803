@@ -1,7 +1,5 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
-import android.app.ActionBar;
-import android.app.DownloadManager;
 import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -20,6 +18,10 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
@@ -52,98 +54,64 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.esri.arcgisruntime.ArcGISRuntimeException;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
-import com.esri.arcgisruntime.data.FeatureCollection;
 import com.esri.arcgisruntime.data.FeatureCollectionTable;
 import com.esri.arcgisruntime.data.FeatureQueryResult;
 import com.esri.arcgisruntime.data.FeatureTable;
-import com.esri.arcgisruntime.data.Field;
 import com.esri.arcgisruntime.data.Geodatabase;
-import com.esri.arcgisruntime.data.GeodatabaseFeatureTable;
 import com.esri.arcgisruntime.data.QueryParameters;
-import com.esri.arcgisruntime.data.ServiceFeatureTable;
 import com.esri.arcgisruntime.data.ShapefileFeatureTable;
 import com.esri.arcgisruntime.geometry.AreaUnit;
 import com.esri.arcgisruntime.geometry.AreaUnitId;
 import com.esri.arcgisruntime.geometry.Envelope;
 import com.esri.arcgisruntime.geometry.GeodeticCurveType;
 import com.esri.arcgisruntime.geometry.Geometry;
-import com.esri.arcgisruntime.geometry.GeometryBuilder;
 import com.esri.arcgisruntime.geometry.GeometryEngine;
 import com.esri.arcgisruntime.geometry.LinearUnit;
 import com.esri.arcgisruntime.geometry.LinearUnitId;
-import com.esri.arcgisruntime.geometry.Part;
 import com.esri.arcgisruntime.geometry.PartCollection;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.PointCollection;
 import com.esri.arcgisruntime.geometry.Polygon;
 import com.esri.arcgisruntime.geometry.Polyline;
-import com.esri.arcgisruntime.geometry.PolylineBuilder;
 import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
-import com.esri.arcgisruntime.layers.ArcGISMapImageLayer;
-import com.esri.arcgisruntime.layers.ArcGISMapImageSublayer;
-import com.esri.arcgisruntime.layers.ArcGISTiledLayer;
-import com.esri.arcgisruntime.layers.ArcGISVectorTiledLayer;
-import com.esri.arcgisruntime.layers.FeatureCollectionLayer;
 import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.layers.Layer;
 import com.esri.arcgisruntime.layers.RasterLayer;
-import com.esri.arcgisruntime.layers.SublayerList;
 import com.esri.arcgisruntime.loadable.LoadStatus;
 import com.esri.arcgisruntime.location.LocationDataSource;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
-import com.esri.arcgisruntime.mapping.Basemap;
-import com.esri.arcgisruntime.mapping.LayerList;
 import com.esri.arcgisruntime.mapping.MobileMapPackage;
-import com.esri.arcgisruntime.mapping.Viewpoint;
-import com.esri.arcgisruntime.mapping.popup.Popup;
 import com.esri.arcgisruntime.mapping.view.Callout;
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
-import com.esri.arcgisruntime.mapping.view.IdentifyLayerResult;
-import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedEvent;
-import com.esri.arcgisruntime.mapping.view.LayerViewStateChangedListener;
 import com.esri.arcgisruntime.mapping.view.LocationDisplay;
 import com.esri.arcgisruntime.mapping.view.MapRotationChangedEvent;
 import com.esri.arcgisruntime.mapping.view.MapRotationChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedEvent;
 import com.esri.arcgisruntime.mapping.view.MapScaleChangedListener;
 import com.esri.arcgisruntime.mapping.view.MapView;
-import com.esri.arcgisruntime.raster.Colormap;
-import com.esri.arcgisruntime.raster.ColormapRenderer;
 import com.esri.arcgisruntime.raster.Raster;
-import com.esri.arcgisruntime.raster.RasterRenderer;
 import com.esri.arcgisruntime.symbology.SimpleFillSymbol;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import com.esri.arcgisruntime.symbology.SimpleRenderer;
-import com.esri.arcgisruntime.symbology.UniqueValueRenderer;
-import com.esri.arcgisruntime.util.ListChangedEvent;
-import com.esri.arcgisruntime.util.ListChangedListener;
 import com.flask.colorpicker.ColorPickerView;
 import com.flask.colorpicker.OnColorSelectedListener;
 import com.flask.colorpicker.builder.ColorPickerClickListener;
 import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
 import com.github.clans.fab.FloatingActionButton;
-import com.google.gson.Gson;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.litepal.LitePal;
 
 import java.io.BufferedReader;
@@ -165,9 +133,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -183,6 +148,23 @@ public class MainActivity extends AppCompatActivity {
     private List<layer> layerList = new ArrayList<>();
     private List<layer1> layers = new ArrayList<>();
     private DrawerLayout mDrawerLayout;
+
+    private LocationManager locationManager;
+
+    Location location;
+
+    //上一个记录下来的坐标点坐标
+    private float last_x, last_y;
+
+    //轨迹线
+    List<Trail> trails;
+
+    //记录当前轨迹
+    String m_cTrail = "";
+    //是否结束轨迹绘制
+    Boolean isLocateEnd = true;
+    //当前记录的轨迹点数
+    int isLocate = 0;
 
     String[] items;
     boolean isLoc = false;
@@ -265,6 +247,45 @@ public class MainActivity extends AppCompatActivity {
     //private static final int INQUERY = -1;
     //private static final int FINISHQUERY = -2;
     //private static final int NOQUERY = -3;
+
+    private void ParseAndUpdateTrails(){
+        ParseTrails();
+        UpdateTrails();
+    }
+
+    private void ParseTrails(){
+        trails = LitePal.findAll(Trail.class);
+        Log.w(TAG, "ParseTrails: " + trails.size());
+    }
+
+    private void UpdateTrails(){
+        if (isLocateEnd && !m_cTrail.isEmpty()) {
+            for (int ii = 0; ii < trails.size(); ii++) {
+                String str1 = trails.get(ii).getPath();
+                String[] TrailString = str1.split(" ");
+                float[] Trails = new float[TrailString.length];
+                for (int i = 0; i < TrailString.length; ++i) {
+                    Trails[i] = Float.valueOf(TrailString[i]);
+                }
+                Log.w(TAG, "onLayerDrawn: ");
+            /*for (int j = 0; j < Trails.length - 2; j = j + 2) {
+                PointF pt11, pt12;
+                pt11 = LatLng.getPixLocFromGeoL(new PointF(Trails[j], Trails[j + 1]), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                pt12 = LatLng.getPixLocFromGeoL(new PointF(Trails[j + 2], Trails[j + 3]), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                canvas.drawLine(pt11.x, pt11.y, pt12.x, pt12.y, paint8);
+            }*/
+                PointCollection points = new PointCollection(SpatialReference.create(4521));
+                for (int j = 0; j < Trails.length - 1; j = j + 2) {
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4521));
+                    points.add(wgs84Point);
+                }
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+                Polyline polyline = new Polyline(points);
+                Graphic g = new Graphic(polyline, lineSymbol);
+                graphics.add(g);
+            }
+        }
+    }
 
     private DisplayEnum isQurey = DisplayEnum.I_NOQUREY;//.I_NOQUREY;I_QUREY
     //private static final int QUREY = 0;
@@ -505,9 +526,7 @@ public class MainActivity extends AppCompatActivity {
                 graphicsOverlay_10.getGraphics().clear();
                 mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 mMapView.getGraphicsOverlays().add(graphicsOverlay_10);*/
-                LitePal.deleteAll(whiteblank.class);
-                drawGraphicsOverlayer();
-                Toast.makeText(MainActivity.this, R.string.EraseFinish, Toast.LENGTH_SHORT).show();
+                showWhiteBlankDialog();
                 /*}catch (Exception e){
                     Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
                     Log.w(TAG, "onClick: " + e.toString());
@@ -673,6 +692,133 @@ public class MainActivity extends AppCompatActivity {
             return context.getResources().getDimensionPixelSize(resourceId);
         }else
             return 0;
+    }
+
+
+    private void ParseWhiteblanklinesToMultilines(PointF pt1){
+        List<String> multilines = new ArrayList<>();
+        List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
+        for (int i = 0; i < whiteblanks.size(); i++) {
+            String line = whiteblanks.get(i).getPts();
+            String[] pts = line.split("lzy");
+            String NewLine = "";
+            for (int j = 0; j < pts.length; j++) {
+                String pt = pts[j] + ",0";
+                if (j != pts.length-1)
+                    pt += " ";
+                NewLine += pt;
+            }
+            multilines.add(NewLine);
+            Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + i + ": " + NewLine);
+        }
+
+        //checkWhiteblankLine(multilines, pt1);
+        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + pt1.x + ", " + pt1.y);
+        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + checkWhiteblankLine(multilines, pt1));
+        if (checkWhiteblankLine(multilines, pt1) != -1) {
+            initialiseGraphics();
+            PointCollection points = new PointCollection(SpatialReference.create(4521));;
+            if (ShowPoi)
+                updatePoi();
+            if (ShowTrail)
+                UpdateTrails();
+            if (ShowMyTuban)
+                parseAndUpdateMyTuban();
+            if (ShowWhiteBlank)
+                updateWhiteBlank();
+            String[] strings = whiteblanks.get(checkWhiteblankLine(multilines, pt1)).getPts().split("lzy");
+            Log.w(TAG, "drawWhiteBlank1: " + strings.length);
+            for (int kk = 0; kk < strings.length; ++kk) {
+                String[] strings1 = strings[kk].split(",");
+                if (strings1.length == 2) {
+                    Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                    points.add(wgs84Point);
+                }
+            }
+            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+            Polyline polyline = new Polyline(points);
+            Graphic g = new Graphic(polyline, lineSymbol);
+            graphics.add(g);
+
+            updateGraphicsOverlayer();
+        }
+    }
+
+    private int checkWhiteblankLine(List<String> multilines, PointF pt1){
+        /*com.esri.arcgisruntime.geometry.Point point = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
+        pt1.x = Float.valueOf(Double.toString(point.getX()));
+        pt1.y = Float.valueOf(Double.toString(point.getY()));*/
+        int TrueIndex = -1;
+        boolean QueryLine = false;
+        if (multilines.size() > 0) {
+            int linenum = multilines.size();
+            double deltas = 0;
+            long calnum = 1;
+            //显示线状要素
+            for (int j = 0; j < linenum; ++j) {
+                String line = multilines.get(j);
+                /*Paint paintk = new Paint();
+                paintk.setStrokeWidth(0.15f);
+                paintk.setColor(Color.BLACK);
+                paintk.setStyle(Paint.Style.STROKE);*/
+                //for (int k = 0; k < linenum1; ++k)
+                {
+                    //String mline = lineUtil.getExternalPolygon(lines.get(k), 0.001);
+                    //String[] strings = mline.split(" ");
+                    String[] strings = line.split(" ");
+                    for (int cc = 0; cc < strings.length - 1; ++cc) {
+                        String[] ptx1 = strings[cc].split(",");
+                        String[] ptx2 = strings[cc + 1].split(",");
+                        //PointF pointF = LatLng.getPixLocFromGeoL(new PointF(Float.valueOf(ptx1[1]), Float.valueOf(ptx1[0])), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                        //PointF pointF1 = LatLng.getPixLocFromGeoL(new PointF(Float.valueOf(ptx2[1]), Float.valueOf(ptx2[0])), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                        //PointF theTouchPt = LatLng.getPixLocFromGeoL(pt1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                        //com.esri.arcgisruntime.geometry.Point pointf00 = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
+                        //com.esri.arcgisruntime.geometry.Point pointf11 = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
+                        /*com.esri.arcgisruntime.demos.displaymap.Point pointF = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx1[1]), Double.valueOf(ptx1[0]));
+                        com.esri.arcgisruntime.demos.displaymap.Point pointF1 = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx2[1]), Double.valueOf(ptx2[0]));*/
+                        com.esri.arcgisruntime.demos.displaymap.Point pointF = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx1[0]), Double.valueOf(ptx1[1]));
+                        com.esri.arcgisruntime.demos.displaymap.Point pointF1 = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx2[0]), Double.valueOf(ptx2[1]));
+                        PointF theTouchPt = pt1;
+                        if (deltas == 0) {
+                            //deltas = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.x, pointF.y, pointF1.x, pointF1.y), theTouchPt);
+                            double thedis = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.getX(), pointF.getY(), pointF1.getX(), pointF1.getY()), theTouchPt);
+                            Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + j + thedis + ", " + deltas);
+                            if (thedis <= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF, pt1) : lineUtil.getDistance1(pointF1, pt1)) && thedis >= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1))) {
+                                deltas = thedis;
+                                TrueIndex = j;
+                            } else {
+                                deltas = (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1));
+                                TrueIndex = j;
+                            }
+                        } else {
+                            //double delta1 = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.x, pointF.y, pointF1.x, pointF1.y), theTouchPt);
+                            double delta1 = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.getX(), pointF.getY(), pointF1.getX(), pointF1.getY()), theTouchPt);
+                            if (delta1 <= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF, pt1) : lineUtil.getDistance1(pointF1, pt1)) && delta1 >= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1))) {
+                                //deltas = delta1;
+                                //theId = dmLines.get(j).getBzmc();
+                            } else
+                                delta1 = (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1));
+                            Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + j + delta1 + ", " + deltas);
+                            if (delta1 < deltas) {
+                                deltas = delta1;
+                                TrueIndex = j;
+                            }
+                            calnum++;
+                        }
+                        //canvas.drawRoundRect(pointF.y>pointF1.y?pointF1.y:pointF.y, pointF.x>pointF1.x?pointF.x:pointF1.x, pointF.y>pointF1.y?pointF.y:pointF1.y, pointF.x>pointF1.x?pointF1.x:pointF.x, 0.5f,  0.5f, paint);
+                        //canvas.drawRoundRect(pointF.y>pointF1.y?pointF1.y:pointF.y, pointF.x>pointF1.x?pointF.x:pointF1.x, pointF.y>pointF1.y?pointF.y:pointF1.y, pointF.x>pointF1.x?pointF1.x:pointF.x, 0.5f,  0.5f, paintk);
+                    }
+                }
+            }
+            if (deltas < 1000000) {
+                // TODO : 设计并完成查询语句
+                //GoDMLSinglePOIPage(theLineId);
+                QueryLine = true;
+                return  TrueIndex;
+            }
+        }
+        return -1;
     }
 
     private void showPopueWindowForMessure(){
@@ -1394,7 +1540,7 @@ public class MainActivity extends AppCompatActivity {
                                         boolean isOK = false;
                                         Double area = GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                                         QueryTaskInfo queryTaskInfo = new QueryTaskInfo(area);
-                                        Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
+                                        Log.w(TAG, "geometry2type For BasePolygon: " + queryTaskInfo.getArea());
                                         //Log.w(TAG, "run: " + geometry1.getSpatialReference().getWkid());
                                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                                         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3);
@@ -1593,6 +1739,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             if (QueriedLayerIndex != -1 && QueriedLayerIndex < BaseLayerFieldsSheetList.size()) {
                 FeatureTable mTable = LayerFieldsSheetList.get(QueriedLayerIndex).getFeatureLayer().getFeatureTable();
+                mCallout.dismiss();
             /*if (QueriedFeature == DisplayEnum.TDGHDL_FEATURE)
                 mTable = TDGHDLFeatureLayer.getFeatureTable();//得到查询属性表
             else
@@ -1620,7 +1767,7 @@ public class MainActivity extends AppCompatActivity {
                                         boolean isOK = false;
                                         Double area = GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                                         QueryTaskInfo queryTaskInfo = new QueryTaskInfo(area);
-                                        Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
+                                        Log.w(TAG, "按需查询切换图层: " + queryTaskInfo.getArea());
                                         //Log.w(TAG, "run: " + geometry1.getSpatialReference().getWkid());
                                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                                         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3);
@@ -1773,8 +1920,12 @@ public class MainActivity extends AppCompatActivity {
                                 // get callout, set content and show
                                 mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
                                 mCallout.setContent(calloutContent);
-                                Log.w(TAG, "run: callout" + mCallout.isShowing());
+
+                                // TODO 2020/12/9 切换查询图层时候的按需查询
+
+                                Log.w(TAG, "run: 按需查询切换图层， Callout是否显示： " + mCallout.isShowing());
                                 mCallout.show();
+                                Log.w(TAG, "run: 按需查询切换图层， Callout是否显示： " + mCallout.isShowing());
                                 inMap = true;
                                 PieChartData pieChartData = new PieChartData(sliceValues);
                                 pieChartData.setHasLabels(true);
@@ -2157,19 +2308,19 @@ public class MainActivity extends AppCompatActivity {
                         inMap = true;
                         if (text.equals("三调地类图斑")) {
                             isQueryTDGHDL = true;
-                            data = "图层:土地规划地类," + data;
+                            data = "图层:三调地类图斑," + data;
                         }
                         else if (text.equals("二调地类图斑")) {
                             isQuery09DLTB = true;
-                            data = "图层:09地类图斑," + data;
+                            data = "图层:二调地类图斑," + data;
                         }
                         else if (text.equals("生态保护红线")) {
                             isQuery16DLTB = true;
-                            data = "图层:16地类图斑," + data;
+                            data = "图层:生态保护红线," + data;
                         }
                         else if (text.equals("农村土地承包经营权")) {
                             isQuery17DLTB = true;
-                            data = "图层:17地类图斑," + data;
+                            data = "图层:农村土地承包经营权," + data;
                         }else if (text.contains("永久基本农田")) {
                             isQueryJBNTBHQ = true;
                             jbntArea = 0;
@@ -2222,9 +2373,10 @@ public class MainActivity extends AppCompatActivity {
             // TODO 2020/9/2 新设置的待查寻内容
             //等高线层
             //querySingleTaskForPolygon(query, polygon, DLTB2017FeatureLayer.getFeatureTable(), "DGX");
+            mCallout.dismiss();
             for (int i = 0; i < LayerFieldsSheetList.size(); i++) {
                 FeatureLayer fl = LayerFieldsSheetList.get(i).getFeatureLayer();
-                querySingleTaskForPolygon(query, polygon, LayerFieldsSheetList.get(i));
+                //querySingleTaskForPolygon(query, polygon, LayerFieldsSheetList.get(i));
             }
         } catch (final Exception e) {
             runOnUiThread(new Runnable() {
@@ -2251,7 +2403,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void isOkForPopWindowFor20200904(String data){
-        Log.w(TAG, "isOkForPopWindow: " + isQueryTDGHDL + isQuery09DLTB + isQuery16DLTB + isQuery17DLTB + isQueryJBNTBHQ);
+        Log.w(TAG, "isOkForPopWindow for 20201209: " + isQueryTDGHDL + isQuery09DLTB + isQuery16DLTB + isQuery17DLTB + isQueryJBNTBHQ);
         PopWindowData.add(data);
 
         showPopWindowForListShow();
@@ -2422,7 +2574,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private HashMap<Integer, Integer> FeaturevalueAndColor;
-    private void featureLayerShapefile(final String path) {
+    private void featureLayerShapefile(final String path, final int color) {
         // load the shapefile with a local path
         final ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
 
@@ -2435,6 +2587,16 @@ public class MainActivity extends AppCompatActivity {
 
                     // create a feature layer to display the shapefile
                     FeatureLayer shapefileFeatureLayer = new FeatureLayer(shapefileFeatureTable);
+
+
+                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 1.0f);
+                    SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, color, lineSymbol);
+
+                    // create the Renderer
+                    SimpleRenderer renderer = new SimpleRenderer(fillSymbol);
+
+                    // set the Renderer on the Layer
+                    shapefileFeatureLayer.setRenderer(renderer);
 
                     /*
                     if (path.contains("云县")) {
@@ -2825,7 +2987,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initWidget(){
-        recyclerViewForP = (RecyclerView) findViewById(R.id.recyclerViewForP);
+        recyclerViewForP = (RecyclerView) findViewById(R.id.RightRecyclerView);
 
         FloatingActionButton InputDataBt = findViewById(R.id.InputData);
         InputDataBt.setOnClickListener(new View.OnClickListener() {
@@ -2969,6 +3131,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        final FloatingActionButton TrailBt = (FloatingActionButton) findViewById(R.id.StartTrail);
+        TrailBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isLocateEnd){
+                    //没有开始轨迹记录
+                    showTrailDialogForStart(TrailBt);
+                }
+                else{
+                    //开始轨迹记录
+                    showTrailDialogForStop(TrailBt);
+                }
+            }
+        });
         /*recyclerViewButton = (ImageButton) findViewById(R.id.openRecyclerView);
         recyclerViewButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -3040,6 +3217,7 @@ public class MainActivity extends AppCompatActivity {
                 final Point clickPoint = mMapView.screenToLocation(screenPoint);
                 if (RunningFunction == DisplayEnum.FUNC_ANA) {
                     if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
+                        mCallout = mMapView.getCallout();
                         mCallout.dismiss();
                         pieChartView.setVisibility(View.GONE);
                         // center on tapped point
@@ -3050,7 +3228,7 @@ public class MainActivity extends AppCompatActivity {
 
                         Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                         if (!queryPoi(mMapView.locationToScreen(clickPoint)))
-                            if (!inTuban(clickPoint)) {
+                            if (!inUserDrawedTuban(clickPoint)) {
                                 // TODO 2020/9/8 重要图斑查询逻辑！！！
                                 if (!isQueryUserLayer) {
                                             // 原版
@@ -3177,6 +3355,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                     builder.show();
+                }else{
+                    ParseWhiteblanklinesToMultilines(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
                 }
                 return true;
             }
@@ -3378,6 +3558,293 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void showWhiteBlankDialog(){
+        /* @setIcon 设置对话框图标
+         * @setTitle 设置对话框标题
+         * @setMessage 设置对话框消息提示
+         * setXXX方法返回Dialog对象，因此可以链式设置属性
+         */
+        final AlertDialog.Builder normalDialog =
+                new AlertDialog.Builder(MainActivity.this);
+        normalDialog.setTitle("提示");
+        normalDialog.setMessage("确定要完全清除当前白板吗？");
+        normalDialog.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        LitePal.deleteAll(whiteblank.class);
+                        drawGraphicsOverlayer();
+                        Toast.makeText(MainActivity.this, R.string.EraseFinish, Toast.LENGTH_SHORT).show();
+                    }
+                });
+        normalDialog.setNegativeButton("取消",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+        // 显示
+        normalDialog.show();
+    }
+
+    private void showTrailDialogForStop(final ImageButton TrailBt){
+        /* @setIcon 设置对话框图标
+         * @setTitle 设置对话框标题
+         * @setMessage 设置对话框消息提示
+         * setXXX方法返回Dialog对象，因此可以链式设置属性
+         */
+        final AlertDialog.Builder normalDialog =
+                new AlertDialog.Builder(MainActivity.this);
+        normalDialog.setTitle("提示");
+        normalDialog.setMessage("确定要停止记录吗？");
+        normalDialog.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        TrailBt.setImageResource(R.drawable.ic_subway);
+                        isLocateEnd = true;
+                        recordTrail(last_x, last_y);
+                        locError(m_cTrail);
+                        invalidateOptionsMenu();
+                        Intent stop_mService = new Intent(MainActivity.this, RecordTrail.class);
+                        stopService(stop_mService);
+                        ParseAndUpdateTrails();
+                    }
+                });
+        normalDialog.setNegativeButton("取消",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+        // 显示
+        normalDialog.show();
+    }
+
+    private void showTrailDialogForStart(final ImageButton TrailBt){
+        /* @setIcon 设置对话框图标
+         * @setTitle 设置对话框标题
+         * @setMessage 设置对话框消息提示
+         * setXXX方法返回Dialog对象，因此可以链式设置属性
+         */
+        final AlertDialog.Builder normalDialog =
+                new AlertDialog.Builder(MainActivity.this);
+        normalDialog.setTitle("提示");
+        normalDialog.setMessage("确定要开始记录轨迹吗？");
+        normalDialog.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        TrailBt.setImageResource(R.drawable.ic_stop_24dp);
+                        isLocateEnd = false;
+                        m_cTrail = "";
+                        isLocate = 0;
+                        initTrail();
+                        //addpoi.setVisibility(View.INVISIBLE);
+                        //query_poi.setVisibility(View.INVISIBLE);
+                        //floatingActionsMenu.setVisibility(View.INVISIBLE);
+                        invalidateOptionsMenu();
+                        Intent start_mService = new Intent(MainActivity.this, RecordTrail.class);
+                        start_mService.putExtra("ic", ic);
+                        startService(start_mService);
+                    }
+                });
+        normalDialog.setNegativeButton("取消",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+        // 显示
+        normalDialog.show();
+    }
+
+    private void recordTrail(Location location) {
+        isLocate++;
+        if (location != null) {
+            if (isLocateEnd || isLocate == 1) {
+                m_cTrail = m_cTrail + Double.toString(m_lat) + " " + Double.toString(m_long);
+                //isLocateEnd = true;
+            } else
+                m_cTrail = m_cTrail + " " + Double.toString(m_lat) + " " + Double.toString(m_long) + " " + Double.toString(m_lat) + " " + Double.toString(m_long);
+            //setHereLocation();
+            //locError(Double.toString(m_lat) + "," + Double.toString(m_long) + "Come here");
+
+        } else {
+
+        }
+    }
+
+    //记录轨迹
+    private void recordTrail(float x, float y) {
+        isLocate++;
+        last_x = x;
+        last_y = y;
+        locError(Integer.toString(isLocate));
+        //if (location != null) {
+        if (isLocateEnd || isLocate == 1) {
+            if (!m_cTrail.isEmpty()) {
+                if (isLocate > 2) {
+                    int num = DataUtil.appearNumber(m_cTrail, " ");
+                    String str = m_cTrail;
+                    for (int i = 0; i <= num - 2; ++i) {
+                        str = str.substring(str.indexOf(" ") + 1);
+                    }
+                    m_cTrail = m_cTrail.substring(0, m_cTrail.length() - str.length());
+                } else m_cTrail = m_cTrail + " " + Float.toString(x) + " " + Float.toString(y);
+            } else m_cTrail = m_cTrail + Float.toString(x) + " " + Float.toString(y);
+        } else
+            m_cTrail = m_cTrail + " " + Float.toString(x) + " " + Float.toString(y) + " " + Float.toString(x) + " " + Float.toString(y);
+        //setHereLocation();
+        //locError(Integer.toString(m_lat) + "," + Double.toString(m_long) + "Come here");
+
+        //} else {
+
+        //}
+    }
+
+    //坐标监听器
+    protected final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            //Log.d(TAG, "Location changed to: " + getLocationInfo(location));
+            updateView(location);
+            if (!isLocateEnd) {
+                recordTrail((float) location.getLatitude(), (float) location.getLongitude());
+                locError(m_cTrail);
+            }
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            Log.d(TAG, "onStatusChanged() called with " + "provider = [" + provider + "], status = [" + status + "], extras = [" + extras + "]");
+            switch (status) {
+                case LocationProvider.AVAILABLE:
+                    Log.i(TAG, "AVAILABLE");
+                    break;
+                case LocationProvider.OUT_OF_SERVICE:
+                    Log.i(TAG, "OUT_OF_SERVICE");
+                    break;
+                case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                    Log.i(TAG, "TEMPORARILY_UNAVAILABLE");
+                    break;
+            }
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Log.d(TAG, "onProviderEnabled() called with " + "provider = [" + provider + "]");
+            try {
+                Location location = locationManager.getLastKnownLocation(provider);
+                Log.d(TAG, "onProviderDisabled.location = " + location);
+                updateView(location);
+            } catch (SecurityException e) {
+
+            }
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Log.d(TAG, "onProviderDisabled() called with " + "provider = [" + provider + "]");
+        }
+    };
+
+    //更新坐标信息
+    private void updateView(Location location) {
+        /*
+        locError("isFullLocation : " + Boolean.toString(isFullLocation));
+        locError("location : " + location.toString());
+        if(isFullLocation && location != null){
+        Geocoder gc = new Geocoder(MainInterface.this);
+        List<Address> addresses = null;
+        String msg = "";
+        Log.d(TAG, "updateView.location = " + location);
+            try {
+                addresses = gc.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                //Log.d(TAG, "updateView.addresses = " + Integer.toString(addresses.size()));
+                if (addresses.size() > 0) Toast.makeText(MainInterface.this, "当前位置: " + addresses.get(0).getAddressLine(0), Toast.LENGTH_LONG).show();
+                else Toast.makeText(this, "你当前没有连接网络, 无法进行详细地址查询", Toast.LENGTH_LONG).show();
+                Log.d(TAG, "updateView.addresses = " + addresses);
+                if (addresses.size() > 0) {
+                    msg += addresses.get(0).getAdminArea().substring(0,2);
+                    msg += " " + addresses.get(0).getLocality().substring(0,2);
+                    Log.d(TAG, "updateView.addresses = " + msg);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }*/
+        if (location != null) {
+            m_lat = location.getLatitude();
+            m_long = location.getLongitude();
+            locError("wgs2000: " + Double.toString(m_lat) + "&&" + Double.toString(m_long) + "Come here");
+            com.esri.arcgisruntime.geometry.Point wgs84Point = new com.esri.arcgisruntime.geometry.Point(m_long, m_lat, SpatialReferences.getWgs84());
+            locError("wgs2000: " + Double.toString(wgs84Point.getX()) + "&&" + Double.toString(wgs84Point.getY()) + "Come here");
+            com.esri.arcgisruntime.geometry.Point wgs2000Point = (com.esri.arcgisruntime.geometry.Point) GeometryEngine.project(wgs84Point, SpatialReference.create(4490));
+            locError("wgs2000: " + Double.toString(wgs2000Point.getX()) + "&&" + Double.toString(wgs2000Point.getY()) + "Come here");
+            m_lat = wgs2000Point.getY();
+            m_long = wgs2000Point.getX();
+            //verx = (float) ((max_lat - m_lat) / (max_lat - min_lat));
+            //setHereLocation();
+
+        }
+    }
+
+    public void locError(String str) {
+        Log.e(TAG, "debug: " + str);
+    }
+
+    //获取当前坐标位置
+    private void getLocation() {
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        if (!(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
+            Toast.makeText(this, R.string.LocError, Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivityForResult(intent, 0);
+            return;
+        }
+
+        try {
+
+            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location == null) {
+                location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+            updateView(location);
+
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, locationListener);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 5, locationListener);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //开始记录轨迹
+    private void initTrail() {
+        if (isGPSEnabled()) {
+            locError("开始绘制轨迹");
+        } else locError("请打开GPS功能");
+    }
+
+    //判断GPS功能是否处于开启状态
+    private boolean isGPSEnabled() {
+        //textView = (TextView) findViewById(R.id.txt);
+        //得到系统的位置服务，判断GPS是否激活
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean ok = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (ok) {
+            //textView.setText("GPS已经开启");
+            //Toast.makeText(this, "GPS已经开启", Toast.LENGTH_LONG).show();
+            return true;
+        } else {
+            Toast.makeText(this, R.string.LocError, Toast.LENGTH_SHORT).show();
+            //textView.setText("GPS没有开启");
+            return false;
+        }
+    }
+
 
 
     private void OutputData(){
@@ -3535,6 +4002,9 @@ public class MainActivity extends AppCompatActivity {
             Log.w(TAG, "run: " + e.getMessage());
         }
     }
+
+    // TODO 2021/1/18 查询点线关系
+    //private boolean
 
     private boolean queryPoi(android.graphics.Point point){
         Log.w(TAG, "queryPoi: " + point.x + "; " + point.y);
@@ -3726,7 +4196,7 @@ public class MainActivity extends AppCompatActivity {
                     // TODO 2020/9/3 图到属性查询
                     final ListenableFuture<FeatureQueryResult> featureQueryResult
                             = mTable.queryFeaturesAsync(query);
-                    Log.w(TAG, "queryTBFor20200903: " + featureQueryResult);
+                    Log.w(TAG, "通过点选查询底图图斑: " + featureQueryResult);
 
                     featureQueryResult.addDoneListener(new Runnable() {
                         @Override
@@ -3800,7 +4270,7 @@ public class MainActivity extends AppCompatActivity {
                                         mCallout.setLocation(mapPoint);
                                         mCallout.setContent(calloutContent);
                                         mCallout.show();
-                                        Log.w(TAG, "run: callout" + mCallout.isShowing());
+                                        Log.w(TAG, "通过点选查询底图图斑: callout" + mCallout.isShowing());
                                         inMap = true;
                                     }
                                     break;
@@ -3822,7 +4292,10 @@ public class MainActivity extends AppCompatActivity {
         {
             Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
         }
-        if (!inMap) mCallout.dismiss();
+        if (!inMap) {
+            Log.w(TAG, "通过点选查询底图图斑: 我关闭了 callout" );
+            mCallout.dismiss();
+        }
     }
 
     private void RemoveFinishButton(){
@@ -4091,6 +4564,7 @@ public class MainActivity extends AppCompatActivity {
         int size = map.getOperationalLayers().size();
         layers.clear();
         layerList.clear();
+
         Log.w(TAG, "size: " + size);
         /*List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
         for (int i = 0; i < tifList.size(); i++) {
@@ -4100,36 +4574,54 @@ public class MainActivity extends AppCompatActivity {
         for (int i = size - 1, j = 0; i > -1; i--){
             Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
             if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
+                //当此图层不是切片图层时
+
+                //在layers中添加一个layer
                 layers.add(new layer1(map.getOperationalLayers().get(i), i));
+
+
                 if (map.getOperationalLayers().get(i).getName().isEmpty()){
+                    //图层名为空
                     List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
                     layerList.add(new layer(tifList.get(j).getName(), tifList.get(j).getPath(), map.getOperationalLayers().get(i).isVisible()));
                     j++;
                 }
                 else
                 {
+                    //图层名不是空值
                     if (map.getOperationalLayers().get(i) instanceof FeatureLayer) {
+                        //要素图层
                         FeatureLayer fl = (FeatureLayer) (map.getOperationalLayers().get(i));
                         FeatureTable ft = fl.getFeatureTable();
                         if (ft instanceof ShapefileFeatureTable) {
+                            //用户添加的Shp图层
                             ShapefileFeatureTable sfft = (ShapefileFeatureTable) ft;
                             layerList.add(new layer(map.getOperationalLayers().get(i).getName(), sfft.getPath(), map.getOperationalLayers().get(i).isVisible()));
                         } else
+                        {
+                            //底图；要素图层
                             layerList.add(new layer(map.getOperationalLayers().get(i).getName(), "", map.getOperationalLayers().get(i).isVisible()));
+                        }
                     }
-                    else
+                    else{
+                        //当前图层不是要素图层时
                         layerList.add(new layer(map.getOperationalLayers().get(i).getName(), "", map.getOperationalLayers().get(i).isVisible()));
+                    }
                 }
                 if (map.getOperationalLayers().get(i).getName().contains("土地规划地类")) {
                     //ArcGISVectorTiledLayer mVectorTiledLayer = (ArcGISVectorTiledLayer) map.getOperationalLayers().get(i);
                     //Log.w(TAG, "initLayerList: " + "omg");
                 }
             }else {
-                //Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
+                //当此图层是切片图层时
                 hasTPK = true;
                 if (!map.getOperationalLayers().get(i).getName().equals("临沧市中心城区影像"))
+                {
+                    //底图；mmpk；影像图层
                     TPKlayers.add(new layer1(map.getOperationalLayers().get(i), i));
+                }
                 else{
+                    //底图；额外特殊；影像图层
                     layers.add(new layer1(map.getOperationalLayers().get(i), i));
                     layerList.add(new layer(map.getOperationalLayers().get(i).getName(), "", map.getOperationalLayers().get(i).isVisible()));
                 }
@@ -4137,9 +4629,17 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         layerList.add(new layer("影像", "", false));
+        AddStandardLayer();
         isOK1 = true;
-        setRecyclerView();
+        setLeftRecyclerView();
 
+    }
+
+    private void AddStandardLayer(){
+        layerList.add(new layer("白板层", "", true));
+        layerList.add(new layer("轨迹线层", "", true));
+        layerList.add(new layer("兴趣点层", "", true));
+        layerList.add(new layer("按需查询层", "", true));
     }
 
     /*private void initLayerList(String name){
@@ -4650,6 +5150,8 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setVisibility(View.VISIBLE);
         LocHereBT.setVisibility(View.VISIBLE);
         ResetBT.setVisibility(View.VISIBLE);
+        FloatingActionButton TrailBt = (FloatingActionButton) findViewById(R.id.StartTrail);
+        TrailBt.setVisibility(View.VISIBLE);
         FloatingActionButton outputbt = (FloatingActionButton) findViewById(R.id.OutputData);
         outputbt.setVisibility(View.VISIBLE);
         FloatingActionButton InputDataBt = findViewById(R.id.InputData);
@@ -4663,6 +5165,8 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setVisibility(View.GONE);
         LocHereBT.setVisibility(View.GONE);
         ResetBT.setVisibility(View.GONE);
+        FloatingActionButton TrailBt = (FloatingActionButton) findViewById(R.id.StartTrail);
+        TrailBt.setVisibility(View.GONE);
 
         FloatingActionButton outputbt = (FloatingActionButton) findViewById(R.id.OutputData);
         outputbt.setVisibility(View.GONE);
@@ -4892,7 +5396,10 @@ public class MainActivity extends AppCompatActivity {
             //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
 
             if(QueriedLayerIndex != -1)
+            {
                 queryTaskFor20200904ForBasePolygon(query, polygon);
+                SaveUserDrawedTB();
+            }
             // TODO 2020/9/4 完成新的按需查询内容
             //querySingleTaskForPolygon(query, polygon, LayerFieldsSheetList.get(1));
         }catch (ArcGISRuntimeException e){
@@ -4924,7 +5431,10 @@ public class MainActivity extends AppCompatActivity {
                     //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
 
                     if(QueriedLayerIndex != -1)
+                    {
                         queryTaskFor20200904(query, polygon);
+                        SaveUserDrawedTB();
+                    }
                     // TODO 2020/9/4 完成新的按需查询内容
                     //querySingleTaskForPolygon(query, polygon, LayerFieldsSheetList.get(1));
                 }catch (ArcGISRuntimeException e){
@@ -4956,12 +5466,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void SaveUserDrawedTB(){
+
+        final FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
+        popListShow.setVisibility(View.VISIBLE);
+        popListShow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // TODO 2020/12/10 解决不弹出分析窗口的问题
+
+                String data = "";
+                String mStrPointCollection = "";
+                for (int i = 0; i < pointCollection.size(); ++i){
+                    Log.w(TAG, "onClick: " + pointCollection.get(i).getX() + ";" + pointCollection.get(i).getY());
+                    mStrPointCollection = mStrPointCollection + pointCollection.get(i).getX() + "," + pointCollection.get(i).getY();
+                    if (i != pointCollection.size() - 1)
+                        mStrPointCollection = mStrPointCollection + ";";
+                }
+                /*
+                Intent intent = new Intent(MainActivity.this, PopWindowForListShow.class);
+                intent.putExtra("data", data);
+                intent.putExtra("pointCollection", mStrPointCollection);
+                intent.putExtra("name", queriedMyTuban.getName());
+                Log.w(TAG, "onClick: " + pointCollection.getSpatialReference().toString());
+                startActivity(intent);*/
+
+
+                isSaveOrUpdate(queriedMyTuban.getName(), mStrPointCollection, data);
+            }
+        });
+    }
+
     private void showPopWindowForListShow(){
         final FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
         popListShow.setVisibility(View.VISIBLE);
         popListShow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                // TODO 2020/12/10 解决不弹出分析窗口的问题
 
                 String data = "";
                 for (int i = 0; i < PopWindowData.size(); ++i){
@@ -5003,6 +5547,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //Boolean isThisUserDrawedTBSaved = false;
     private void saveTbData(String PointCollection, String data){
         String name = "图斑" + LitePal.findAll(my_tb.class).size();
         my_tb my_tb = new my_tb();
@@ -5011,6 +5556,7 @@ public class MainActivity extends AppCompatActivity {
         my_tb.setName(name);
         my_tb.save();
         Toast.makeText(MainActivity.this, name + "已经保存", Toast.LENGTH_SHORT).show();
+        // isThisUserDrawedTBSaved = true;
     }
 
     private void updateTbData(String name, String PointCollection, String data){
@@ -5070,7 +5616,9 @@ public class MainActivity extends AppCompatActivity {
 
                     try {
                         //基本农田保护区
+
                         querySingleTaskForPolygon(query, (Polygon) mPolygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
+                        SaveUserDrawedTB();
                     }catch (ArcGISRuntimeException e){
                         Toast.makeText(MainActivity.this, e.getMessage() + e.getErrorCode(), Toast.LENGTH_SHORT).show();
                     }
@@ -5152,6 +5700,15 @@ public class MainActivity extends AppCompatActivity {
             Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
             Graphic g = new Graphic(polygon, lineSymbol);
             graphics.add(g);
+        }
+    }
+
+    private void removeMyTuban(){
+        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+        for (int i = 0; i < currentMyTuban.size(); ++i){
+            Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
+            Graphic g = new Graphic(polygon, lineSymbol);
+            graphics.remove(g);
         }
     }
 
@@ -5249,7 +5806,7 @@ public class MainActivity extends AppCompatActivity {
         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
     }
 
-    private boolean inTuban(Point pt){
+    private boolean inUserDrawedTuban(Point pt){
         for (int i = 0; i < currentMyTuban.size(); ++i){
             Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
             if (GeometryEngine.within(pt, polygon)){
@@ -5263,7 +5820,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void drawGraphicsOverlayer(){
         initialiseGraphics();
-        updatePoiAndWhiteBlank();
+        ParseAndUpdateTrails();
+        //updatePoiAndWhiteBlank();
+        updatePoi();
+        updateWhiteBlank();
         parseAndUpdateMyTuban();
         updateGraphicsOverlayer();
     }
@@ -5275,7 +5835,19 @@ public class MainActivity extends AppCompatActivity {
         graphics.clear();
     }
 
-    public void updatePoiAndWhiteBlank(){
+    private void updatePoi(){
+        List<POI> pois = LitePal.findAll(POI.class);
+        int psize = pois.size();
+        if (psize > 0) updatepoi(pois, psize);
+    }
+
+    private void updateWhiteBlank(){
+        List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
+        int wbsize = whiteblanks.size();
+        if (wbsize > 0) updateWhiteBlank(whiteblanks, wbsize);
+    }
+
+    /*public void updatePoiAndWhiteBlank(){
         List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
         List<POI> pois = LitePal.findAll(POI.class);
         int wbsize = whiteblanks.size();
@@ -5286,7 +5858,7 @@ public class MainActivity extends AppCompatActivity {
             if (wbsize > 0) updateWhiteBlank(whiteblanks, wbsize);
             if (psize > 0) updatepoi(pois, psize);
         }
-    }
+    }*/
 
     public void updateGraphicsOverlayer(){
         graphicsOverlay_10 = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
@@ -6589,7 +7161,7 @@ public class MainActivity extends AppCompatActivity {
                         SharedPreferences.Editor editor = getSharedPreferences("ptb", MODE_PRIVATE).edit();
                         editor.putString("year", "");
                         editor.apply();
-                        setRecyclerViewForP();
+                        setRightRecyclerView();
                     } catch (Exception e) {
                         Toast.makeText(MainActivity.this, "Feature search failed for: " + ". Error=" + e.getMessage(), Toast.LENGTH_SHORT).show();
                         Log.e(getResources().getString(R.string.app_name), "Feature search failed for: " + ". Error=" + e.getMessage());
@@ -6664,8 +7236,13 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    private void setRecyclerView(){
-        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+    private Boolean ShowWhiteBlank = true;
+    private Boolean ShowTrail = true;
+    private Boolean ShowPoi = true;
+    private Boolean ShowMyTuban = true;
+
+    private void setLeftRecyclerView(){
+        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.LeftRecyclerView);
         GridLayoutManager layoutManager = new GridLayoutManager(this,1);
         recyclerView.setLayoutManager(layoutManager);
         Log.w(TAG, "setRecyclerView: " + layerList.size() );
@@ -6677,10 +7254,66 @@ public class MainActivity extends AppCompatActivity {
                 if (!holder.checkBox.isChecked()){
                     holder.checkBox.setChecked(false);
                     if (!name.equals("影像")) {
-                        map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
-                        for (int i = 0; i < layerList.size(); ++i){
-                            if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
+
+                        if(name.equals("白板层")){
+                            initialiseGraphics();
+                            ShowWhiteBlank = false;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
                         }
+                        else if(name.equals("轨迹线层")){
+                            initialiseGraphics();
+                            ShowTrail = false;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else if(name.equals("兴趣点层")){
+                            initialiseGraphics();
+                            ShowPoi = false;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else if(name.equals("按需查询层")){
+                            initialiseGraphics();
+                            ShowMyTuban = false;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else {
+                            map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
+                            for (int i = 0; i < layerList.size(); ++i){
+                                if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
+                            }
+                        }
+
                     }
                     else {
                         for (int kk = 0; kk < TPKlayers.size(); ++kk){
@@ -6694,9 +7327,66 @@ public class MainActivity extends AppCompatActivity {
                 }else {
                     holder.checkBox.setChecked(true);
                     if (!name.equals("影像")) {
-                        map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
-                        for (int i = 0; i < layerList.size(); ++i){
-                            if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(true);
+
+                        if(name.equals("白板层")){
+                            initialiseGraphics();
+                            ShowWhiteBlank = true;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else if(name.equals("轨迹线层")){
+                            initialiseGraphics();
+                            ShowTrail = true;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else if(name.equals("兴趣点层")){
+                            initialiseGraphics();
+                            ShowPoi = true;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else if(name.equals("按需查询层")){
+                            initialiseGraphics();
+                            ShowMyTuban = true;
+                            if (ShowPoi)
+                                updatePoi();
+                            if (ShowTrail)
+                                UpdateTrails();
+                            if (ShowMyTuban)
+                                parseAndUpdateMyTuban();
+                            if (ShowWhiteBlank)
+                                updateWhiteBlank();
+                            updateGraphicsOverlayer();
+                        }
+                        else {
+
+                            map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
+                            for (int i = 0; i < layerList.size(); ++i) {
+                                if (name.equals(layerList.get(i).getName()))
+                                    layerList.get(i).setStatus(true);
+                            }
                         }
                     }
                     else {
@@ -6728,25 +7418,98 @@ public class MainActivity extends AppCompatActivity {
     private void LayerAdapterLongClickFunction(layerAdapter.ViewHolder holder, final String name, final String path){
         Boolean isBaseLayer = IsBasedLayerForMMPK(name);
         if (!isBaseLayer) {
-            holder.cardView.setCardBackgroundColor(Color.RED);
-            new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("提示")
-                    .setMessage("删除该用户图层吗？")
-                    .setPositiveButton("删除", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Log.w(TAG, "onClick: 2020/12/7 For Left: " + name + "; " + path);
+            {
+                holder.cardView.setCardBackgroundColor(Color.RED);
+                if (path.contains(".SHP") || path.contains(".shp")) {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("提示")
+                            .setMessage("想对该用户要素图层进行什么操作？")
+                            .setPositiveButton("删除", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Log.w(TAG, "onClick: 2020/12/7 For Left: " + name + "; " + path);
 
-                            RemoveUserLayer(name, path);
-                            setRecyclerViewForDynamicChooseFrame();
-                        }
-                    })
-                    .setNegativeButton("否", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                        }
-                    })
-                    .show();
+                                    RemoveUserLayer(name, path);
+                                    setRecyclerViewForDynamicChooseFrame();
+                                }
+                            })
+                            .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                }
+                            })
+                            .setNeutralButton("样式管理器", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // TODO 2021/1/18 样式管理器
+
+                                    ColorPickerDialogBuilder
+                                            .with(MainActivity.this)
+                                            .setTitle(R.string.ChooseColor)
+                                            .initialColor(Color.RED)
+                                            .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
+                                            .density(12)
+                                            .setOnColorSelectedListener(new OnColorSelectedListener() {
+                                                @Override
+                                                public void onColorSelected(int selectedColor) {
+                                                }
+                                            })
+                                            .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
+                                                    List<UserLayer> userLayers = LitePal.where("path = ?", path).find(UserLayer.class);
+
+                                                    RemoveUserLayer(name, path);
+                                                    setRecyclerViewForDynamicChooseFrame();
+
+
+                                                    UserLayer userLayer = userLayers.get(0);
+
+                                                    userLayer.setShpColor(selectedColor);
+
+                                                    userLayer.save();
+                                                    setRecyclerViewForDynamicChooseFrame();
+                                                    Log.w(TAG, "useUserLayer: " + LitePal.findAll(UserLayer.class).size());
+                                                    //useUserLayer();
+                                                    showUserLayer(userLayer);
+                                                    ResetMapView();
+
+                                                }
+                                            })
+                                            .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                }
+                                            })
+                                            .build()
+                                            .show();
+
+                                }
+                            })
+                            .show();
+                }
+                else{
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("提示")
+                            .setMessage("删除该用户图层吗？")
+                            .setPositiveButton("删除", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Log.w(TAG, "onClick: 2020/12/7 For Left: " + name + "; " + path);
+
+                                    RemoveUserLayer(name, path);
+                                    setRecyclerViewForDynamicChooseFrame();
+                                }
+                            })
+                            .setNegativeButton("否", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                }
+                            })
+                            .show();
+                }
+            }
+
         }
     }
 
@@ -6790,7 +7553,10 @@ public class MainActivity extends AppCompatActivity {
                 //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
 
                 if (QueriedLayerIndex != -1)
+                {
                     queryTaskFor20200904(query, polygon);
+                    SaveUserDrawedTB();
+                }
                 // TODO 2020/9/4 完成新的按需查询内容
                 //querySingleTaskForPolygon(query, polygon, BaseLayerFieldsSheetList.get(1));
             } catch (ArcGISRuntimeException e) {
@@ -6960,7 +7726,10 @@ public class MainActivity extends AppCompatActivity {
                     //querySingleTaskForPolygon(query, polygon, JBNTFeatureLayer.getFeatureTable(), "JBNTBHQ");
 
                     if (QueriedLayerIndex != -1)
+                    {
                         queryTaskFor20200904(query, polygon);
+                        SaveUserDrawedTB();
+                    }
                     // TODO 2020/9/4 完成新的按需查询内容
                     //querySingleTaskForPolygon(query, polygon, BaseLayerFieldsSheetList.get(1));
                 } catch (ArcGISRuntimeException e) {
@@ -6973,8 +7742,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setRecyclerViewForP(){
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerViewForP);
+    private void setRightRecyclerView(){
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.RightRecyclerView);
         GridLayoutManager layoutManager = new GridLayoutManager(this,1);
         recyclerView.setLayoutManager(layoutManager);
         List<QueryInfo> queryInfos2 = new ArrayList<>();
@@ -7337,13 +8106,41 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     if (!hasSameFile) {
-                        UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE);
+                        //TODO 2021/1/17 Color
 
-                        userLayer.save();
-                        //useUserLayer();
-                        showUserLayer(userLayer);
-                        Toast.makeText(MainActivity.this, shp_path, Toast.LENGTH_LONG).show();
-                        ResetMapView();
+                        ColorPickerDialogBuilder
+                                .with(MainActivity.this)
+                                .setTitle(R.string.ChooseColor)
+                                .initialColor(Color.RED)
+                                .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
+                                .density(12)
+                                .setOnColorSelectedListener(new OnColorSelectedListener() {
+                                    @Override
+                                    public void onColorSelected(int selectedColor) {
+                                    }
+                                })
+                                .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
+                                        UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE, selectedColor);
+
+                                        userLayer.save();
+                                        Log.w(TAG, "useUserLayer: " + LitePal.findAll(UserLayer.class).size());
+                                        //useUserLayer();
+                                        showUserLayer(userLayer);
+                                        Toast.makeText(MainActivity.this, shp_path, Toast.LENGTH_LONG).show();
+                                        ResetMapView();
+
+                                    }
+                                })
+                                .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                    }
+                                })
+                                .build()
+                                .show();
+
                     }
                     else
                         Toast.makeText(MainActivity.this, "不能重复添加图层文件！", Toast.LENGTH_LONG).show();
@@ -7390,6 +8187,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void useUserLayer(){
         List<UserLayer> userLayerList = LitePal.findAll(UserLayer.class);
+        Log.w(TAG, "useUserLayer: " + userLayerList.size());;
         checkUserLayerFile(userLayerList);
         showUserLayer(userLayerList);
     }
@@ -7424,7 +8222,7 @@ public class MainActivity extends AppCompatActivity {
                         loadRaster(path);
                         break;
                     case UserLayer.SHP_FILE:
-                        featureLayerShapefile(path);
+                        featureLayerShapefile(path, userLayerList.get(i).getShpColor());
                         break;
                 }
                 List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
@@ -7450,7 +8248,7 @@ public class MainActivity extends AppCompatActivity {
                         loadRaster(path);
                         break;
                     case UserLayer.SHP_FILE:
-                        featureLayerShapefile(path);
+                        featureLayerShapefile(path, userLayer.getShpColor());
                         break;
                 }
             List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();

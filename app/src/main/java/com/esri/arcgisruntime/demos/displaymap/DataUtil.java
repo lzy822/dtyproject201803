@@ -136,6 +136,39 @@ public class DataUtil {
         }
     }
 
+    public static void getSpatialIndex(){
+        List<Trail> trails = LitePal.findAll(Trail.class);
+        for (int i = 0; i < trails.size(); ++i) {
+            Log.w(TAG, "getSpatialIndex2: " + trails.get(i).getPath());
+            float[] spatialIndex = getSpatialIndex(trails.get(i).getPath());
+            Trail l = new Trail();
+            l.setMaxlat(spatialIndex[0]);
+            l.setMinlat(spatialIndex[1]);
+            l.setMaxlng(spatialIndex[2]);
+            l.setMinlng(spatialIndex[3]);
+            l.updateAll("name = ?", trails.get(i).getName());
+        }
+    }
+    public static float[] getSpatialIndex(String line){
+        String[] strings = line.split(" ");
+        float maxlat = 0;
+        float minlat = 0;
+        float maxlng = 0;
+        float minlng = 0;
+        for (int i = 0; i < strings.length; i = i + 2){
+            float temp = Float.valueOf(strings[i]);
+            if (temp > maxlat) maxlat = temp;
+            else if (temp < minlat) minlat = temp;
+        }
+        for (int i = 1; i < strings.length; i = i + 2){
+            float temp = Float.valueOf(strings[i]);
+            if (temp > maxlng) maxlng = temp;
+            else if (temp < minlng) minlng = temp;
+        }
+        float[] spatialIndex = {maxlat, minlat, maxlng, minlng};
+        return spatialIndex;
+    }
+
     /**
      * @auther lizhengyang
      *

@@ -1,5 +1,7 @@
 package com.esri.arcgisruntime.demos.displaymap;
 
+import android.graphics.Color;
+
 import org.litepal.crud.LitePalSupport;
 
 public class UserLayer extends LitePalSupport {
@@ -12,6 +14,7 @@ public class UserLayer extends LitePalSupport {
     private boolean loadstatus;
     private int type;
     private String queriedKey;
+    private int ShpColor;
 
     public UserLayer() {
     }
@@ -22,11 +25,26 @@ public class UserLayer extends LitePalSupport {
         this.type = type;
     }
 
+    public UserLayer(String name, String path, int type, int color) {
+        this.name = name;
+        this.path = path;
+        this.type = type;
+        this.ShpColor = color;
+    }
+
     public UserLayer(String name, String path, boolean loadstatus, int type) {
         this.name = name;
         this.path = path;
         this.loadstatus = loadstatus;
         this.type = type;
+    }
+
+    public int getShpColor() {
+        return ShpColor;
+    }
+
+    public void setShpColor(int shpColor) {
+        ShpColor = shpColor;
     }
 
     public String getQueriedKey() {

@@ -69,6 +69,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <service
+            android:name=".RecordTrail"
+            android:enabled="true"
+            android:exported="true" />
+
         <activity
             android:name=".PopWindowForListShow"
             android:screenOrientation="landscape" />
