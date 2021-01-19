@@ -242,6 +242,9 @@ public class MainActivity extends AppCompatActivity {
     boolean MapQuery = false;
     private DisplayEnum QueryProcessType = DisplayEnum.NOQUERY;
 
+
+    private Boolean Deleting = false;
+
     //FeatureLayer QueriedFeatureLayer;
 
     //private static final int INQUERY = -1;
@@ -253,38 +256,66 @@ public class MainActivity extends AppCompatActivity {
         UpdateTrails();
     }
 
-    private void ParseTrails(){
+                                                                                                                                                                                                                                                                                                                            private void ParseTrails(){
         trails = LitePal.findAll(Trail.class);
         Log.w(TAG, "ParseTrails: " + trails.size());
     }
 
     private void UpdateTrails(){
-        if (isLocateEnd && !m_cTrail.isEmpty()) {
+        if (isLocateEnd) {
             for (int ii = 0; ii < trails.size(); ii++) {
+                String name = trails.get(ii).getName();
+                boolean HasChoosed = false;
+                for (int i = 0; i < ChoosedTrails.size(); i++) {
+                    if (ChoosedTrails.get(i).equals(name))
+                    {
+                        HasChoosed = true;
+                        break;
+                    }
+                }
                 String str1 = trails.get(ii).getPath();
                 String[] TrailString = str1.split(" ");
                 float[] Trails = new float[TrailString.length];
                 for (int i = 0; i < TrailString.length; ++i) {
                     Trails[i] = Float.valueOf(TrailString[i]);
                 }
-                Log.w(TAG, "onLayerDrawn: ");
-            /*for (int j = 0; j < Trails.length - 2; j = j + 2) {
-                PointF pt11, pt12;
-                pt11 = LatLng.getPixLocFromGeoL(new PointF(Trails[j], Trails[j + 1]), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-                pt12 = LatLng.getPixLocFromGeoL(new PointF(Trails[j + 2], Trails[j + 3]), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-                canvas.drawLine(pt11.x, pt11.y, pt12.x, pt12.y, paint8);
-            }*/
                 PointCollection points = new PointCollection(SpatialReference.create(4521));
                 for (int j = 0; j < Trails.length - 1; j = j + 2) {
                     Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4521));
                     points.add(wgs84Point);
                 }
-                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+                SimpleLineSymbol lineSymbol = null;
+                if (HasChoosed) {
+                    lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+                }
+                else {
+                    lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(255, 0, 255), 3);
+                }
                 Polyline polyline = new Polyline(points);
                 Graphic g = new Graphic(polyline, lineSymbol);
                 graphics.add(g);
             }
         }
+    }
+
+    private String ParseTrailToMultiline(String TrailStr){
+        String Multiline = "";
+        String[] TrailString = TrailStr.split(" ");
+        float[] Trails = new float[TrailString.length];
+        for (int i = 0; i < TrailString.length; ++i) {
+            Trails[i] = Float.valueOf(TrailString[i]);
+        }
+        for (int j = 0; j < Trails.length - 1; j = j + 2) {
+            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4521));
+            if (j != 0)
+                Multiline += " ";
+            Multiline += wgs84Point.getX() + "," + wgs84Point.getY() + ",0";
+        }
+        return Multiline;
+    }
+
+    private String GetNowTime(){
+        return Long.toString(System.currentTimeMillis());
     }
 
     private DisplayEnum isQurey = DisplayEnum.I_NOQUREY;//.I_NOQUREY;I_QUREY
@@ -589,6 +620,7 @@ public class MainActivity extends AppCompatActivity {
                                 pts = pts + "lzy" + Double.toString(points.get(i).getX()) + "," + Double.toString(points.get(i).getY());
                             }
                         }
+                        wb.setObjectID(GetNowTime());
                         wb.setPts(pts);
                         wb.setColor(color_Whiteblank);
                         wb.save();
@@ -695,30 +727,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void ParseWhiteblanklinesToMultilines(PointF pt1){
-        List<String> multilines = new ArrayList<>();
+    private void ChooseAndShowWhiteblankLine(PointF pt1){
         List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
-        for (int i = 0; i < whiteblanks.size(); i++) {
-            String line = whiteblanks.get(i).getPts();
-            String[] pts = line.split("lzy");
-            String NewLine = "";
-            for (int j = 0; j < pts.length; j++) {
-                String pt = pts[j] + ",0";
-                if (j != pts.length-1)
-                    pt += " ";
-                NewLine += pt;
-            }
-            multilines.add(NewLine);
-            Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + i + ": " + NewLine);
-        }
 
         //checkWhiteblankLine(multilines, pt1);
         Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + pt1.x + ", " + pt1.y);
-        int AddIndex = checkWhiteblankLine(multilines, pt1);
-        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + AddIndex);
-        if (AddIndex != -1) {
-            AddWhiteblankLineByIndex(AddIndex);
-
+        String ChoosedObjectID = GetChoosedWhiteblankLine(whiteblanks, pt1);
+        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + ChoosedObjectID);
+        if (ChoosedObjectID != "") {
+            AddWhiteblankLineByObjectID(ChoosedObjectID);
             initialiseGraphics();
             if (ShowPoi)
                 updatePoi();
@@ -728,123 +745,196 @@ public class MainActivity extends AppCompatActivity {
                 parseAndUpdateMyTuban();
             if (ShowWhiteBlank)
                 updateWhiteBlank();
-            for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
-                PointCollection points = new PointCollection(SpatialReference.create(4521));;
-                String[] strings = whiteblanks.get(ChoosedWhiteblankLines.get(i)).getPts().split("lzy");
-                Log.w(TAG, "drawWhiteBlank1: " + strings.length);
-                for (int kk = 0; kk < strings.length; ++kk) {
-                    String[] strings1 = strings[kk].split(",");
-                    if (strings1.length == 2) {
-                        Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
-                        Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
-                        points.add(wgs84Point);
-                    }
-                }
-                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
-                Polyline polyline = new Polyline(points);
-                Graphic g = new Graphic(polyline, lineSymbol);
-                graphics.add(g);
-            }
-
             updateGraphicsOverlayer();
         }
     }
 
-    private void AddWhiteblankLineByIndex(int index){
-        Boolean hasSameIndex = false;
+    private void ChoosedAndShowTrail(PointF pt1){
+        List<Trail> trails = LitePal.findAll(Trail.class);
+        String ChoosedName = GetChoosedTrail(trails, pt1);
+        if (ChoosedName != "") {
+            AddTrailsByName(ChoosedName);
+            initialiseGraphics();
+            if (ShowPoi)
+                updatePoi();
+            if (ShowTrail)
+                UpdateTrails();
+            if (ShowMyTuban)
+                parseAndUpdateMyTuban();
+            if (ShowWhiteBlank)
+                updateWhiteBlank();
+            updateGraphicsOverlayer();
+        }
+    }
+
+    private void AddWhiteblankLineByObjectID(String objectID){
+        Boolean hasSameObject = false;
         for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
-            if (ChoosedWhiteblankLines.get(i) == index)
+            if (ChoosedWhiteblankLines.get(i).equals(objectID))
             {
                 ChoosedWhiteblankLines.remove(i);
+                i--;
+                hasSameObject = true;
+                break;
+            }
+        }
+        if (!hasSameObject)
+            ChoosedWhiteblankLines.add(objectID);
+    }
+
+    private void AddPoisByPoic(String poic){
+        Boolean hasSameIndex = false;
+        for (int i = 0; i < ChoosedPois.size(); i++) {
+            if (ChoosedPois.get(i).equals(poic))
+            {
+                ChoosedPois.remove(i);
                 i--;
                 hasSameIndex = true;
                 break;
             }
         }
         if (!hasSameIndex)
-            ChoosedWhiteblankLines.add(index);
+            ChoosedPois.add(poic);
     }
 
-    private List<Integer> ChoosedWhiteblankLines = new ArrayList<>();
-    private List<Integer> ChoosedPois = new ArrayList<>();
-    private List<Integer> ChoosedTrails = new ArrayList<>();
-    private List<Integer> ChoosedMyTubans = new ArrayList<>();
+    private void AddTrailsByName(String name){
+        Boolean hasSameIndex = false;
+        for (int i = 0; i < ChoosedTrails.size(); i++) {
+            if (ChoosedTrails.get(i).equals(name) )
+            {
+                ChoosedTrails.remove(i);
+                i--;
+                hasSameIndex = true;
+                break;
+            }
+        }
+        if (!hasSameIndex)
+            ChoosedTrails.add(name);
+    }
 
+    private void AddMyTubansByName(String name){
+        Boolean hasSameIndex = false;
+        for (int i = 0; i < ChoosedMyTubans.size(); i++) {
+            if (ChoosedMyTubans.get(i).equals(name))
+            {
+                ChoosedMyTubans.remove(i);
+                i--;
+                hasSameIndex = true;
+                break;
+            }
+        }
+        if (!hasSameIndex)
+            ChoosedMyTubans.add(name);
+    }
 
-    private int checkWhiteblankLine(List<String> multilines, PointF pt1){
-        /*com.esri.arcgisruntime.geometry.Point point = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
-        pt1.x = Float.valueOf(Double.toString(point.getX()));
-        pt1.y = Float.valueOf(Double.toString(point.getY()));*/
-        int TrueIndex = -1;
-        boolean QueryLine = false;
-        if (multilines.size() > 0) {
-            int linenum = multilines.size();
+    private List<String> ChoosedWhiteblankLines = new ArrayList<>();
+    private List<String> ChoosedPois = new ArrayList<>();
+    private List<String> ChoosedTrails = new ArrayList<>();
+    private List<String> ChoosedMyTubans = new ArrayList<>();
+
+    private String GetMultiLineByWhiteblank(String OldPts){
+        //for (int i = 0; i < whiteblanks.size(); i++) {
+        String line = OldPts;
+        String[] pts = line.split("lzy");
+        String NewLine = "";
+        for (int j = 0; j < pts.length; j++) {
+            String pt = pts[j] + ",0";
+            if (j != pts.length-1)
+                pt += " ";
+            NewLine += pt;
+        }
+        //}
+        return NewLine;
+    }
+
+    private String GetChoosedTrail(List<Trail> trails, PointF pt1){
+        String ChoosedName = "";
+        if (trails.size() > 0) {
+            int linenum = trails.size();
             double deltas = 0;
-            long calnum = 1;
             //显示线状要素
             for (int j = 0; j < linenum; ++j) {
-                String line = multilines.get(j);
-                /*Paint paintk = new Paint();
-                paintk.setStrokeWidth(0.15f);
-                paintk.setColor(Color.BLACK);
-                paintk.setStyle(Paint.Style.STROKE);*/
-                //for (int k = 0; k < linenum1; ++k)
-                {
-                    //String mline = lineUtil.getExternalPolygon(lines.get(k), 0.001);
-                    //String[] strings = mline.split(" ");
+                String line = ParseTrailToMultiline(trails.get(j).getPath());
+                String[] strings = line.split(" ");
+                for (int cc = 0; cc < strings.length - 1; ++cc) {
+                    String[] ptx1 = strings[cc].split(",");
+                    String[] ptx2 = strings[cc + 1].split(",");
+                    com.esri.arcgisruntime.demos.displaymap.Point pointF = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx1[0]), Double.valueOf(ptx1[1]));
+                    com.esri.arcgisruntime.demos.displaymap.Point pointF1 = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx2[0]), Double.valueOf(ptx2[1]));
+                    PointF theTouchPt = pt1;
+                    if (deltas == 0) {
+                        double thedis = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.getX(), pointF.getY(), pointF1.getX(), pointF1.getY()), theTouchPt);
+                        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + j + thedis + ", " + deltas);
+                        if (thedis <= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF, pt1) : lineUtil.getDistance1(pointF1, pt1)) && thedis >= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1))) {
+                            deltas = thedis;
+                            ChoosedName = trails.get(j).getName();
+                        } else {
+                            deltas = (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1));
+                            ChoosedName = trails.get(j).getName();
+                        }
+                    } else {
+                        double delta1 = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.getX(), pointF.getY(), pointF1.getX(), pointF1.getY()), theTouchPt);
+                        if (delta1 <= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF, pt1) : lineUtil.getDistance1(pointF1, pt1)) && delta1 >= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1))) {
+                        } else
+                            delta1 = (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1));
+                        Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + j + delta1 + ", " + deltas);
+                        if (delta1 < deltas) {
+                            deltas = delta1;
+                            ChoosedName = trails.get(j).getName();
+                        }
+                    }
+                }
+            }
+            if (deltas < 1000000) {
+                return  ChoosedName;
+            }
+        }
+        return "";
+    }
+
+    private String GetChoosedWhiteblankLine(List<whiteblank> whiteblanks, PointF pt1){
+        String ChoosedObjectID = "";
+        if (whiteblanks.size() > 0) {
+            int linenum = whiteblanks.size();
+            double deltas = 0;
+            //显示线状要素
+            for (int j = 0; j < linenum; ++j) {
+                String line = GetMultiLineByWhiteblank(whiteblanks.get(j).getPts());
                     String[] strings = line.split(" ");
                     for (int cc = 0; cc < strings.length - 1; ++cc) {
                         String[] ptx1 = strings[cc].split(",");
                         String[] ptx2 = strings[cc + 1].split(",");
-                        //PointF pointF = LatLng.getPixLocFromGeoL(new PointF(Float.valueOf(ptx1[1]), Float.valueOf(ptx1[0])), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-                        //PointF pointF1 = LatLng.getPixLocFromGeoL(new PointF(Float.valueOf(ptx2[1]), Float.valueOf(ptx2[0])), current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-                        //PointF theTouchPt = LatLng.getPixLocFromGeoL(pt1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-                        //com.esri.arcgisruntime.geometry.Point pointf00 = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
-                        //com.esri.arcgisruntime.geometry.Point pointf11 = (com.esri.arcgisruntime.geometry.Point)GeometryEngine.project(new Point(pt1.x, pt1.y), SpatialReference.create(4490));
-                        /*com.esri.arcgisruntime.demos.displaymap.Point pointF = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx1[1]), Double.valueOf(ptx1[0]));
-                        com.esri.arcgisruntime.demos.displaymap.Point pointF1 = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx2[1]), Double.valueOf(ptx2[0]));*/
                         com.esri.arcgisruntime.demos.displaymap.Point pointF = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx1[0]), Double.valueOf(ptx1[1]));
                         com.esri.arcgisruntime.demos.displaymap.Point pointF1 = new com.esri.arcgisruntime.demos.displaymap.Point(Double.valueOf(ptx2[0]), Double.valueOf(ptx2[1]));
                         PointF theTouchPt = pt1;
                         if (deltas == 0) {
-                            //deltas = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.x, pointF.y, pointF1.x, pointF1.y), theTouchPt);
                             double thedis = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.getX(), pointF.getY(), pointF1.getX(), pointF1.getY()), theTouchPt);
                             Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + j + thedis + ", " + deltas);
                             if (thedis <= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF, pt1) : lineUtil.getDistance1(pointF1, pt1)) && thedis >= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1))) {
                                 deltas = thedis;
-                                TrueIndex = j;
+                                ChoosedObjectID = whiteblanks.get(j).getObjectID();
                             } else {
                                 deltas = (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1));
-                                TrueIndex = j;
+                                ChoosedObjectID = whiteblanks.get(j).getObjectID();
                             }
                         } else {
-                            //double delta1 = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.x, pointF.y, pointF1.x, pointF1.y), theTouchPt);
                             double delta1 = lineUtil.getDistance(lineUtil.getLineNormalEquation(pointF.getX(), pointF.getY(), pointF1.getX(), pointF1.getY()), theTouchPt);
                             if (delta1 <= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF, pt1) : lineUtil.getDistance1(pointF1, pt1)) && delta1 >= (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1))) {
-                                //deltas = delta1;
-                                //theId = dmLines.get(j).getBzmc();
                             } else
                                 delta1 = (lineUtil.getDistance1(pointF, pt1) >= lineUtil.getDistance1(pointF1, pt1) ? lineUtil.getDistance1(pointF1, pt1) : lineUtil.getDistance1(pointF, pt1));
                             Log.w(TAG, "ParseWhiteblanklinesToMultilines: " + j + delta1 + ", " + deltas);
                             if (delta1 < deltas) {
                                 deltas = delta1;
-                                TrueIndex = j;
+                                ChoosedObjectID = whiteblanks.get(j).getObjectID();
                             }
-                            calnum++;
                         }
-                        //canvas.drawRoundRect(pointF.y>pointF1.y?pointF1.y:pointF.y, pointF.x>pointF1.x?pointF.x:pointF1.x, pointF.y>pointF1.y?pointF.y:pointF1.y, pointF.x>pointF1.x?pointF1.x:pointF.x, 0.5f,  0.5f, paint);
-                        //canvas.drawRoundRect(pointF.y>pointF1.y?pointF1.y:pointF.y, pointF.x>pointF1.x?pointF.x:pointF1.x, pointF.y>pointF1.y?pointF.y:pointF1.y, pointF.x>pointF1.x?pointF1.x:pointF.x, 0.5f,  0.5f, paintk);
                     }
-                }
             }
             if (deltas < 1000000) {
-                // TODO : 设计并完成查询语句
-                //GoDMLSinglePOIPage(theLineId);
-                QueryLine = true;
-                return  TrueIndex;
+                return  ChoosedObjectID;
             }
         }
-        return -1;
+        return "";
     }
 
     private void showPopueWindowForMessure(){
@@ -3172,6 +3262,24 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        final FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+        DeleteBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Deleting)
+                {
+                    DeleteFeatures();
+                    ShowStandardLayers();
+                    Deleting = false;
+                    DeleteBt.setImageResource(R.drawable.ic_delete_start_24dp);
+                }
+                else{
+                    Deleting = true;
+                    DeleteBt.setImageResource(R.drawable.ic_delete_stop_24dp);
+                }
+            }
+        });
         /*recyclerViewButton = (ImageButton) findViewById(R.id.openRecyclerView);
         recyclerViewButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -3381,8 +3489,11 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                     builder.show();
-                }else{
-                    ParseWhiteblanklinesToMultilines(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
+                }else if (Deleting){
+                    ChooseUserTuban(clickPoint);
+                    ChooseAndShowWhiteblankLine(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
+                    queryPoiForDelete(mMapView.locationToScreen(clickPoint));
+                    ChoosedAndShowTrail(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
                 }
                 return true;
             }
@@ -3584,6 +3695,49 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void DeleteFeatures(){
+        DeleteWhiteblankLines();
+        DeletePois();
+        DeleteTrails();
+        DeleteMyTubans();
+        RemoveChoosedFeatures();
+    }
+
+    private void DeleteWhiteblankLines(){
+        for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
+            LitePal.deleteAll(whiteblank.class, "ObjectID = ?", ChoosedWhiteblankLines.get(i));
+        }
+    }
+
+    private void DeletePois(){
+        for (int i = 0; i < ChoosedPois.size(); i++) {
+            LitePal.deleteAll(POI.class, "poic = ?", ChoosedPois.get(i));
+        }
+    }
+
+    private void DeleteTrails(){
+        for (int i = 0; i < ChoosedTrails.size(); i++) {
+            LitePal.deleteAll(Trail.class, "name = ?", ChoosedTrails.get(i));
+        }
+    }
+
+    private void DeleteMyTubans(){
+        for (int i = 0; i < ChoosedMyTubans.size(); i++) {
+            LitePal.deleteAll(my_tb.class, "name = ?", ChoosedMyTubans.get(i));
+        }
+    }
+
+    private void RemoveChoosedFeatures(){
+        ChoosedWhiteblankLines = new ArrayList<>();
+        ChoosedMyTubans = new ArrayList<>();
+        ChoosedPois = new ArrayList<>();
+        ChoosedTrails = new ArrayList<>();
+    }
+
+    private void ShowStandardLayers(){
+        drawGraphicsOverlayer();
+    }
+
     private void showWhiteBlankDialog(){
         /* @setIcon 设置对话框图标
          * @setTitle 设置对话框标题
@@ -3599,7 +3753,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         LitePal.deleteAll(whiteblank.class);
-                        drawGraphicsOverlayer();
+                        ShowStandardLayers();
                         Toast.makeText(MainActivity.this, R.string.EraseFinish, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -3634,7 +3788,7 @@ public class MainActivity extends AppCompatActivity {
                         invalidateOptionsMenu();
                         Intent stop_mService = new Intent(MainActivity.this, RecordTrail.class);
                         stopService(stop_mService);
-                        ParseAndUpdateTrails();
+                        drawGraphicsOverlayer();
                     }
                 });
         normalDialog.setNegativeButton("取消",
@@ -3951,7 +4105,7 @@ public class MainActivity extends AppCompatActivity {
         int size_lines_whiteBlank = lines_whiteBlanks.size();
         sb = sb.append("<Lines_WhiteBlank>").append("\n");
         for (int i = 0; i < size_lines_whiteBlank; ++i){
-            //sb.append("<m_ic>").append(lines_whiteBlanks.get(i).getIc()).append("</m_ic>").append("\n");
+            sb.append("<m_objectid>").append(lines_whiteBlanks.get(i).getObjectID()).append("</m_objectid>").append("\n");
             sb.append("<m_lines>").append(lines_whiteBlanks.get(i).getPts()).append("</m_lines>").append("\n");
             sb.append("<m_color>").append(lines_whiteBlanks.get(i).getColor()).append("</m_color>").append("\n");
         }
@@ -4084,6 +4238,79 @@ public class MainActivity extends AppCompatActivity {
             if (mdelta < 35 || num != 0) {
                 //return pois.get(num).getM_POIC();
                 GoNormalSinglePOIPage(pois.get(num).getM_POIC());
+                return true;
+                //locError(Integer.toString(pois.get(num).getPhotonum()));
+            } else {
+                return false;
+            }
+        } else return false;
+    }
+
+    private boolean queryPoiForDelete(android.graphics.Point point){
+        Log.w(TAG, "queryPoi: " + point.x + "; " + point.y);
+        List<mPOIobj> pois = new ArrayList<>();
+        Cursor cursor = LitePal.findBySQL("select * from POI");
+        if (cursor.moveToFirst()) {
+            do {
+                String POIC = cursor.getString(cursor.getColumnIndex("poic"));
+                String time = cursor.getString(cursor.getColumnIndex("time"));
+                String name = cursor.getString(cursor.getColumnIndex("name"));
+                String description = cursor.getString(cursor.getColumnIndex("description"));
+                int tapenum = cursor.getInt(cursor.getColumnIndex("tapenum"));
+                int photonum = cursor.getInt(cursor.getColumnIndex("photonum"));
+                float x = cursor.getFloat(cursor.getColumnIndex("x"));
+                float y = cursor.getFloat(cursor.getColumnIndex("y"));
+                mPOIobj mPOIobj = new mPOIobj(POIC, x, y, time, tapenum, photonum, name, description);
+                pois.add(mPOIobj);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        int n = 0;
+        int num = 0;
+        if (pois.size() > 0) {
+            mPOIobj poii = pois.get(0);
+
+            //PointF pointF1 = new PointF(poii.getM_X(), poii.getM_Y());
+            //pointF1 = LatLng.getPixLocFromGeoL(pointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+            Point mpt0 = (Point) GeometryEngine.project(new Point((double)poii.getM_Y(), (double)poii.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+            android.graphics.Point pt0 = mMapView.locationToScreen(mpt0);
+            Log.w(TAG, "queryPoi0: " + pt0.x + "; " + pt0.y);
+            //pointF1 = new PointF(pointF1.x, pointF1.y);
+            //pointF = getGeoLocFromPixL(pointF);
+            //final PointF pt9 = LatLng.getPixLocFromGeoL(pt1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+            float mdelta = Math.abs(pt0.x - point.x) + Math.abs(pt0.y - point.y);
+            for (mPOIobj poi : pois) {
+                /*PointF mpointF1 = new PointF(poi.getM_X(), poi.getM_Y());
+                Log.w(TAG, "mpointF1 queried: " + mpointF1.x + ";" + mpointF1.y);
+                mpointF1 = LatLng.getPixLocFromGeoL(mpointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
+                mpointF1 = new PointF(mpointF1.x, mpointF1.y);*/
+                Point mpt1 = (Point) GeometryEngine.project(new Point((double)poi.getM_Y(), (double)poi.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                android.graphics.Point pt1 = mMapView.locationToScreen(mpt1);
+                Log.w(TAG, "queryPoi: " + n);
+                Log.w(TAG, "queryPoi: " + pt1.x + "; " + pt1.y);
+                if (Math.abs(pt1.x - point.x) + Math.abs(pt1.y - point.y) < mdelta && Math.abs(pt1.x - point.x) + Math.abs(pt1.y - point.y) < 35) {
+                    //locError("mpointF : " + mpointF1.toString());
+                    mdelta = Math.abs(pt1.x - point.x) + Math.abs(pt1.y - point.y);
+                    num = n;
+                }
+                n++;
+            }
+            if (mdelta < 35 || num != 0) {
+                //return pois.get(num).getM_POIC();
+                AddPoisByPoic(pois.get(num).getM_POIC());
+                Log.w(TAG, "queryPoiForDelete: " + pois.get(num).getM_POIC());
+
+                initialiseGraphics();
+                if (ShowPoi)
+                    updatePoi();
+                if (ShowTrail)
+                    UpdateTrails();
+                if (ShowMyTuban)
+                    parseAndUpdateMyTuban();
+                if (ShowWhiteBlank)
+                    updateWhiteBlank();
+                updateGraphicsOverlayer();
+                //GoNormalSinglePOIPage(pois.get(num).getM_POIC());
                 return true;
                 //locError(Integer.toString(pois.get(num).getPhotonum()));
             } else {
@@ -5176,6 +5403,8 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setVisibility(View.VISIBLE);
         LocHereBT.setVisibility(View.VISIBLE);
         ResetBT.setVisibility(View.VISIBLE);
+        FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+        DeleteBt.setVisibility(View.VISIBLE);
         FloatingActionButton TrailBt = (FloatingActionButton) findViewById(R.id.StartTrail);
         TrailBt.setVisibility(View.VISIBLE);
         FloatingActionButton outputbt = (FloatingActionButton) findViewById(R.id.OutputData);
@@ -5191,6 +5420,10 @@ public class MainActivity extends AppCompatActivity {
         DrawFeature.setVisibility(View.GONE);
         LocHereBT.setVisibility(View.GONE);
         ResetBT.setVisibility(View.GONE);
+
+        FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+        DeleteBt.setVisibility(View.GONE);
+
         FloatingActionButton TrailBt = (FloatingActionButton) findViewById(R.id.StartTrail);
         TrailBt.setVisibility(View.GONE);
 
@@ -5721,11 +5954,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateMyTuban(){
-        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+        SimpleLineSymbol lineSymbol = null;
         for (int i = 0; i < currentMyTuban.size(); ++i){
-            Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
-            Graphic g = new Graphic(polygon, lineSymbol);
-            graphics.add(g);
+            Boolean ChoosedMyTuban = false;
+            for (int j = 0; j < ChoosedMyTubans.size(); j++) {
+                if(currentMyTuban.get(i).getName().equals(ChoosedMyTubans.get(j))){
+                    ChoosedMyTuban = true;
+                    break;
+                }
+            }
+
+            if (ChoosedMyTuban){
+                lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+                Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
+                Graphic g = new Graphic(polygon, lineSymbol);
+                graphics.add(g);
+            }
+            else {
+                lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3);
+                Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
+                Graphic g = new Graphic(polygon, lineSymbol);
+                graphics.add(g);
+            }
         }
     }
 
@@ -5832,6 +6082,17 @@ public class MainActivity extends AppCompatActivity {
         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
     }
 
+    private void ChooseUserTuban(Point pt){
+        for (int i = 0; i < currentMyTuban.size(); ++i){
+            Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
+            if (GeometryEngine.within(pt, polygon)){
+                Log.w(TAG, "ChooseUserTuban: " + currentMyTuban.get(i).getName());
+                AddMyTubansByName(currentMyTuban.get(i).getName());
+                drawGraphicsOverlayer();
+            }
+        }
+    }
+
     private boolean inUserDrawedTuban(Point pt){
         for (int i = 0; i < currentMyTuban.size(); ++i){
             Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
@@ -5846,11 +6107,14 @@ public class MainActivity extends AppCompatActivity {
 
     public void drawGraphicsOverlayer(){
         initialiseGraphics();
-        ParseAndUpdateTrails();
-        //updatePoiAndWhiteBlank();
-        updatePoi();
-        updateWhiteBlank();
-        parseAndUpdateMyTuban();
+        if(ShowTrail)
+            ParseAndUpdateTrails();
+        if (ShowPoi)
+            updatePoi();
+        if (ShowWhiteBlank)
+            updateWhiteBlank();
+        if (ShowMyTuban)
+            parseAndUpdateMyTuban();
         updateGraphicsOverlayer();
     }
 
@@ -5864,13 +6128,62 @@ public class MainActivity extends AppCompatActivity {
     private void updatePoi(){
         List<POI> pois = LitePal.findAll(POI.class);
         int psize = pois.size();
-        if (psize > 0) updatepoi(pois, psize);
+        if (psize > 0) {
+            updatepoi(pois, psize);
+            updateChoosedPoi();
+        }
+    }
+
+    private void updateChoosedPoi(){
+        for (int i = 0; i < ChoosedPois.size(); i++) {
+            String poic = ChoosedPois.get(i);
+            List<POI> pois = LitePal.findAll(POI.class);
+            for (int j = 0; j < pois.size(); j++) {
+                if (poic.equals(pois.get(j).getPoic())){
+                    SimpleMarkerSymbol makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.rgb(0, 255, 255), 20);
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(j).getY()), Double.valueOf(pois.get(j).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                    Graphic g = new Graphic(wgs84Point, makerSymbol);
+                    graphics.add(g);
+                    break;
+                }
+            }
+        }
     }
 
     private void updateWhiteBlank(){
         List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
         int wbsize = whiteblanks.size();
-        if (wbsize > 0) updateWhiteBlank(whiteblanks, wbsize);
+        if (wbsize > 0) {
+            updateWhiteBlank(whiteblanks, wbsize);
+            updateChoosedWhiteblank();
+        }
+    }
+
+    private void updateChoosedWhiteblank(){
+        List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
+        for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
+            PointCollection points = new PointCollection(SpatialReference.create(4521));;
+            for (int j = 0; j < whiteblanks.size(); j++) {
+                if (ChoosedWhiteblankLines.get(i).equals(whiteblanks.get(j).getObjectID()))
+                {
+                    String[] strings = whiteblanks.get(j).getPts().split("lzy");
+                    Log.w(TAG, "drawWhiteBlank1: " + strings.length);
+                    for (int kk = 0; kk < strings.length; ++kk) {
+                        String[] strings1 = strings[kk].split(",");
+                        if (strings1.length == 2) {
+                            Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
+                            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                            points.add(wgs84Point);
+                        }
+                    }
+                    SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+                    Polyline polyline = new Polyline(points);
+                    Graphic g = new Graphic(polyline, lineSymbol);
+                    graphics.add(g);
+                    break;
+                }
+            }
+        }
     }
 
     /*public void updatePoiAndWhiteBlank(){
@@ -5992,34 +6305,30 @@ public class MainActivity extends AppCompatActivity {
     public void updatepoi(List<POI> pois, int size){
         Log.w(TAG, "drawpoi: " + size);
         for (int i = 0; i < size; ++i){
-            SimpleMarkerSymbol makerSymbol;
-            int tapenum = pois.get(i).getTapenum();
-            int photonum = pois.get(i).getPhotonum();
-            /*if (photonum == 0){
-                if (tapenum == 0){
-
-                }else {
-
+            Boolean hasSamePoi = false;
+            for (int j = 0; j < ChoosedPois.size(); j++) {
+                if (ChoosedPois.get(j).equals(pois.get(i).getPoic())){
+                    hasSamePoi = true;
+                    break;
                 }
-            }else {
-                if (tapenum == 0){
-
-                }else {
-
-                }
-            }*/
-            if (tapenum == 0 && photonum == 0){
-                makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 20);
-            }else if (tapenum > 0 && photonum > 0){
-                makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE,  Color.GREEN, 20);
-            }else {
-                makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.YELLOW, 20);
             }
-            Log.w(TAG, "drawWhiteBlank2: " + pois.get(i).getX() + "; " + pois.get(i).getY());
-            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(i).getY()), Double.valueOf(pois.get(i).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4521));
-            Log.w(TAG, "drawWhiteBlank2: " + wgs84Point.getX() + "; " + wgs84Point.getY());
-            Graphic g = new Graphic(wgs84Point, makerSymbol);
-            graphics.add(g);
+            if (!hasSamePoi) {
+                SimpleMarkerSymbol makerSymbol;
+                int tapenum = pois.get(i).getTapenum();
+                int photonum = pois.get(i).getPhotonum();
+                if (tapenum == 0 && photonum == 0) {
+                    makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 20);
+                } else if (tapenum > 0 && photonum > 0) {
+                    makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 20);
+                } else {
+                    makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.YELLOW, 20);
+                }
+                Log.w(TAG, "drawWhiteBlank2: " + pois.get(i).getX() + "; " + pois.get(i).getY());
+                Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(i).getY()), Double.valueOf(pois.get(i).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                Log.w(TAG, "drawWhiteBlank2: " + wgs84Point.getX() + "; " + wgs84Point.getY());
+                Graphic g = new Graphic(wgs84Point, makerSymbol);
+                graphics.add(g);
+            }
         }
     }
 
@@ -7282,56 +7591,20 @@ public class MainActivity extends AppCompatActivity {
                     if (!name.equals("影像")) {
 
                         if(name.equals("白板层")){
-                            initialiseGraphics();
                             ShowWhiteBlank = false;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else if(name.equals("轨迹线层")){
-                            initialiseGraphics();
                             ShowTrail = false;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else if(name.equals("兴趣点层")){
-                            initialiseGraphics();
                             ShowPoi = false;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else if(name.equals("按需查询层")){
-                            initialiseGraphics();
                             ShowMyTuban = false;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else {
                             map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
@@ -7355,56 +7628,20 @@ public class MainActivity extends AppCompatActivity {
                     if (!name.equals("影像")) {
 
                         if(name.equals("白板层")){
-                            initialiseGraphics();
                             ShowWhiteBlank = true;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else if(name.equals("轨迹线层")){
-                            initialiseGraphics();
                             ShowTrail = true;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else if(name.equals("兴趣点层")){
-                            initialiseGraphics();
                             ShowPoi = true;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else if(name.equals("按需查询层")){
-                            initialiseGraphics();
                             ShowMyTuban = true;
-                            if (ShowPoi)
-                                updatePoi();
-                            if (ShowTrail)
-                                UpdateTrails();
-                            if (ShowMyTuban)
-                                parseAndUpdateMyTuban();
-                            if (ShowWhiteBlank)
-                                updateWhiteBlank();
-                            updateGraphicsOverlayer();
+                            drawGraphicsOverlayer();
                         }
                         else {
 

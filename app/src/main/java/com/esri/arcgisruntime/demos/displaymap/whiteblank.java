@@ -6,8 +6,17 @@ import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
 import org.litepal.crud.LitePalSupport;
 
 public class whiteblank extends LitePalSupport{
+    private String ObjectID;
     private String pts;
     private int color;
+
+    public String getObjectID() {
+        return ObjectID;
+    }
+
+    public void setObjectID(String objectID) {
+        ObjectID = objectID;
+    }
 
     public String getPts() {
         return pts;
