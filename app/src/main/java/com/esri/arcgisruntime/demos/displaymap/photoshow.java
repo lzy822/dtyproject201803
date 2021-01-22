@@ -153,8 +153,8 @@ public class photoshow extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= 24){
             //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
             imageUri = FileProvider.getUriForFile(photoshow.this, "com.android.displaymap.fileprovider", outputImage);
-            Log.w(TAG, "takePhoto: " + imageUri);
         }else imageUri = Uri.fromFile(outputImage);
+        Log.w(TAG, "takePhoto: " + imageUri);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
         startActivityForResult(intent, TAKE_PHOTO);
@@ -461,6 +461,7 @@ public class photoshow extends AppCompatActivity {
                     int size = mphotos.size();
                     for (int i = 0; i < size; i++) {
                         String path = mphotos.get(i).getPath();
+                        Log.w(TAG, "openImg: " + path);
                         File file = new File(path);
                         if (file.exists()) {
                             Bitmap bitmap = DataUtil.getImageThumbnail(path, 2048, 2048);
@@ -505,7 +506,7 @@ public class photoshow extends AppCompatActivity {
     private void openImg(String ImgPathTemp){
         if (ImgPathTemp != null) {
             String[] imgPath = new String[DataUtil.appearNumber(ImgPathTemp, "\\|") + 1];
-            Log.w(TAG, "run: " + ImgPathTemp);
+            Log.w(TAG, "openImg: " + ImgPathTemp);
             for (int k = 0; k < imgPath.length; k++) {
                 if (imgPath.length > 1) {
                     if (k < imgPath.length - 1) {

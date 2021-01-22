@@ -23,6 +23,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.media.ExifInterface;
+import android.media.Image;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
@@ -43,6 +44,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.ListPopupWindow;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -239,11 +241,17 @@ public class MainActivity extends AppCompatActivity {
     FeatureLayer TDGHDLFeatureLayer = null;
     FeatureLayer XZQFeatureLayer = null;
     boolean hasTPK = false;
-    boolean MapQuery = false;
+
+    //用于标识是否开启了"图查询"状态，该状态和"要素批量删除"状态相互冲突
+    private Boolean MapQuery = false;
+    //用于标识当前是否开启了"要素批量删除"状态，该状态和"图查询"状态相互冲突
+    private Boolean Deleting = false;
+    //用于标识当前是否开启了"轨迹记录"状态
+    private Boolean IsRecordingTrail = false;
+
     private DisplayEnum QueryProcessType = DisplayEnum.NOQUERY;
 
 
-    private Boolean Deleting = false;
 
     //FeatureLayer QueriedFeatureLayer;
 
@@ -958,6 +966,7 @@ public class MainActivity extends AppCompatActivity {
         bt_polygon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                IsDrawedTuban = true;
                 analyseFunction();
                 popupWindow.dismiss();
             }
@@ -1643,6 +1652,7 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 removeGraphicsOverlayers();
                                 FeatureQueryResult featureResul = featureQueryResult.get();
+                                AnalysisUserGeometry = polygon;
                                 Geometry geometry1 = polygon;
                                 List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
                                 HashMap<String, ChartQueryResult> hashMap = new HashMap<>();
@@ -2033,6 +2043,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                                 calloutContent.setText(str);
+                                mCallout.dismiss();
                                 // get callout, set content and show
                                 mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
                                 mCallout.setContent(calloutContent);
@@ -3077,24 +3088,55 @@ public class MainActivity extends AppCompatActivity {
         DataUtil.xzqClassify(LitePal.findAll(xzq.class));
     }
 
-    private void mapQueryBtEvent(){
-        if (!MapQuery) {
-            RunningFunction = DisplayEnum.FUNC_ANA;
-            MapQuery = true;
-            ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
-            Toast.makeText(MainActivity.this, R.string.OpenMapQuery, Toast.LENGTH_LONG).show();
+    private void StartMapQueryStatus(){
+        if (Deleting){
+            StopDeletingStatusForStartMapQuery();
         }
         else {
-            RunningFunction = DisplayEnum.FUNC_NONE;
-            MapQuery = false;
-            mCallout.dismiss();
-            mMapView.getGraphicsOverlays().clear();
-            drawGraphicsOverlayer();
-            ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
-            pieChartView.setVisibility(View.GONE);
-            Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
-            RemoveFinishButton();
+            StartMapQueryFunction();
         }
+    }
+
+    private void StartMapQueryFunction(){
+        RunningFunction = DisplayEnum.FUNC_ANA;
+        MapQuery = true;
+        //ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
+        ShowScreenBottomTipText();
+        Toast.makeText(MainActivity.this, R.string.OpenMapQuery, Toast.LENGTH_LONG).show();
+    }
+
+    private void StopMapQueryStatus(){
+        RunningFunction = DisplayEnum.FUNC_NONE;
+        MapQuery = false;
+        mCallout.dismiss();
+        mMapView.getGraphicsOverlays().clear();
+        drawGraphicsOverlayer();
+        //ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
+        ShowScreenBottomTipText();
+        pieChartView.setVisibility(View.GONE);
+        Toast.makeText(MainActivity.this, R.string.CloseMapQuery, Toast.LENGTH_LONG).show();
+        RemoveFinishButton();
+    }
+
+    private void mapQueryBtEvent(){
+        if (!MapQuery) {
+            StartMapQueryStatus();
+        }
+        else {
+            StopMapQueryStatus();
+        }
+    }
+
+    // TODO 2021/1/22 完成模式文本标识模块
+    private void ShowScreenBottomTipText(){
+        String BaseString = "云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale());
+        if (MapQuery)
+            BaseString += " 图面查询中";
+        if (Deleting)
+            BaseString += " 要素批量删除中";
+        if (IsRecordingTrail)
+            BaseString += " 正在记录轨迹";
+        ScaleShow.setText(BaseString);
     }
 
     private void initWidgetAndVariable(){
@@ -3263,59 +3305,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
-        DeleteBt.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (Deleting)
-                {
-                    DeleteFeatures();
-                    ShowStandardLayers();
-                    Deleting = false;
-                    DeleteBt.setImageResource(R.drawable.ic_delete_start_24dp);
-                }
-                else{
-                    Deleting = true;
-                    DeleteBt.setImageResource(R.drawable.ic_delete_stop_24dp);
-                }
-            }
-        });
-        /*recyclerViewButton = (ImageButton) findViewById(R.id.openRecyclerView);
-        recyclerViewButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isClick){
-                    recyclerView.setVisibility(View.GONE);
-                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_more_black_24dp);
-                    recyclerViewButton.setY(recyclerView.getY());
-                    isClick = false;
-                    //recyclerViewButton.setX(recyclerView.getX());
-                }else {
-                    //setRecyclerView();
-                    recyclerView.setVisibility(View.VISIBLE);
-                    recyclerViewButton.setVisibility(View.GONE);
-                    TimerTask task = new TimerTask() {
-                        @Override
-                        public void run() {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    recyclerViewButton.setY(recyclerView.getY() + recyclerView.getHeight() + 20);
-                                    recyclerViewButton.setBackgroundResource(R.drawable.ic_expand_less_black_24dp);
-                                    recyclerViewButton.setVisibility(View.VISIBLE);
-                                }
-                            });
-                        }
-                    };
-                    Timer timer = new Timer();
-                    timer.schedule(task, 1000);
-                    //recyclerViewButton1.setVisibility(View.VISIBLE);
-                    //recyclerViewButton.setVisibility(View.GONE);
-                    isClick = true;
-                }
-                //Log.w(TAG, "onClick: " + recyclerViewButton.getBackground().toString() );
-            }
-        });*/
+        InitDeletingBt();
+
         mMapView = findViewById(R.id.mapView);// = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 34.056295, -117.195800, 16);
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
@@ -3377,6 +3368,7 @@ public class MainActivity extends AppCompatActivity {
                                         String path = userLayerList.get(i).getPath();
                                         if (QueriedLayerIndex != -1 && path.equals(LayerFieldsSheetList.get(QueriedLayerIndex).getLayerPath())) {
                                             ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
+                                            pointCollection = null;
                                             if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
                                                 break;
                                             }
@@ -3509,8 +3501,9 @@ public class MainActivity extends AppCompatActivity {
         mMapView.addMapScaleChangedListener(new MapScaleChangedListener() {
             @Override
             public void mapScaleChanged(MapScaleChangedEvent mapScaleChangedEvent) {
-                if (!MapQuery) ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
-                else ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");
+                /*if (!MapQuery) ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
+                else ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");*/
+                ShowScreenBottomTipText();
             }
         });
         LocHereBT = (FloatingActionButton) findViewById(R.id.LocHere);
@@ -3695,6 +3688,102 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void InitDeletingBt(){
+        //批量删除按钮
+        final FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+        DeleteBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Deleting)
+                {
+                    StopDeletingStatus();
+                }
+                else{
+                    StartDeletingStatus();
+                }
+            }
+        });
+    }
+
+    private void StartDeletingStatus(){
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("提示")
+                .setMessage("确定开启批量删除模式吗？")
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+                        StopMapQueryStatus();
+                        Deleting = true;
+                        DeleteBt.setImageResource(R.drawable.ic_delete_stop_24dp);
+                        ShowScreenBottomTipText();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .show();
+    }
+
+    private void StopDeletingStatusFunctionForConfirm(){
+        FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+        DeleteFeatures();
+        ShowStandardLayers();
+        Deleting = false;
+        DeleteBt.setImageResource(R.drawable.ic_delete_start_24dp);
+    }
+
+    private void StopDeletingStatusFunctionForCancel(){
+        FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
+        RemoveChoosedFeatures();
+        ShowStandardLayers();
+        Deleting = false;
+        DeleteBt.setImageResource(R.drawable.ic_delete_start_24dp);
+    }
+
+    private void StopDeletingStatusForStartMapQuery(){
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("提示")
+                .setMessage("确定要删除所选要素吗？")
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        StopDeletingStatusFunctionForConfirm();
+                        ShowScreenBottomTipText();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        StopDeletingStatusFunctionForCancel();
+                        ShowScreenBottomTipText();
+                        StartMapQueryFunction();
+                    }
+                })
+                .show();
+    }
+
+    private  void StopDeletingStatus(){
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("提示")
+                .setMessage("确定要删除所选要素吗？")
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        StopDeletingStatusFunctionForConfirm();
+                        ShowScreenBottomTipText();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .show();
+    }
+
     private void DeleteFeatures(){
         DeleteWhiteblankLines();
         DeletePois();
@@ -3781,14 +3870,7 @@ public class MainActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        TrailBt.setImageResource(R.drawable.ic_subway);
-                        isLocateEnd = true;
-                        recordTrail(last_x, last_y);
-                        locError(m_cTrail);
-                        invalidateOptionsMenu();
-                        Intent stop_mService = new Intent(MainActivity.this, RecordTrail.class);
-                        stopService(stop_mService);
-                        drawGraphicsOverlayer();
+                        StopRecordingTrail(TrailBt);
                     }
                 });
         normalDialog.setNegativeButton("取消",
@@ -3815,18 +3897,7 @@ public class MainActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        TrailBt.setImageResource(R.drawable.ic_stop_24dp);
-                        isLocateEnd = false;
-                        m_cTrail = "";
-                        isLocate = 0;
-                        initTrail();
-                        //addpoi.setVisibility(View.INVISIBLE);
-                        //query_poi.setVisibility(View.INVISIBLE);
-                        //floatingActionsMenu.setVisibility(View.INVISIBLE);
-                        invalidateOptionsMenu();
-                        Intent start_mService = new Intent(MainActivity.this, RecordTrail.class);
-                        start_mService.putExtra("ic", ic);
-                        startService(start_mService);
+                        StartRecordingTrail(TrailBt);
                     }
                 });
         normalDialog.setNegativeButton("取消",
@@ -3837,6 +3908,33 @@ public class MainActivity extends AppCompatActivity {
                 });
         // 显示
         normalDialog.show();
+    }
+
+    private void StopRecordingTrail(final ImageButton TrailBt){
+        IsRecordingTrail = false;
+        TrailBt.setImageResource(R.drawable.ic_subway);
+        isLocateEnd = true;
+        recordTrail(last_x, last_y);
+        locError(m_cTrail);
+        invalidateOptionsMenu();
+        Intent stop_mService = new Intent(MainActivity.this, RecordTrail.class);
+        stopService(stop_mService);
+        drawGraphicsOverlayer();
+        ShowScreenBottomTipText();
+    }
+
+    private void StartRecordingTrail(final ImageButton TrailBt){
+        IsRecordingTrail = true;
+        TrailBt.setImageResource(R.drawable.ic_stop_24dp);
+        isLocateEnd = false;
+        m_cTrail = "";
+        isLocate = 0;
+        initTrail();
+        invalidateOptionsMenu();
+        Intent start_mService = new Intent(MainActivity.this, RecordTrail.class);
+        start_mService.putExtra("ic", ic);
+        startService(start_mService);
+        ShowScreenBottomTipText();
     }
 
     private void recordTrail(Location location) {
@@ -5714,6 +5812,7 @@ public class MainActivity extends AppCompatActivity {
             } else
                 Toast.makeText(MainActivity.this, "请构建面(至少三个点)", Toast.LENGTH_SHORT).show();
         } else if (QueryProcessType == DisplayEnum.FINISHQUERY) {
+            IsDrawedTuban = false;
             queriedMyTuban = new my_tb();
             QueryProcessType = DisplayEnum.NOQUERY;
             removeQueryWidgetFinishLater();
@@ -5726,23 +5825,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void SaveUserDrawedTB(){
+        //if (IsDrawedTuban)
+        {
+            final FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
+            popListShow.setVisibility(View.VISIBLE);
+            popListShow.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
 
-        final FloatingActionButton popListShow = (FloatingActionButton) findViewById(R.id.PopWindow);
-        popListShow.setVisibility(View.VISIBLE);
-        popListShow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+                    // TODO 2020/12/10 解决不弹出分析窗口的问题
 
-                // TODO 2020/12/10 解决不弹出分析窗口的问题
-
-                String data = "";
-                String mStrPointCollection = "";
-                for (int i = 0; i < pointCollection.size(); ++i){
-                    Log.w(TAG, "onClick: " + pointCollection.get(i).getX() + ";" + pointCollection.get(i).getY());
-                    mStrPointCollection = mStrPointCollection + pointCollection.get(i).getX() + "," + pointCollection.get(i).getY();
-                    if (i != pointCollection.size() - 1)
-                        mStrPointCollection = mStrPointCollection + ";";
-                }
+                    String data = "";
+                    String mStrPointCollection = "";
+                    if (pointCollection != null) {
+                        for (int i = 0; i < pointCollection.size(); ++i) {
+                            Log.w(TAG, "onClick: " + pointCollection.get(i).getX() + ";" + pointCollection.get(i).getY());
+                            mStrPointCollection = mStrPointCollection + pointCollection.get(i).getX() + "," + pointCollection.get(i).getY();
+                            if (i != pointCollection.size() - 1)
+                                mStrPointCollection = mStrPointCollection + ";";
+                        }
+                    }
                 /*
                 Intent intent = new Intent(MainActivity.this, PopWindowForListShow.class);
                 intent.putExtra("data", data);
@@ -5751,10 +5853,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "onClick: " + pointCollection.getSpatialReference().toString());
                 startActivity(intent);*/
 
-
-                isSaveOrUpdate(queriedMyTuban.getName(), mStrPointCollection, data);
-            }
-        });
+                    if (IsDrawedTuban)
+                        isSaveOrUpdate(queriedMyTuban.getName(), mStrPointCollection, data);
+                }
+            });
+        }
     }
 
     private void showPopWindowForListShow(){
@@ -5788,8 +5891,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "onClick: " + pointCollection.getSpatialReference().toString());
                 startActivity(intent);*/
 
-
-                isSaveOrUpdate(queriedMyTuban.getName(), mStrPointCollection, data);
+                if (IsDrawedTuban)
+                    isSaveOrUpdate(queriedMyTuban.getName(), mStrPointCollection, data);
             }
         });
     }
@@ -5808,7 +5911,7 @@ public class MainActivity extends AppCompatActivity {
 
     //Boolean isThisUserDrawedTBSaved = false;
     private void saveTbData(String PointCollection, String data){
-        String name = "图斑" + LitePal.findAll(my_tb.class).size();
+        String name = "图斑" + System.currentTimeMillis();
         my_tb my_tb = new my_tb();
         my_tb.setPointCollection(PointCollection);
         my_tb.setMdata(data);
@@ -6001,14 +6104,21 @@ public class MainActivity extends AppCompatActivity {
         //LitePal.deleteAll(my_tb.class);
         List<my_tb> myTbs = LitePal.findAll(my_tb.class);
         currentMyTuban = myTbs;
-        for (int i = 0; i < myTbs.size(); ++i){
+        for (int i = 0; i < myTbs.size(); ++i) {
             String mpointCollection = myTbs.get(i).getPointCollection();
             PointCollection pointCollection = new PointCollection(SpatialReference.create(4521));
             Log.w(TAG, "queryMyTuban: " + mpointCollection);
             String[] mPoint = mpointCollection.split(";");
-            for (int j = 0; j < mPoint.length; ++j){
+            for (int j = 0; j < mPoint.length; ++j) {
                 String[] mPoint1 = mPoint[j].split(",");
-                pointCollection.add(new Point(Double.valueOf(mPoint1[0]), Double.valueOf(mPoint1[1])));
+                try {
+                    pointCollection.add(new Point(Double.valueOf(mPoint1[0]), Double.valueOf(mPoint1[1])));
+                }
+                catch (Exception e){
+                    LitePal.deleteAll(my_tb.class, "name = ?", myTbs.get(i).getName());
+                    myTbs.remove(i--);
+                    currentMyTuban = myTbs;
+                }
             }
             //pointCollectionList.add(pointCollection);
             currentMyTuban.get(i).setPoints(pointCollection);
@@ -6040,7 +6150,6 @@ public class MainActivity extends AppCompatActivity {
         removeStandardWidget();
         QueryProcessType = DisplayEnum.INQUERY;
     }
-
 
     private void analyseFunctionForBasePolygon(Polygon polygon){
         removeGraphicsOverlayers();
@@ -6093,12 +6202,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private Boolean IsDrawedTuban = false;
     private boolean inUserDrawedTuban(Point pt){
         for (int i = 0; i < currentMyTuban.size(); ++i){
             Polygon polygon = new Polygon(currentMyTuban.get(i).getPoints());
             if (GeometryEngine.within(pt, polygon)){
                 queriedMyTuban = currentMyTuban.get(i);
                 analyseFunction(queriedMyTuban.getPoints());
+                IsDrawedTuban = true;
                 return true;
             }
         }
@@ -7720,23 +7831,34 @@ public class MainActivity extends AppCompatActivity {
                                             .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
                                                 @Override
                                                 public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
-                                                    List<UserLayer> userLayers = LitePal.where("path = ?", path).find(UserLayer.class);
+                                                    WindowManager wm = (WindowManager) MainActivity.this
+                                                            .getSystemService(Context.WINDOW_SERVICE);
+                                                    DisplayMetrics dm = new DisplayMetrics();
+                                                    wm.getDefaultDisplay().getMetrics(dm);
+                                                    int width = dm.widthPixels;
+                                                    int height = dm.heightPixels;
+                                                    android.graphics.Point screenPoint = new android.graphics.Point(Math.round(width/2),
+                                                            Math.round(height/2 - getWindow().findViewById(Window.ID_ANDROID_CONTENT).getTop()));
+                                                    Point mapPoint = mMapView.screenToLocation(screenPoint);
+                                                    Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4521));
+
+                                                    double MapScale = mMapView.getMapScale();
+                                                    double Rotation = mMapView.getMapRotation();
 
                                                     RemoveUserLayer(name, path);
                                                     setRecyclerViewForDynamicChooseFrame();
 
 
-                                                    UserLayer userLayer = userLayers.get(0);
+                                                    UserLayer userLayer = new UserLayer(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")), path, UserLayer.SHP_FILE, selectedColor);
 
-                                                    userLayer.setShpColor(selectedColor);
+                                                    //userLayer.setShpColor(selectedColor);
 
                                                     userLayer.save();
                                                     setRecyclerViewForDynamicChooseFrame();
                                                     Log.w(TAG, "useUserLayer: " + LitePal.findAll(UserLayer.class).size());
                                                     //useUserLayer();
                                                     showUserLayer(userLayer);
-                                                    ResetMapView();
-
+                                                    ResetMapViewForNow(wgs84Point, MapScale, Rotation);
                                                 }
                                             })
                                             .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
@@ -8000,6 +8122,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             else{
+                pieChartView.setVisibility(View.GONE);
+                mCallout.dismiss();
                 NeedQueryForBasePolygon(AnalysisUserGeometry);
             }
         }
@@ -8386,7 +8510,6 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
                                         UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE, selectedColor);
-
                                         userLayer.save();
                                         Log.w(TAG, "useUserLayer: " + LitePal.findAll(UserLayer.class).size());
                                         //useUserLayer();
@@ -8502,8 +8625,15 @@ public class MainActivity extends AppCompatActivity {
         mMapView.setViewpointRotationAsync(0);
     }
 
+    private void ResetMapViewForNow(Point wgs84Point, double MapScale, double Rotation) {
+        mMapView.setViewpointCenterAsync(wgs84Point, MapScale);
+        mMapView.setViewpointRotationAsync(Rotation);
+    }
+
     private void showUserLayer(UserLayer userLayer){
         try {
+            /*LayerFieldsSheetList.clear();
+            LayerFieldsSheetList.addAll(BaseLayerFieldsSheetList);*/
                 String path = userLayer.getPath();
                 //TODO 完成用户图层使用逻辑
                 switch (userLayer.getType()){
