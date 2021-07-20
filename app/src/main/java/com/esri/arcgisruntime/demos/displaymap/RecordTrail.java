@@ -251,8 +251,13 @@ public class RecordTrail extends Service {
         //List<Address> addresses = null;
         //String msg = "";
         //Log.d(TAG, "updateView.location = " + location);
-        m_lat = location.getLatitude();
-        m_long = location.getLongitude();
+        if (location != null) {
+            m_lat = location.getLatitude();
+            m_long = location.getLongitude();
+        }
+        else{
+            Toast.makeText(RecordTrail.this, "请打开GPS组件或者移动到有GPS信号的地方", Toast.LENGTH_LONG).show();
+        }
         //setHereLocation();
         //locError(Double.toString(m_lat) + "&&" + Double.toString(m_long) + "Come here");
     }

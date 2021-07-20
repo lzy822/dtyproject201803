@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">临沧外业踏勘系统</string>
-    <string name="version_info">1.6.1</string>
+    <string name="version_info">1.6.2</string>
     <string name="action_search">简单查询</string>
     <string name="WhiteBlankDrawing">正在进行白板绘图</string>
     <string name="ChooseColor">选择颜色</string>
@@ -40,6 +40,7 @@
     <string name="EasterEggErrorInfo">你缺失一些必要文件, 请确认后再开启该功能</string>
     <string name="HasDeleteAllWhiteBlank">已清空当前画板</string>
     <string name="MapList">地图列表</string>
+    <string name="VideoList">录像列表</string>
     <string name="AddMap">添加地图</string>
     <string name="OutputData">导出数据</string>
     <string name="InputData">导入数据</string>

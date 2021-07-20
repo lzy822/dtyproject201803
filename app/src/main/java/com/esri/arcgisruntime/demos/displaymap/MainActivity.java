@@ -63,6 +63,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
 import com.esri.arcgisruntime.ArcGISRuntimeException;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Feature;
@@ -264,7 +265,8 @@ public class MainActivity extends AppCompatActivity {
         UpdateTrails();
     }
 
-                                                                                                                                                                                                                                                                                                                            private void ParseTrails(){
+
+    private void ParseTrails(){
         trails = LitePal.findAll(Trail.class);
         Log.w(TAG, "ParseTrails: " + trails.size());
     }
@@ -943,6 +945,152 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return "";
+    }
+
+    private void ShowTextButton(){
+        /*Button AddPOIBT = findViewById(R.id.AddPOIBT);
+        AddPOIBT.setVisibility(View.VISIBLE);
+        AddPOIBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AddPOIFunction();
+            }
+        });
+        Button DrawPolygonQueryBT = findViewById(R.id.drawPolygonQueryBT);
+        DrawPolygonQueryBT.setVisibility(View.VISIBLE);
+        DrawPolygonQueryBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NeedQueryFunction();
+            }
+        });
+        Button DistanceMessureBT = findViewById(R.id.DistanceMessureBT);
+        DistanceMessureBT.setVisibility(View.VISIBLE);
+        DistanceMessureBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DistanceMessureFunction();
+            }
+        });
+        Button AreaMessureBT = findViewById(R.id.AreaMessureBT);
+        AreaMessureBT.setVisibility(View.VISIBLE);
+        AreaMessureBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AreaMessureFunction();
+            }
+        });*/
+        FloatingActionButton AddPOIFAB = findViewById(R.id.AddPOIFAB);
+        AddPOIFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AddPOIFunction();
+            }
+        });
+        FloatingActionButton NeedQueryFAB = findViewById(R.id.NeedQueryFAB);
+        NeedQueryFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NeedQueryFunction();
+            }
+        });
+        FloatingActionButton DistanceMessureFAB = findViewById(R.id.DistanceMessureFAB);
+        DistanceMessureFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DistanceMessureFunction();
+            }
+        });
+        FloatingActionButton AreaMessureFAB = findViewById(R.id.AreaMessureFAB);
+        AreaMessureFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AreaMessureFunction();
+            }
+        });
+    }
+
+    private void RemoveTextButton(){
+        /*Button AddPOIBT = findViewById(R.id.AddPOIBT);
+        AddPOIBT.setVisibility(View.INVISIBLE);
+        Button DrawPolygonQueryBT = findViewById(R.id.drawPolygonQueryBT);
+        DrawPolygonQueryBT.setVisibility(View.INVISIBLE);
+        Button DistanceMessureBT = findViewById(R.id.DistanceMessureBT);
+        DistanceMessureBT.setVisibility(View.INVISIBLE);
+        Button AreaMessureBT = findViewById(R.id.AreaMessureBT);
+        AreaMessureBT.setVisibility(View.INVISIBLE);*/
+        FloatingActionButton AddPOIFAB = findViewById(R.id.AddPOIFAB);
+        AddPOIFAB.setVisibility(View.INVISIBLE);
+        FloatingActionButton NeedQueryFAB = findViewById(R.id.NeedQueryFAB);
+        NeedQueryFAB.setVisibility(View.INVISIBLE);
+        FloatingActionButton DistanceMessureFAB = findViewById(R.id.DistanceMessureFAB);
+        DistanceMessureFAB.setVisibility(View.INVISIBLE);
+        FloatingActionButton AreaMessureFAB = findViewById(R.id.AreaMessureFAB);
+        AreaMessureFAB.setVisibility(View.INVISIBLE);
+    }
+
+    private void AddPOIFunction(){
+        RunningFunction = DisplayEnum.FUNC_ADDPOI;
+        removeStandardWidget();
+    }
+
+    private void NeedQueryFunction(){
+        // TODO DFASASDF
+        if (DrawType == DisplayEnum.DRAW_NONE) {
+            mCallout.dismiss();
+            pieChartView.setVisibility(View.GONE);
+            IsDrawedTuban = true;
+            analyseFunction();
+        }
+        else {
+            if (DrawType == DisplayEnum.DRAW_POLYGON && pointCollection.size() >= 3){
+                final Polygon polygon = new Polygon(pointCollection);
+                QueryParameters query = new QueryParameters();
+                query.setGeometry(polygon);// 设置空间几何对象
+                if (isFileExist(StaticVariableEnum.GDBROOTPATH) && isFileExist(StaticVariableEnum.PGDBROOTPATH) && MapQuery) {
+                    //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
+                    queryTaskForPolygon(query, polygon);
+                } else
+                    Toast.makeText(MainActivity.this, R.string.QueryError_2, Toast.LENGTH_SHORT).show();
+                if (!inMap) mCallout.dismiss();
+
+            }else if (DrawType == DisplayEnum.DRAW_POLYLINE && pointCollection.size() >= 2){
+                Polyline polyline = new Polyline(pointCollection);
+                GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                Graphic fillGraphic = new Graphic(polyline, lineSymbol);
+                graphicsOverlay_1.getGraphics().add(fillGraphic);
+                mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                Log.w(TAG, "onClick: " + pointCollection.size());
+                Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC));
+                DecimalFormat format = new DecimalFormat("0.00");
+                Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(MainActivity.this, "请构建面(至少三个点)后进行查询", Toast.LENGTH_SHORT).show();
+            }
+            DrawType = DisplayEnum.DRAW_NONE;
+            mapQueryBtEvent();
+        }
+    }
+
+    private void DistanceMessureFunction(){
+        RunningFunction = DisplayEnum.FUNC_ANA;
+        DrawType = DisplayEnum.DRAW_POLYLINE;
+        QueryProcessType = DisplayEnum.INQUERY;
+        pointCollection = new PointCollection(SpatialReference.create(4521));
+        RunningAnalyseFunction = DisplayEnum.ANA_DISTANCE;
+        showQueryWidget();
+        removeStandardWidget();
+    }
+
+    private void AreaMessureFunction(){
+        RunningFunction = DisplayEnum.FUNC_ANA;
+        DrawType = DisplayEnum.DRAW_POLYGON;
+        QueryProcessType = DisplayEnum.INQUERY;
+        pointCollection = new PointCollection(SpatialReference.create(4521));
+        RunningAnalyseFunction = DisplayEnum.ANA_AREA;
+        showQueryWidget();
+        removeStandardWidget();
     }
 
     private void showPopueWindowForMessure(){
@@ -3169,13 +3317,37 @@ public class MainActivity extends AppCompatActivity {
                 builder1.show();
             }
         });
+        /*Button InputData = findViewById(R.id.InputDataBT);
+        InputData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(MainActivity.this);
+                builder1.setTitle("提示");
+                builder1.setMessage("请选择你要添加的文件类型:" + "\n" + "（将在下次启动时生效）");
+                builder1.setNegativeButton("SHP文件", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        InputDataForShp();
+                    }
+                });
+                builder1.setPositiveButton("TIF文件", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        InputDataForTif();
+                    }
+                });
+                builder1.show();
+            }
+        });*/
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         pieChartView = (PieChartView) findViewById(R.id.chart);
+        ShowTextButton();
         //按钮添加要素
         DrawFeature = (FloatingActionButton)findViewById(R.id.DrawFeature);
         DrawFeature.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //showPopueWindowForMessure();
                 if (DrawType == DisplayEnum.DRAW_NONE) {
                     mCallout.dismiss();
                     pieChartView.setVisibility(View.GONE);
@@ -3308,6 +3480,10 @@ public class MainActivity extends AppCompatActivity {
         InitDeletingBt();
 
         mMapView = findViewById(R.id.mapView);// = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 34.056295, -117.195800, 16);
+
+        //去除水印
+        mMapView.setAttributionTextVisible(false);
+
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
             public boolean  onSingleTapConfirmed(MotionEvent v) {
@@ -3530,150 +3706,6 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
 
                             OutputData();
-                            /*List<POI> pois = LitePal.findAll(POI.class);
-                            List<String> types = new ArrayList<>();
-                            Log.w(TAG, "runlzy: " + pois.size());
-                            for (int i = 0; i < pois.size(); ++i){
-                                String temp = pois.get(i).getType();
-                                Log.w(TAG, "runlzy: " + temp);
-                                if (temp != null) {
-                                    if (!temp.isEmpty()) {
-                                        if (types.size() > 0) {
-                                            for (int j = 0; j < types.size(); ++j) {
-                                                if (temp.equals(types.get(j))) break;
-                                                else {
-                                                    if (j == types.size() - 1) types.add(temp);
-                                                    else continue;
-                                                }
-                                            }
-                                        }else types.add(temp);
-                                    }
-                                }
-                            }
-                            DataUtil.makeKML();
-                            Log.w(TAG, "runlzy: " + types.size());
-                            if (types.size() > 0) {
-                                for (int i = 0; i < types.size(); ++i) {
-                                    DataUtil.makeTxt(types.get(i));
-                                }
-                            }else DataUtil.makeTxt("");
-                            DataUtil.makeTxt1();
-                            //DataUtil.makeWhiteBlankKML();
-                            List<File> files = new ArrayList<File>();
-                            StringBuffer sb = new StringBuffer();
-                            int size_POI = pois.size();
-                            sb = sb.append("<POI>").append("\n");
-                            for (int i = 0; i < size_POI; ++i){
-                                sb.append("<id>").append(pois.get(i).getId()).append("</id>").append("\n");
-                                sb.append("<ic>").append(pois.get(i).getIc()).append("</ic>").append("\n");
-                                sb.append("<name>").append(pois.get(i).getName()).append("</name>").append("\n");
-                                sb.append("<POIC>").append(pois.get(i).getPoic()).append("</POIC>").append("\n");
-                                sb.append("<type>").append(pois.get(i).getType()).append("</type>").append("\n");
-                                sb.append("<photonum>").append(pois.get(i).getPhotonum()).append("</photonum>").append("\n");
-                                sb.append("<description>").append(pois.get(i).getDescription()).append("</description>").append("\n");
-                                sb.append("<tapenum>").append(pois.get(i).getTapenum()).append("</tapenum>").append("\n");
-                                sb.append("<x>").append(pois.get(i).getX()).append("</x>").append("\n");
-                                sb.append("<y>").append(pois.get(i).getY()).append("</y>").append("\n");
-                                sb.append("<time>").append(pois.get(i).getTime()).append("</time>").append("\n");
-                            }
-                            sb.append("</POI>").append("\n");
-                            List<MPHOTO> mphotos = LitePal.findAll(MPHOTO.class);
-                            int size_mphoto = mphotos.size();
-                            sb = sb.append("<MPHOTO>").append("\n");
-                            for (int i = 0; i < size_mphoto; ++i){
-                                sb.append("<id>").append(mphotos.get(i).getId()).append("</id>").append("\n");
-                                sb.append("<pdfic>").append(mphotos.get(i).getPdfic()).append("</pdfic>").append("\n");
-                                sb.append("<POIC>").append(mphotos.get(i).getPoic()).append("</POIC>").append("\n");
-                                String path = mphotos.get(i).getPath();
-                                sb.append("<path>").append(path).append("</path>").append("\n");
-                                files.add(new File(path));
-                                sb.append("<time>").append(mphotos.get(i).getTime()).append("</time>").append("\n");
-                            }
-                            sb.append("</MPHOTO>").append("\n");
-                            List<MTAPE> mtapes = LitePal.findAll(MTAPE.class);
-                            int size_mtape = mtapes.size();
-                            sb = sb.append("<MTAPE>").append("\n");
-                            for (int i = 0; i < size_mtape; ++i){
-                                sb.append("<id>").append(mtapes.get(i).getId()).append("</id>").append("\n");
-                                sb.append("<pdfic>").append(mtapes.get(i).getPdfic()).append("</pdfic>").append("\n");
-                                sb.append("<POIC>").append(mtapes.get(i).getPoic()).append("</POIC>").append("\n");
-                                String path = mtapes.get(i).getPath();
-                                sb.append("<path>").append(path).append("</path>").append("\n");
-                                files.add(new File(path));
-                                sb.append("<time>").append(mtapes.get(i).getTime()).append("</time>").append("\n");
-                            }
-                            sb.append("</MTAPE>").append("\n");
-                            File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
-                            if (!file.exists() && !file.isDirectory()){
-                                file.mkdirs();
-                            }
-                            final String outputPath = Long.toString(System.currentTimeMillis());
-                            File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".dtdb");
-                            try {
-                                FileOutputStream of = new FileOutputStream(file1);
-                                of.write(sb.toString().getBytes());
-                                of.close();
-                                files.add(file1);
-                            }catch (IOException e){
-                                Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.OpenFileError) + "_2", Toast.LENGTH_SHORT).show();
-                            }
-                            try {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.PackingData).toString() + R.string.QSH, Toast.LENGTH_LONG).show();
-                                        //toolbar.setTitle("数据打包中");
-                                    }
-                                });
-                                File zipFile = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".zip");
-                                //InputStream inputStream = null;
-                                ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFile));
-                                zipOut.setComment("test");
-                                int size = files.size();
-                                Log.w(TAG, "run: " + size);
-                                for (int i = 0; i < size; ++i){
-                                    Log.w(TAG, "run: " + i);
-                                    Log.w(TAG, "run: " + files.get(i).getPath());
-                                    boolean isOK = false;
-                                    for (int k = 0; k < i; ++k) {
-                                        if (files.get(i).getPath().equals(files.get(k).getPath())) break;
-                                        if ((k == i - 1 & !files.get(i).getPath().equals(files.get(k).getPath()) & files.get(i).exists())) isOK = true;
-                                    }
-                                    Log.w(TAG, "aa");
-                                    if (i == 0 & files.get(i).exists()) isOK = true;
-                                    if (isOK){
-                                        Log.w(TAG, "aa");
-                                        InputStream inputStream = new FileInputStream(files.get(i));
-                                        Log.w(TAG, "aa");
-                                        zipOut.putNextEntry(new ZipEntry(files.get(i).getName()));
-                                        Log.w(TAG, "aa");
-                                        //int temp = 0;
-                                        //while ((temp = inputStream.read()) != -1){
-                                        //    zipOut.write(temp);
-                                        //}
-                                        byte buffer[] = new byte[4096];
-                                        int realLength;
-                                        while ((realLength = inputStream.read(buffer)) > 0) {
-                                            zipOut.write(buffer, 0, realLength);
-                                        }
-                                        inputStream.close();
-                                    }
-                                }
-                                zipOut.close();
-                                file1.delete();
-                                files.clear();
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.PackingOk), Toast.LENGTH_LONG).show();
-                                        //toolbar.setTitle(MainActivity.this.getResources().getText(R.string.MapList));
-                                    }
-                                });
-                            }catch (IOException e){
-                                Toast.makeText(MainActivity.this, MainActivity.this.getResources().getText(R.string.OpenFileError) + "_2", Toast.LENGTH_SHORT).show();
-                                Log.w(TAG, "run: " + e.toString());
-                                Log.w(TAG, "run: " + e.getMessage());
-                            }*/
 
 
                         }
@@ -3686,6 +3718,28 @@ public class MainActivity extends AppCompatActivity {
                 //setFAMVisible(false);
             }
         });
+        /*Button OutputBT = findViewById(R.id.OutputDataBT);
+        OutputBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            OutputData();
+
+
+                        }
+
+                    }).start();
+                }catch (Exception e)
+                {
+                    Log.w(TAG, "error: " + e.toString());
+                }
+                //setFAMVisible(false);
+            }
+        });*/
     }
 
     private void InitDeletingBt(){
@@ -3897,7 +3951,9 @@ public class MainActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        StartRecordingTrail(TrailBt);
+                        getLocation();
+                        if (location != null)
+                            StartRecordingTrail(TrailBt);
                     }
                 });
         normalDialog.setNegativeButton("取消",
@@ -3988,8 +4044,15 @@ public class MainActivity extends AppCompatActivity {
             //Log.d(TAG, "Location changed to: " + getLocationInfo(location));
             updateView(location);
             if (!isLocateEnd) {
-                recordTrail((float) location.getLatitude(), (float) location.getLongitude());
-                locError(m_cTrail);
+                if(location != null) {
+                    recordTrail((float) location.getLatitude(), (float) location.getLongitude());
+                    locError(m_cTrail);
+                }
+                else{
+                    Toast.makeText(MainActivity.this, "当前没有GPS信号，无法正常记录轨迹", Toast.LENGTH_LONG).show();
+                    final FloatingActionButton TrailBt = (FloatingActionButton) findViewById(R.id.StartTrail);
+                    StopRecordingTrail(TrailBt);
+                }
             }
         }
 
@@ -4065,6 +4128,9 @@ public class MainActivity extends AppCompatActivity {
             //verx = (float) ((max_lat - m_lat) / (max_lat - min_lat));
             //setHereLocation();
 
+        }
+        else{
+            Toast.makeText(MainActivity.this, "请打开GPS组件或者移动到有GPS信号的地方", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -5056,6 +5122,7 @@ public class MainActivity extends AppCompatActivity {
                 if (mainLoadStatus == LoadStatus.LOADED) {
                     List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
                     map = mainArcGISMapL.get(0);
+                    //map.setMaxScale(2000);
                     mMapView.setMap(map);
                     initSurfaceCenterPoint(mainMobileMapPackage);
                     drawGraphicsOverlayer();
@@ -5065,6 +5132,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     initLayerList();
                     useUserLayer();
+
                     //setRecyclerView();
                     /*loadRaster();
                     featureLayerShapefile();*/
@@ -5426,6 +5494,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //去除水印
+        ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166");
+
         Random r = new Random();
 
         FeaturevalueAndColor = new HashMap<>();
@@ -5498,7 +5569,8 @@ public class MainActivity extends AppCompatActivity {
     private void showStandardWidget(){
         whiteBlank_fab.setVisibility(View.VISIBLE);
         MapQueryBT.setVisibility(View.VISIBLE);
-        DrawFeature.setVisibility(View.VISIBLE);
+        ShowTextButton();
+        //DrawFeature.setVisibility(View.VISIBLE);
         LocHereBT.setVisibility(View.VISIBLE);
         ResetBT.setVisibility(View.VISIBLE);
         FloatingActionButton DeleteBt = (FloatingActionButton) findViewById(R.id.DeleteFeatures);
@@ -5509,6 +5581,18 @@ public class MainActivity extends AppCompatActivity {
         outputbt.setVisibility(View.VISIBLE);
         FloatingActionButton InputDataBt = findViewById(R.id.InputData);
         InputDataBt.setVisibility(View.VISIBLE);
+        FloatingActionButton AddPOIFAB = (FloatingActionButton) findViewById(R.id.AddPOIFAB);
+        AddPOIFAB.setVisibility(View.VISIBLE);
+        FloatingActionButton NeedQueryFAB = findViewById(R.id.NeedQueryFAB);
+        NeedQueryFAB.setVisibility(View.VISIBLE);
+        FloatingActionButton DistanceMessureFAB = (FloatingActionButton) findViewById(R.id.DistanceMessureFAB);
+        DistanceMessureFAB.setVisibility(View.VISIBLE);
+        FloatingActionButton AreaMessureFAB = findViewById(R.id.AreaMessureFAB);
+        AreaMessureFAB.setVisibility(View.VISIBLE);
+        /*Button OutputBT = findViewById(R.id.OutputDataBT);
+        OutputBT.setVisibility(View.VISIBLE);
+        Button InputBT = findViewById(R.id.InputDataBT);
+        InputBT.setVisibility(View.VISIBLE);*/
     }
 
     private void removeStandardWidget(){
@@ -5516,6 +5600,7 @@ public class MainActivity extends AppCompatActivity {
         whiteBlank_fab.setVisibility(View.GONE);
         MapQueryBT.setVisibility(View.GONE);
         DrawFeature.setVisibility(View.GONE);
+        RemoveTextButton();
         LocHereBT.setVisibility(View.GONE);
         ResetBT.setVisibility(View.GONE);
 
@@ -5530,6 +5615,10 @@ public class MainActivity extends AppCompatActivity {
 
         FloatingActionButton InputDataBt = findViewById(R.id.InputData);
         InputDataBt.setVisibility(View.GONE);
+        /*Button OutputBT = findViewById(R.id.OutputDataBT);
+        OutputBT.setVisibility(View.GONE);
+        Button InputBT = findViewById(R.id.InputDataBT);
+        InputBT.setVisibility(View.GONE);*/
     }
 
     private DisplayEnum RunningAnalyseFunction = DisplayEnum.ANA_NONE;
@@ -8602,7 +8691,7 @@ public class MainActivity extends AppCompatActivity {
             LayerFieldsSheetList.addAll(BaseLayerFieldsSheetList);
             for (int i = 0 ; i < size; ++i){
                 String path = userLayerList.get(i).getPath();
-                //TODO 完成用户图层使用逻辑dasfasdf as
+
                 switch (userLayerList.get(i).getType()){
                     case UserLayer.TIF_FILE:
                         loadRaster(path);
