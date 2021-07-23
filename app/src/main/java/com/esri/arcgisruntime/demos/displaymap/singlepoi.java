@@ -1423,7 +1423,7 @@ public class singlepoi extends AppCompatActivity {
         }
         if (Build.VERSION.SDK_INT >= 24){
             //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
-            imageUri = FileProvider.getUriForFile(this, "com.android.tuzhi.fileprovider", outputImage);
+            imageUri = FileProvider.getUriForFile(this, "com.android.displaymap.fileprovider", outputImage);
 
         }else imageUri = Uri.fromFile(outputImage);
         Log.w(TAG, "takeVideo: " + imageUri.toString());

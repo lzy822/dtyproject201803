@@ -72,8 +72,6 @@ public class VideoShow extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_show);
         //声明ToolBar
-        toolbar = (Toolbar) findViewById(R.id.VedioShow_Toolbal);
-        setSupportActionBar(toolbar);
         setTitle(VideoShow.this.getResources().getText(R.string.VideoList));
         Intent intent = getIntent();
         POIType = intent.getIntExtra("type", -1);
@@ -81,6 +79,8 @@ public class VideoShow extends AppCompatActivity {
         else if (POIType == 1) DMXH = intent.getStringExtra("DMBZ");
         else if (POIType == 2) DML = intent.getStringExtra("DML");
         else if (POIType == 3) DMP = intent.getStringExtra("DMP");
+        toolbar = (Toolbar) findViewById(R.id.VedioShow_Toolbal);
+        setSupportActionBar(toolbar);
     }
 
     @Override

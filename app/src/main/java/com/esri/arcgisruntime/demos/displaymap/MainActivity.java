@@ -2,9 +2,11 @@ package com.esri.arcgisruntime.demos.displaymap;
 
 import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -216,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
     List<Point> whiteBlankPts;
     GraphicsOverlay graphicsOverlay_9;
     GraphicsOverlay graphicsOverlay_10;
-    PointCollection points = new PointCollection(SpatialReference.create(4521));;
+    PointCollection points = new PointCollection(SpatialReference.create(4523));;
     List<Graphic> graphics = new ArrayList<>();
     boolean isOk = false;
     boolean isOK1 = false;
@@ -289,9 +291,9 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < TrailString.length; ++i) {
                     Trails[i] = Float.valueOf(TrailString[i]);
                 }
-                PointCollection points = new PointCollection(SpatialReference.create(4521));
+                PointCollection points = new PointCollection(SpatialReference.create(4523));
                 for (int j = 0; j < Trails.length - 1; j = j + 2) {
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4521));
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4523));
                     points.add(wgs84Point);
                 }
                 SimpleLineSymbol lineSymbol = null;
@@ -316,7 +318,7 @@ public class MainActivity extends AppCompatActivity {
             Trails[i] = Float.valueOf(TrailString[i]);
         }
         for (int j = 0; j < Trails.length - 1; j = j + 2) {
-            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4521));
+            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4523));
             if (j != 0)
                 Multiline += " ";
             Multiline += wgs84Point.getX() + "," + wgs84Point.getY() + ",0";
@@ -599,7 +601,7 @@ public class MainActivity extends AppCompatActivity {
         frameLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                //PointCollection points = new PointCollection(SpatialReference.create(4521));
+                //PointCollection points = new PointCollection(SpatialReference.create(4523));
                 switch (event.getAction()){
                     case MotionEvent.ACTION_DOWN:
                         //按下
@@ -649,7 +651,7 @@ public class MainActivity extends AppCompatActivity {
                         // create a map point from screen point
                         Point mapPoint = mMapView.screenToLocation(screenPoint);
                         // convert to WGS84 for lat/lon format
-                        Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4521));
+                        Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4523));
                         //whiteBlankPts.add(wgs84Point);
                         //int size = whiteBlankPts.size();
                         //for (int i = 0; i < size; ++i){
@@ -1064,7 +1066,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "onClick: " + pointCollection.size());
                 Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC));
                 DecimalFormat format = new DecimalFormat("0.00");
-                Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4523)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
             }else {
                 Toast.makeText(MainActivity.this, "请构建面(至少三个点)后进行查询", Toast.LENGTH_SHORT).show();
             }
@@ -1077,7 +1079,7 @@ public class MainActivity extends AppCompatActivity {
         RunningFunction = DisplayEnum.FUNC_ANA;
         DrawType = DisplayEnum.DRAW_POLYLINE;
         QueryProcessType = DisplayEnum.INQUERY;
-        pointCollection = new PointCollection(SpatialReference.create(4521));
+        pointCollection = new PointCollection(SpatialReference.create(4523));
         RunningAnalyseFunction = DisplayEnum.ANA_DISTANCE;
         showQueryWidget();
         removeStandardWidget();
@@ -1087,7 +1089,7 @@ public class MainActivity extends AppCompatActivity {
         RunningFunction = DisplayEnum.FUNC_ANA;
         DrawType = DisplayEnum.DRAW_POLYGON;
         QueryProcessType = DisplayEnum.INQUERY;
-        pointCollection = new PointCollection(SpatialReference.create(4521));
+        pointCollection = new PointCollection(SpatialReference.create(4523));
         RunningAnalyseFunction = DisplayEnum.ANA_AREA;
         showQueryWidget();
         removeStandardWidget();
@@ -1137,7 +1139,7 @@ public class MainActivity extends AppCompatActivity {
                 RunningFunction = DisplayEnum.FUNC_ANA;
                 DrawType = DisplayEnum.DRAW_POLYLINE;
                 QueryProcessType = DisplayEnum.INQUERY;
-                pointCollection = new PointCollection(SpatialReference.create(4521));
+                pointCollection = new PointCollection(SpatialReference.create(4523));
                 RunningAnalyseFunction = DisplayEnum.ANA_DISTANCE;
                 showQueryWidget();
                 removeStandardWidget();
@@ -1150,7 +1152,7 @@ public class MainActivity extends AppCompatActivity {
                 RunningFunction = DisplayEnum.FUNC_ANA;
                 DrawType = DisplayEnum.DRAW_POLYGON;
                 QueryProcessType = DisplayEnum.INQUERY;
-                pointCollection = new PointCollection(SpatialReference.create(4521));
+                pointCollection = new PointCollection(SpatialReference.create(4523));
                 RunningAnalyseFunction = DisplayEnum.ANA_AREA;
                 showQueryWidget();
                 removeStandardWidget();
@@ -1562,7 +1564,7 @@ public class MainActivity extends AppCompatActivity {
                                     Feature mFeatureGrafic = (Feature) element;
                                     Geometry geometry = null;
                                     Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                    geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                    geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4523)), polygon);
                                     boolean isOK = false;
                                     QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
                                     Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
@@ -1721,7 +1723,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             calloutContent.setText(str);
                             // get callout, set content and show
-                            mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
+                            mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4523)));
                             mCallout.setContent(calloutContent);
                             Log.w(TAG, "run: callout" + mCallout.isShowing());
                             mCallout.show();
@@ -1810,7 +1812,7 @@ public class MainActivity extends AppCompatActivity {
                                         Feature mFeatureGrafic = (Feature) element;
                                         Geometry geometry = null;
                                         Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                        geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                        geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4523)), polygon);
                                         boolean isOK = false;
                                         Double area = GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                                         QueryTaskInfo queryTaskInfo = new QueryTaskInfo(area);
@@ -1965,7 +1967,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 calloutContent.setText(str);
                                 // get callout, set content and show
-                                mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
+                                mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4523)));
                                 mCallout.setContent(calloutContent);
                                 Log.w(TAG, "run: callout" + mCallout.isShowing());
                                 mCallout.show();
@@ -2037,7 +2039,7 @@ public class MainActivity extends AppCompatActivity {
                                         Feature mFeatureGrafic = (Feature) element;
                                         Geometry geometry = null;
                                         Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                        geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                        geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4523)), polygon);
                                         boolean isOK = false;
                                         Double area = GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500;
                                         QueryTaskInfo queryTaskInfo = new QueryTaskInfo(area);
@@ -2193,7 +2195,7 @@ public class MainActivity extends AppCompatActivity {
                                 calloutContent.setText(str);
                                 mCallout.dismiss();
                                 // get callout, set content and show
-                                mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
+                                mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4523)));
                                 mCallout.setContent(calloutContent);
 
                                 // TODO 2020/12/9 切换查询图层时候的按需查询
@@ -2261,7 +2263,7 @@ public class MainActivity extends AppCompatActivity {
                                 Feature mFeatureGrafic = (Feature) element;
                                 Geometry geometry = null;
                                 Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4523)), polygon);
                                 boolean isOK = false;
                                 QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
                                 Log.w(TAG, "geometry2type: " + text + queryTaskInfo.getArea());
@@ -2457,7 +2459,7 @@ public class MainActivity extends AppCompatActivity {
                                 Feature mFeatureGrafic = (Feature) element;
                                 Geometry geometry = null;
                                 Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4523)), polygon);
                                 boolean isOK = false;
                                 QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
                                 Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
@@ -3005,7 +3007,7 @@ public class MainActivity extends AppCompatActivity {
                                 Feature mFeatureGrafic = (Feature) element;
                                 Geometry geometry = null;
                                 Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
-                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4521)), polygon);
+                                geometry = GeometryEngine.intersection(GeometryEngine.project(polygon1, SpatialReference.create(4523)), polygon);
                                 boolean isOK = false;
                                 QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
                                 Log.w(TAG, "geometry2type: " + queryTaskInfo.getArea());
@@ -3170,7 +3172,7 @@ public class MainActivity extends AppCompatActivity {
 
                         calloutContent.setText(str);
                         // get callout, set content and show
-                        mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4521)));
+                        mCallout.setLocation(new Point(geometry1.getExtent().getCenter().getX(), geometry1.getExtent().getYMax(), SpatialReference.create(4523)));
                         mCallout.setContent(calloutContent);
                         Log.w(TAG, "run: callout" + mCallout.isShowing());
                         mCallout.show();
@@ -3292,8 +3294,142 @@ public class MainActivity extends AppCompatActivity {
         initVariable();
     }
 
+    private boolean checkWps(){
+        Intent intent = getPackageManager().getLaunchIntentForPackage("cn.wps.moffice_eng");//WPS个人版的包名
+        if (intent == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    // 回调接口
+    public interface WpsInterface {
+        void doRequest(String filePath);//filePath为文档的保存路径
+        void doFinish();
+    }
+    /*
+    // 广播接收器
+    private class WpsCloseListener extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            try {
+                if (intent.getAction().equals("cn.wps.moffice.file.save")) {
+                    String fileSavePath = intent.getExtras().getString(Define.SAVE_PATH);
+                    if(canWrite) {
+                        wpsInterface.doRequest(fileSavePath);// 保存回调
+                    }
+                } else if (intent.getAction().equals("cn.wps.moffice.file.close")||
+                        intent.getAction().equals("com.kingsoft.writer.back.key.down")) {
+                    wpsInterface.doFinish();// 关闭,返回回调
+                    mActivity.unregisterReceiver(wpsCloseListener);//注销广播
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void initWpsCloseListener() {
+        wpsCloseListener = new WpsCloseListener();
+        IntentFilter filter = new IntentFilter(Define.OFFICE_SERVICE_ACTION);
+        filter.addAction("com.kingsoft.writer.back.key.down");//按下返回键
+        filter.addAction("com.kingsoft.writer.home.key.down");//按下home键
+        filter.addAction("cn.wps.moffice.file.save");//保存
+        filter.addAction("cn.wps.moffice.file.close");//关闭
+        mActivity.registerReceiver(wpsCloseListener,filter);//注册广播
+    }
+
+    public void openDoc() {
+        Bundle bundle = new Bundle();
+        if (canWrite) {// 判断是否可以编辑文档
+            bundle.putString("OpenMode", "Normal");// 一般模式
+        } else {
+            bundle.putString("OpenMode", "ReadOnly");// 只读模式
+        }
+        bundle.putBoolean("SendSaveBroad", true);// 关闭保存时是否发送广播
+        bundle.putBoolean("SendCloseBroad", true);// 关闭文件时是否发送广播
+        bundle.putBoolean("HomeKeyDown", true);// 按下Home键
+        bundle.putBoolean("BackKeyDown", true);// 按下Back键
+        bundle.putBoolean("IsShowView", false);// 是否显示wps界面
+        bundle.putBoolean("AutoJump", true);// //第三方打开文件时是否自动跳转
+        //设置广播
+        bundle.putString("ThirdPackage", mActivity.getPackageName());
+        //第三方应用的包名，用于对改应用合法性的验证
+        //bundle.putBoolean(Define.CLEAR_FILE, true);
+        //关闭后删除打开文件
+        intent.setAction(android.content.Intent.ACTION_MAIN);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+        intent.setData(Uri.parse(fileUrl));
+        intent.putExtras(bundle);
+        mActivity.startActivity(intent);
+    }*/
+
+    boolean openFile(String path) {
+        try {
+            Intent intent = new Intent();
+            Bundle bundle = new Bundle();
+            bundle.putString(WpsModel.OPEN_MODE, WpsModel.OpenMode.NORMAL); // 打开模式
+            //bundle.putBoolean(WpsModel.SEND_CLOSE_BROAD, true); // 关闭时是否发送广播
+            //bundle.putString(WpsModel.THIRD_PACKAGE, getPackageName()); // 第三方应用的包名，用于对改应用合法性的验证
+            //bundle.putBoolean(WpsModel.CLEAR_TRACE, true);// 清除打开记录
+            // bundle.putBoolean(CLEAR_FILE, true); //关闭后删除打开文件
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setAction(android.content.Intent.ACTION_VIEW);
+            intent.setClassName(WpsModel.PackageName.NORMAL, WpsModel.ClassName.NORMAL);
+
+            File file = new File(path);
+            if (file == null || !file.exists()) {
+                System.out.println("文件为空或者不存在");
+                return false;
+            }
+
+
+            Uri uri = null;
+            if (Build.VERSION.SDK_INT >= 24) {
+                //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
+                uri = FileProvider.getUriForFile(MainActivity.this, "com.android.displaymap.fileprovider", file);
+
+            } else uri = Uri.fromFile(file);
+            Log.w(TAG, "openFile: " + uri);
+            intent.setData(uri);
+            Log.w(TAG, "openFile: " + Uri.parse(path));
+            //intent.setData(Uri.parse(path));
+            intent.putExtras(bundle);
+            try {
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                System.out.println("打开wps异常：" + e.toString());
+                e.printStackTrace();
+                return false;
+            }
+            return true;
+        }
+        catch (Exception ioe){
+            return false;
+        }
+    }
+
     private void initWidget(){
         recyclerViewForP = (RecyclerView) findViewById(R.id.RightRecyclerView);
+
+        FloatingActionButton ReadPDFFAB = findViewById(R.id.ReadPDFFAB);
+        ReadPDFFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (checkWps()){
+                    Intent intent = new Intent(MainActivity.this, Activity_FileManage.class);
+                    intent.putExtra("type", ".pdf");
+                    //intent.putExtra("type", ".shp");
+                    startActivityForResult(intent, EnumClass.GET_PDF_FILE);
+
+                }
+                else{
+                    Toast.makeText(MainActivity.this, "请先安装WPS", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
 
         FloatingActionButton InputDataBt = findViewById(R.id.InputData);
         InputDataBt.setOnClickListener(new View.OnClickListener() {
@@ -3375,7 +3511,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.w(TAG, "onClick: " + pointCollection.size());
                         Log.w(TAG, "onClick: " + GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC));
                         DecimalFormat format = new DecimalFormat("0.00");
-                        Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4523)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
                     }else {
                         Toast.makeText(MainActivity.this, "请构建面(至少三个点)后进行查询", Toast.LENGTH_SHORT).show();
                     }
@@ -3494,11 +3630,11 @@ public class MainActivity extends AppCompatActivity {
                 // create a map point from screen point
                 final Point mapPoint = mMapView.screenToLocation(screenPoint);
                 // convert to WGS84 for lat/lon format
-                final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4521));
+                final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4523));
                 /*if (numx == 0) {
                     Point pt = mMapView.screenToLocation(new android.graphics.Point(Math.round(mMapView.getWidth() / 2), Math.round(((mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this))) / 2)));
                     //Log.w(TAG, "run: " + pt.getX() + "; " + pt.getY());
-                    OriginLocation = (Point) GeometryEngine.project(pt, SpatialReference.create(4521));
+                    OriginLocation = (Point) GeometryEngine.project(pt, SpatialReference.create(4523));
                     numx++;
                 }*/
                 // create a textview for the callout
@@ -3560,14 +3696,14 @@ public class MainActivity extends AppCompatActivity {
                             removeGraphicsOverlayers();
                             GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                             SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                         } else if (pointCollection.size() == 2) {
                             removeGraphicsOverlayers();
                             GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                             SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                         } else if (pointCollection.size() > 2) {
@@ -3577,12 +3713,12 @@ public class MainActivity extends AppCompatActivity {
                             SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
                             switch (RunningAnalyseFunction) {
                                 case ANA_NEED:
-                                    Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                                    Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), lineSymbol);
                                     graphicsOverlay_1.getGraphics().add(fillGraphic);
                                     mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                                     break;
                                 case ANA_AREA:
-                                    fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), fillSymbol);
+                                    fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), fillSymbol);
                                     graphicsOverlay_1.getGraphics().add(fillGraphic);
                                     mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                                     break;
@@ -3594,18 +3730,18 @@ public class MainActivity extends AppCompatActivity {
                             removeGraphicsOverlayers();
                             GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                             SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                         } else if (pointCollection.size() >= 2) {
                             removeGraphicsOverlayers();
                             GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                             SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                             DecimalFormat format = new DecimalFormat("0.00");
-                            Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4521)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4523)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
                         }
                     } else if (DrawType == DisplayEnum.DRAW_POINT) {
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
@@ -4239,6 +4375,21 @@ public class MainActivity extends AppCompatActivity {
             sb.append("<time>").append(pois.get(i).getTime()).append("</time>").append("\n");
         }
         sb.append("</POI>").append("\n");
+
+
+        List<Trail> trails = LitePal.findAll(Trail.class);
+        int size_trail = trails.size();
+        sb = sb.append("<Trail>").append("\n");
+        for (int i = 0; i < size_trail; ++i){
+            sb.append("<id>").append(trails.get(i).getId()).append("</id>").append("\n");
+            sb.append("<ic>").append(trails.get(i).getIc()).append("</ic>").append("\n");
+            sb.append("<name>").append(trails.get(i).getName()).append("</name>").append("\n");
+            sb.append("<path>").append(trails.get(i).getPath()).append("</path>").append("\n");
+            sb.append("<starttime>").append(trails.get(i).getStarttime()).append("</starttime>").append("\n");
+            sb.append("<endtime>").append(trails.get(i).getEndtime()).append("</endtime>").append("\n");
+        }
+        sb.append("</Trail>").append("\n");
+
         List<MPHOTO> mphotos = LitePal.findAll(MPHOTO.class);
         int size_mphoto = mphotos.size();
         sb = sb.append("<MPHOTO>").append("\n");
@@ -4248,10 +4399,41 @@ public class MainActivity extends AppCompatActivity {
             sb.append("<POIC>").append(mphotos.get(i).getPoic()).append("</POIC>").append("\n");
             String path = mphotos.get(i).getPath();
             sb.append("<path>").append(path).append("</path>").append("\n");
+
             files.add(new File(path));
+
             sb.append("<time>").append(mphotos.get(i).getTime()).append("</time>").append("\n");
         }
         sb.append("</MPHOTO>").append("\n");
+
+
+        List<MVEDIO> mvedios = LitePal.findAll(MVEDIO.class);
+        int size_mvideo = mvedios.size();
+        sb = sb.append("<MVIDEO>").append("\n");
+        for (int i = 0; i < size_mvideo; ++i){
+            sb.append("<id>").append(mvedios.get(i).getId()).append("</id>").append("\n");
+            sb.append("<pdfic>").append(mvedios.get(i).getPdfic()).append("</pdfic>").append("\n");
+            sb.append("<POIC>").append(mvedios.get(i).getPoic()).append("</POIC>").append("\n");
+            String path1 = mvedios.get(i).getThumbnailImg();
+            sb.append("<Thumbnailpath>").append(path1).append("</Thumbnailpath>").append("\n");
+            try {
+                files.add(new File(path1));
+            }
+            catch (Exception e){
+
+            }
+            String path = mvedios.get(i).getPath();
+            sb.append("<path>").append(path).append("</path>").append("\n");
+            try {
+                files.add(new File(path));
+            }
+            catch (Exception e){
+
+            }
+            sb.append("<time>").append(mvedios.get(i).getTime()).append("</time>").append("\n");
+        }
+        sb.append("</MVIDEO>").append("\n");
+
         List<MTAPE> mtapes = LitePal.findAll(MTAPE.class);
         int size_mtape = mtapes.size();
         sb = sb.append("<MTAPE>").append("\n");
@@ -4347,9 +4529,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // TODO 2021/1/18 查询点线关系
-    //private boolean
-
     private boolean queryPoi(android.graphics.Point point){
         Log.w(TAG, "queryPoi: " + point.x + "; " + point.y);
         List<mPOIobj> pois = new ArrayList<>();
@@ -4376,7 +4555,7 @@ public class MainActivity extends AppCompatActivity {
 
             //PointF pointF1 = new PointF(poii.getM_X(), poii.getM_Y());
             //pointF1 = LatLng.getPixLocFromGeoL(pointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-            Point mpt0 = (Point) GeometryEngine.project(new Point((double)poii.getM_Y(), (double)poii.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+            Point mpt0 = (Point) GeometryEngine.project(new Point((double)poii.getM_Y(), (double)poii.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4523));
             android.graphics.Point pt0 = mMapView.locationToScreen(mpt0);
             Log.w(TAG, "queryPoi0: " + pt0.x + "; " + pt0.y);
             //pointF1 = new PointF(pointF1.x, pointF1.y);
@@ -4388,7 +4567,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "mpointF1 queried: " + mpointF1.x + ";" + mpointF1.y);
                 mpointF1 = LatLng.getPixLocFromGeoL(mpointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
                 mpointF1 = new PointF(mpointF1.x, mpointF1.y);*/
-                Point mpt1 = (Point) GeometryEngine.project(new Point((double)poi.getM_Y(), (double)poi.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                Point mpt1 = (Point) GeometryEngine.project(new Point((double)poi.getM_Y(), (double)poi.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4523));
                 android.graphics.Point pt1 = mMapView.locationToScreen(mpt1);
                 Log.w(TAG, "queryPoi: " + n);
                 Log.w(TAG, "queryPoi: " + pt1.x + "; " + pt1.y);
@@ -4436,7 +4615,7 @@ public class MainActivity extends AppCompatActivity {
 
             //PointF pointF1 = new PointF(poii.getM_X(), poii.getM_Y());
             //pointF1 = LatLng.getPixLocFromGeoL(pointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
-            Point mpt0 = (Point) GeometryEngine.project(new Point((double)poii.getM_Y(), (double)poii.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+            Point mpt0 = (Point) GeometryEngine.project(new Point((double)poii.getM_Y(), (double)poii.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4523));
             android.graphics.Point pt0 = mMapView.locationToScreen(mpt0);
             Log.w(TAG, "queryPoi0: " + pt0.x + "; " + pt0.y);
             //pointF1 = new PointF(pointF1.x, pointF1.y);
@@ -4448,7 +4627,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "mpointF1 queried: " + mpointF1.x + ";" + mpointF1.y);
                 mpointF1 = LatLng.getPixLocFromGeoL(mpointF1, current_pagewidth, current_pageheight, w, h, min_long, min_lat);
                 mpointF1 = new PointF(mpointF1.x, mpointF1.y);*/
-                Point mpt1 = (Point) GeometryEngine.project(new Point((double)poi.getM_Y(), (double)poi.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                Point mpt1 = (Point) GeometryEngine.project(new Point((double)poi.getM_Y(), (double)poi.getM_X(), SpatialReferences.getWgs84()), SpatialReference.create(4523));
                 android.graphics.Point pt1 = mMapView.locationToScreen(mpt1);
                 Log.w(TAG, "queryPoi: " + n);
                 Log.w(TAG, "queryPoi: " + pt1.x + "; " + pt1.y);
@@ -4575,7 +4754,7 @@ public class MainActivity extends AppCompatActivity {
                 NeedQueryForBasePolygon((Polygon) geometry);
 
                 /*try {
-                    //PartCollection parts = new PartCollection(polygon.getParts(), SpatialReference.create(4521));
+                    //PartCollection parts = new PartCollection(polygon.getParts(), SpatialReference.create(4523));
                     PartCollection parts = new PartCollection(polygon.getParts());
                     pointCollection = new PointCollection(parts.getPartsAsPoints());
                 }
@@ -4844,7 +5023,7 @@ public class MainActivity extends AppCompatActivity {
                                         Log.w(TAG, "run: callout" + mCallout.isShowing());
                                         inMap = true;
                                         //Toast.makeText(MainActivity.this, mapPoint.getSpatialReference().getWkid() + geometry.getSpatialReference().getWkid(), Toast.LENGTH_SHORT).show();
-                                        //Toast.makeText(MainActivity.this, GeometryEngine.within(mapPoint, GeometryEngine.project(geometry, SpatialReference.create(4521))) + "", Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(MainActivity.this, GeometryEngine.within(mapPoint, GeometryEngine.project(geometry, SpatialReference.create(4523))) + "", Toast.LENGTH_SHORT).show();
                                     }
                                 }
                                 break;
@@ -5495,7 +5674,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         //去除水印
-        ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166");
+        //ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166");
 
         Random r = new Random();
 
@@ -5516,6 +5695,35 @@ public class MainActivity extends AppCompatActivity {
 
         /*Toast.makeText(MainActivity.this, DeviceUtil.GetAndroidID(this), Toast.LENGTH_LONG).show();
         Log.w(TAG, "onCreate: " + DeviceUtil.GetAndroidID(this));*/
+    }
+
+    private double[] GetCoordinate(String QueryString){
+        String[] strings = QueryString.split(";");
+        if (strings.length == 2){
+            String longitude = strings[0];
+            String latitude = strings[1];
+            Boolean longitudeIsNumeric = longitude.matches("-?[0-9]+.?[0-9]*");
+            Boolean latitudeIsNumeric = latitude.matches("-?[0-9]+.?[0-9]*");
+            if (longitudeIsNumeric && latitudeIsNumeric)
+            {
+                double[] coordinate = {Double.valueOf(longitude), Double.valueOf(latitude)};
+                return coordinate;
+            }
+            else{
+                try{
+                    double mLongitude = Double.valueOf(longitude.substring(0, longitude.indexOf("°"))) + Double.valueOf(longitude.substring(longitude.indexOf("°")+1, longitude.indexOf("′")))/60 + Double.valueOf(longitude.substring(longitude.indexOf("′")+1, longitude.indexOf("″")))/3600;
+                    double mLatitude = Double.valueOf(latitude.substring(0, latitude.indexOf("°"))) + Double.valueOf(latitude.substring(latitude.indexOf("°")+1, latitude.indexOf("′")))/60 + Double.valueOf(latitude.substring(latitude.indexOf("′")+1, latitude.indexOf("″")))/3600;
+
+                    double[] coordinate = {Double.valueOf(mLongitude), Double.valueOf(mLatitude)};
+                    return coordinate;
+                }
+                catch (Exception e){
+                    return null;
+                }
+            }
+        }
+        else
+            return null;
     }
 
     private void InputDataForTif(){
@@ -5589,6 +5797,8 @@ public class MainActivity extends AppCompatActivity {
         DistanceMessureFAB.setVisibility(View.VISIBLE);
         FloatingActionButton AreaMessureFAB = findViewById(R.id.AreaMessureFAB);
         AreaMessureFAB.setVisibility(View.VISIBLE);
+        FloatingActionButton ReadPDFFAB = findViewById(R.id.ReadPDFFAB);
+        ReadPDFFAB.setVisibility(View.VISIBLE);
         /*Button OutputBT = findViewById(R.id.OutputDataBT);
         OutputBT.setVisibility(View.VISIBLE);
         Button InputBT = findViewById(R.id.InputDataBT);
@@ -5615,6 +5825,9 @@ public class MainActivity extends AppCompatActivity {
 
         FloatingActionButton InputDataBt = findViewById(R.id.InputData);
         InputDataBt.setVisibility(View.GONE);
+
+        FloatingActionButton ReadPDFFAB = findViewById(R.id.ReadPDFFAB);
+        ReadPDFFAB.setVisibility(View.GONE);
         /*Button OutputBT = findViewById(R.id.OutputDataBT);
         OutputBT.setVisibility(View.GONE);
         Button InputBT = findViewById(R.id.InputDataBT);
@@ -5688,13 +5901,13 @@ public class MainActivity extends AppCompatActivity {
                 if (pointCollection.size() == 1){
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                     SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
-                    Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4521)), lineSymbol);
+                    Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
                     graphicsOverlay_1.getGraphics().add(fillGraphic);
                     mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                 }else if (pointCollection.size() == 2){
                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                     SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                    Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                    Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
                     graphicsOverlay_1.getGraphics().add(fillGraphic);
                     mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                 }else if (pointCollection.size() > 2){
@@ -5704,18 +5917,18 @@ public class MainActivity extends AppCompatActivity {
                     Graphic fillGraphic;
                     switch (RunningAnalyseFunction){
                         case ANA_DISTANCE:
-                            fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                             break;
                         case ANA_AREA:
                             fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
-                            fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), fillSymbol);
+                            fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), fillSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                             break;
                         case ANA_NEED:
-                            fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4521)), lineSymbol);
+                            fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), lineSymbol);
                             graphicsOverlay_1.getGraphics().add(fillGraphic);
                             mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                             break;
@@ -5752,14 +5965,16 @@ public class MainActivity extends AppCompatActivity {
                                 {
                                     area = GeometryEngine.areaGeodetic(polygon, new AreaUnit(AreaUnitId.SQUARE_METERS), GeodeticCurveType.GEODESIC);
                                     str = df.format(area);
-                                    calloutContent.setText(str + "平方米");
+                                    double s = GeometryEngine.lengthGeodetic(polygon, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC);
+                                    calloutContent.setText("面积：" + str + "平方米" + "\n" + "周长：" + df.format(s) + "米");
                                 }
                                 else {
-                                    calloutContent.setText(str + getResources().getString(R.string.SQUARE_KILOMETERS));
+                                    double s = GeometryEngine.lengthGeodetic(polygon, new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC);
+                                    calloutContent.setText("面积：" + str + getResources().getString(R.string.SQUARE_KILOMETERS) + "\n" + "周长：" + df.format(s) + "公里");
                                 }
                                 //calloutContent.setText(str);
                                 // get callout, set content and show
-                                mCallout.setLocation(new Point(polygon.getExtent().getCenter().getX(), polygon.getExtent().getYMax(), SpatialReference.create(4521)));
+                                mCallout.setLocation(new Point(polygon.getExtent().getCenter().getX(), polygon.getExtent().getYMax(), SpatialReference.create(4523)));
                                 mCallout.setContent(calloutContent);
                                 mCallout.show();
                                 //if (!inMap) mCallout.dismiss();
@@ -5786,14 +6001,23 @@ public class MainActivity extends AppCompatActivity {
                                 final Polyline polyline = new Polyline(pointCollection);
                                 DecimalFormat df = new DecimalFormat("0.0");
                                 double length = GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.KILOMETERS), GeodeticCurveType.GEODESIC);
-                                String str = df.format(length);
-                                Log.w(TAG, "onClick: " + str);
                                 TextView calloutContent = new TextView(getApplicationContext());
-                                calloutContent.setTextColor(Color.BLACK);
-                                calloutContent.setText(str + getResources().getString(R.string.KILOMETERS));
+                                if (length < 10){
+                                    length = GeometryEngine.lengthGeodetic(polyline, new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC);
+                                    String str = df.format(length);
+                                    Log.w(TAG, "onClick: " + str);
+                                    calloutContent.setTextColor(Color.BLACK);
+                                    calloutContent.setText(str + "米");
+                                }
+                                else{
+                                    String str = df.format(length);
+                                    Log.w(TAG, "onClick: " + str);
+                                    calloutContent.setTextColor(Color.BLACK);
+                                    calloutContent.setText(str + getResources().getString(R.string.KILOMETERS));
+                                }
                                 //calloutContent.setText(str + R.string.SQUARE_KILOMETERS);
                                 // get callout, set content and show
-                                mCallout.setLocation(new Point(polyline.getExtent().getCenter().getX(), polyline.getExtent().getYMax(), SpatialReference.create(4521)));
+                                mCallout.setLocation(new Point(polyline.getExtent().getCenter().getX(), polyline.getExtent().getYMax(), SpatialReference.create(4523)));
                                 mCallout.setContent(calloutContent);
                                 mCallout.show();
                                 //if (!inMap) mCallout.dismiss();
@@ -6195,7 +6419,7 @@ public class MainActivity extends AppCompatActivity {
         currentMyTuban = myTbs;
         for (int i = 0; i < myTbs.size(); ++i) {
             String mpointCollection = myTbs.get(i).getPointCollection();
-            PointCollection pointCollection = new PointCollection(SpatialReference.create(4521));
+            PointCollection pointCollection = new PointCollection(SpatialReference.create(4523));
             Log.w(TAG, "queryMyTuban: " + mpointCollection);
             String[] mPoint = mpointCollection.split(";");
             for (int j = 0; j < mPoint.length; ++j) {
@@ -6219,7 +6443,7 @@ public class MainActivity extends AppCompatActivity {
         if (!MapQuery)
             mapQueryBtEvent();
         DrawType = DisplayEnum.DRAW_POLYGON;
-        pointCollection = new PointCollection(SpatialReference.create(4521));
+        pointCollection = new PointCollection(SpatialReference.create(4523));
         RunningAnalyseFunction = DisplayEnum.ANA_NEED;
         showQueryWidget();
         removeStandardWidget();
@@ -6233,7 +6457,7 @@ public class MainActivity extends AppCompatActivity {
             mapQueryBtEvent();
         DrawType = DisplayEnum.DRAW_POLYGON;
         pointCollection = pc;
-        drawGeometry(new Polygon(pointCollection, SpatialReference.create(4521)));
+        drawGeometry(new Polygon(pointCollection, SpatialReference.create(4523)));
         RunningAnalyseFunction = DisplayEnum.ANA_NEED;
         showQueryWidget();
         removeStandardWidget();
@@ -6262,7 +6486,7 @@ public class MainActivity extends AppCompatActivity {
         if (!MapQuery)
             mapQueryBtEvent();
         DrawType = DisplayEnum.DRAW_POLYGON;
-        PartCollection parts = new PartCollection(polygon.getParts(), SpatialReference.create(4521));
+        PartCollection parts = new PartCollection(polygon.getParts(), SpatialReference.create(4523));
         pointCollection = new PointCollection(parts.getPartsAsPoints());
         drawGeometry(polygon);
         RunningAnalyseFunction = DisplayEnum.ANA_NEED;
@@ -6341,7 +6565,7 @@ public class MainActivity extends AppCompatActivity {
             for (int j = 0; j < pois.size(); j++) {
                 if (poic.equals(pois.get(j).getPoic())){
                     SimpleMarkerSymbol makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.rgb(0, 255, 255), 20);
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(j).getY()), Double.valueOf(pois.get(j).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(j).getY()), Double.valueOf(pois.get(j).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4523));
                     Graphic g = new Graphic(wgs84Point, makerSymbol);
                     graphics.add(g);
                     break;
@@ -6362,7 +6586,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateChoosedWhiteblank(){
         List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
         for (int i = 0; i < ChoosedWhiteblankLines.size(); i++) {
-            PointCollection points = new PointCollection(SpatialReference.create(4521));;
+            PointCollection points = new PointCollection(SpatialReference.create(4523));;
             for (int j = 0; j < whiteblanks.size(); j++) {
                 if (ChoosedWhiteblankLines.get(i).equals(whiteblanks.get(j).getObjectID()))
                 {
@@ -6372,7 +6596,7 @@ public class MainActivity extends AppCompatActivity {
                         String[] strings1 = strings[kk].split(",");
                         if (strings1.length == 2) {
                             Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
-                            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4523));
                             points.add(wgs84Point);
                         }
                     }
@@ -6424,7 +6648,7 @@ public class MainActivity extends AppCompatActivity {
                 String[] strings1 = strings[kk].split(",");
                 if (strings1.length == 2) {
                     Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4523));
                     points.add(wgs84Point);
                 }
             }
@@ -6451,7 +6675,7 @@ public class MainActivity extends AppCompatActivity {
                     String[] strings1 = strings[kk].split(",");
                     if (strings1.length == 2) {
                         Log.w(TAG, "drawWhiteBlank2: " + strings1.length);
-                        Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                        Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4523));
                         points.add(wgs84Point);
                     }
                 }
@@ -6524,7 +6748,7 @@ public class MainActivity extends AppCompatActivity {
                     makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.YELLOW, 20);
                 }
                 Log.w(TAG, "drawWhiteBlank2: " + pois.get(i).getX() + "; " + pois.get(i).getY());
-                Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(i).getY()), Double.valueOf(pois.get(i).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4521));
+                Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(i).getY()), Double.valueOf(pois.get(i).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4523));
                 Log.w(TAG, "drawWhiteBlank2: " + wgs84Point.getX() + "; " + wgs84Point.getY());
                 Graphic g = new Graphic(wgs84Point, makerSymbol);
                 graphics.add(g);
@@ -6623,7 +6847,15 @@ public class MainActivity extends AppCompatActivity {
                             queryInfos.clear();
                             /*showListPopupWindowforListViewForXZ(searchView, query);
                             showListPopupWindowforListViewForCXZ(searchView, query);*/
-                            showListPopupWindowforListViewFor20200903(searchView, query);
+                            double[] coordinate = GetCoordinate(query);
+                            if (coordinate == null)
+                                showListPopupWindowforListViewFor20200903(searchView, query);
+                            else{
+                                if (coordinate[0]>180)
+                                    ResetMapViewForNow(new Point(coordinate[0], coordinate[1], 0, SpatialReference.create(4523)), 2000, 0);
+                                else
+                                    ResetMapViewForNow(new Point(coordinate[0], coordinate[1], 0, SpatialReference.create(4326)), 2000, 0);
+                            }
 
                         }
                         //else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
@@ -7731,9 +7963,9 @@ public class MainActivity extends AppCompatActivity {
                                 Feature mFeatureGrafic = (Feature) element;
                                 Polygon polygon1 = (Polygon) mFeatureGrafic.getGeometry();
                                 if (mPolygon == null)
-                                    mPolygon = GeometryEngine.project(polygon1, SpatialReference.create(4521));
+                                    mPolygon = GeometryEngine.project(polygon1, SpatialReference.create(4523));
                                 else
-                                    mPolygon = GeometryEngine.union(GeometryEngine.project(polygon1, SpatialReference.create(4521)), mPolygon);
+                                    mPolygon = GeometryEngine.union(GeometryEngine.project(polygon1, SpatialReference.create(4523)), mPolygon);
                                 removeGraphicsOverlayers();
                             }
                         }
@@ -7929,7 +8161,7 @@ public class MainActivity extends AppCompatActivity {
                                                     android.graphics.Point screenPoint = new android.graphics.Point(Math.round(width/2),
                                                             Math.round(height/2 - getWindow().findViewById(Window.ID_ANDROID_CONTENT).getTop()));
                                                     Point mapPoint = mMapView.screenToLocation(screenPoint);
-                                                    Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4521));
+                                                    Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4523));
 
                                                     double MapScale = mMapView.getMapScale();
                                                     double Rotation = mMapView.getMapRotation();
@@ -8644,6 +8876,18 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else
                         Toast.makeText(MainActivity.this, "不能重复添加图层文件！", Toast.LENGTH_LONG).show();
+                    break;
+                case EnumClass.GET_PDF_FILE:
+                    //TODO 处理文件管理器获取PDF文件
+                    final String pdf_path = data.getStringExtra("filePath");
+                    //String stringPath = Environment.getExternalStorageDirectory() + "/TuZhi/1.pdf";
+                    boolean flag = openFile(pdf_path);
+                    if (flag == true) {
+
+                        Toast.makeText(MainActivity.this," 打开文件成功", Toast.LENGTH_LONG).show();
+                    }else{
+                        Toast.makeText(MainActivity.this, "打开文件失败", Toast.LENGTH_LONG).show();
+                    }
                     break;
             }
         }

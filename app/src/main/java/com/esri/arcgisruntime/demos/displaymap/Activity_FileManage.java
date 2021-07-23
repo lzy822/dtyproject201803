@@ -81,6 +81,10 @@ public class Activity_FileManage extends AppCompatActivity {
             SharedPreferences prf1 = getSharedPreferences("filepath", MODE_PRIVATE);
             filepath = prf1.getString("tif_inputpath", "");
             Log.w(TAG, "onCreate: " + filepath);
+        }else if (type.equals(".pdf")){
+            SharedPreferences prf1 = getSharedPreferences("filepath", MODE_PRIVATE);
+            filepath = prf1.getString("pdf_inputpath", "");
+            Log.w(TAG, "onCreate: " + filepath);
         }
         if (filepath.isEmpty()) {
             fileManage = new FileManage(type);
@@ -147,7 +151,7 @@ public class Activity_FileManage extends AppCompatActivity {
                         }
                     }
                     refreshRecycler();
-                }else if (HZ.contains(".shp") || HZ.contains(".tif")){
+                }else if (HZ.contains(".shp") || HZ.contains(".tif") || HZ.contains(".pdf")){
                     Intent i = new Intent();
                     i.putExtra("filePath", RootPath);
                     setResult(RESULT_OK, i);
@@ -161,6 +165,9 @@ public class Activity_FileManage extends AppCompatActivity {
                         editor.apply();
                     }else if (type.equals(".tif")){
                         editor.putString("tif_inputpath", RootPathForTrue);
+                        editor.apply();
+                    }else if (type.equals(".pdf")){
+                        editor.putString("pdf_inputpath", RootPathForTrue);
                         editor.apply();
                     }
                     Activity_FileManage.this.finish();

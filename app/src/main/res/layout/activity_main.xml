@@ -13,6 +13,21 @@
         android:layout_height="match_parent">
 
         <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/ReadPDFFAB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:adjustViewBounds="false"
+            android:src="@drawable/ic_readpdf_24dp"
+            app:fab_colorNormal="#F50057"
+            app:fab_colorPressed="#E8004A"
+            app:fab_colorRipple="#C20024"
+            app:fab_elevationCompat="6dp"
+            app:fab_shadowColor="#000"
+            app:fab_size="mini"
+            android:layout_above="@id/whiteBlank"  />
+
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/whiteBlank"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

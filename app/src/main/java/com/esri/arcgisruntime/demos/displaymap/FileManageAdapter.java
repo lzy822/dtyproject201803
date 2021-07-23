@@ -94,6 +94,9 @@ public class FileManageAdapter extends RecyclerView.Adapter<FileManageAdapter.Vi
         else if (data.contains(".tif")) {
             holder.FileImage.setImageResource(R.drawable.ic_landscape_black_24dp);
         }
+        else if (data.contains(".pdf")) {
+            holder.FileImage.setImageResource(R.drawable.ic_map_black_24dp);
+        }
         else holder.FileImage.setImageResource(R.drawable.ic_folder_black_24dp);
     }
 
