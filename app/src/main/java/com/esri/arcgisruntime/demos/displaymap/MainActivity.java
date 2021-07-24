@@ -1049,7 +1049,7 @@ public class MainActivity extends AppCompatActivity {
                 final Polygon polygon = new Polygon(pointCollection);
                 QueryParameters query = new QueryParameters();
                 query.setGeometry(polygon);// 设置空间几何对象
-                if (isFileExist(StaticVariableEnum.GDBROOTPATH) && isFileExist(StaticVariableEnum.PGDBROOTPATH) && MapQuery) {
+                if (isFileExist(StaticVariableEnum.YSZRZYROOTPATH) && MapQuery) {
                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
                     queryTaskForPolygon(query, polygon);
                 } else
@@ -2051,7 +2051,7 @@ public class MainActivity extends AppCompatActivity {
                                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                                         Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                        if (QueriedLayerIndex == 5 || QueriedLayerIndex == 6 || QueriedLayerIndex == 2) {
+                                        if (QueriedLayerIndex == 4 || QueriedLayerIndex == 12 || QueriedLayerIndex == 18) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("DLMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
@@ -2086,9 +2086,9 @@ public class MainActivity extends AppCompatActivity {
                                                 if (area > 0)
                                                     hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
                                             }
-                                        } else if (QueriedLayerIndex == 8) {
+                                        } else if (QueriedLayerIndex == 5 || QueriedLayerIndex == 16) {
                                             for (String key : mQuerryString.keySet()) {
-                                                if (key.equals("ZLDWMC")) {
+                                                if (key.equals("XMMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
                                                     if (hashMap.containsKey(mkey)) {
                                                         ChartQueryResult cqr = hashMap.get(mkey);
@@ -2102,9 +2102,9 @@ public class MainActivity extends AppCompatActivity {
                                                     break;
                                                 }
                                             }
-                                        } else if (QueriedLayerIndex == 4) {
+                                        } else if (QueriedLayerIndex == 6 || QueriedLayerIndex == 7 || QueriedLayerIndex == 8 || QueriedLayerIndex == 9) {
                                             for (String key : mQuerryString.keySet()) {
-                                                if (key.equals("PDJB")) {
+                                                if (key.equals("ZRBHDMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
                                                     if (hashMap.containsKey(mkey)) {
                                                         ChartQueryResult cqr = hashMap.get(mkey);
@@ -2118,25 +2118,25 @@ public class MainActivity extends AppCompatActivity {
                                                     break;
                                                 }
                                             }
-                                        } else if (QueriedLayerIndex == 3) {
+                                        } else if (QueriedLayerIndex == 17) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("JBXX_XMMC")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        } else if (QueriedLayerIndex == 13) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("XZQMC")) {
-                                                    String mkey = String.valueOf(mQuerryString.get(key));
-                                                    if (hashMap.containsKey(mkey)) {
-                                                        ChartQueryResult cqr = hashMap.get(mkey);
-                                                        Polygon p = cqr.getPolygon();
-                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
-                                                        cqr.setArea(cqr.getArea() + area);
-                                                    } else {
-                                                        if (area > 0)
-                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
-                                                    }
-                                                    break;
-                                                }
-                                            }
-                                        } else if (QueriedLayerIndex == 1) {
-                                            for (String key : mQuerryString.keySet()) {
-                                                if (key.equals("CODE")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
                                                     if (hashMap.containsKey(mkey)) {
                                                         ChartQueryResult cqr = hashMap.get(mkey);
@@ -2972,6 +2972,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void queryTaskForPolygon(final QueryParameters query, final Polygon polygon){
         try {
+            Log.w(TAG, "queryTaskForPolygon: " + "开始按需查询！");
             FeatureTable mTable = null;
             switch (QueriedFeature){
                 case TDGHDL_FEATURE:
@@ -3539,7 +3540,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //Log.w(TAG, "onClick: " + OriginLocation.getX() + " ; " + OriginLocation.getY());
                 if (OriginLocation != null) {
-                    mMapView.setViewpointCenterAsync(OriginLocation, 1500000);
+                    mMapView.setViewpointCenterAsync(OriginLocation, 700000);
                     mMapView.setViewpointRotationAsync(0);
                 }else {
                     ResetMapView();
@@ -3623,182 +3624,9 @@ public class MainActivity extends AppCompatActivity {
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
             public boolean  onSingleTapConfirmed(MotionEvent v) {
-                Log.d(TAG, "onSingleTapConfirmed: " + v.toString());
-                // get the point that was clicked and convert it to a point in map coordinates
-                final android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
-                        Math.round(v.getY()));
-                // create a map point from screen point
-                final Point mapPoint = mMapView.screenToLocation(screenPoint);
-                // convert to WGS84 for lat/lon format
-                final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4523));
-                /*if (numx == 0) {
-                    Point pt = mMapView.screenToLocation(new android.graphics.Point(Math.round(mMapView.getWidth() / 2), Math.round(((mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this))) / 2)));
-                    //Log.w(TAG, "run: " + pt.getX() + "; " + pt.getY());
-                    OriginLocation = (Point) GeometryEngine.project(pt, SpatialReference.create(4523));
-                    numx++;
-                }*/
-                // create a textview for the callout
-                /*TextView calloutContent = new TextView(getApplicationContext());
-                calloutContent.setTextColor(Color.BLACK);
-                calloutContent.setSingleLine();
-                // format coordinates to 4 decimal places
-                calloutContent.setText("Lat: " +  String.format("%.4f", wgs84Point.getY()) +
-                        ", Lon: " + String.format("%.4f", wgs84Point.getX()));
 
-                // get callout, set content and show
-                Callout mCallout = mMapView.getCallout();
-                mCallout.setLocation(mapPoint);
-                mCallout.setContent(calloutContent);
-                mCallout.show();*/
-
-                final Point clickPoint = mMapView.screenToLocation(screenPoint);
-                if (RunningFunction == DisplayEnum.FUNC_ANA) {
-                    if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
-                        mCallout = mMapView.getCallout();
-                        mCallout.dismiss();
-                        pieChartView.setVisibility(View.GONE);
-                        // center on tapped point
-                        //mMapView.setViewpointCenterAsync(wgs84Point);
-                        Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
-                        inMap = false;
-                        Log.w(TAG, "onSingleTapConfirmed: ");
-
-                        Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
-                        if (!queryPoi(mMapView.locationToScreen(clickPoint)))
-                            if (!inUserDrawedTuban(clickPoint)) {
-                                // TODO 2020/9/8 重要图斑查询逻辑！！！
-                                if (!isQueryUserLayer) {
-                                            // 原版
-                                            //queryTB(clickPoint, mapPoint);
-                                    // 新版
-                                    queryTBFor20200903(clickPoint, mapPoint);
-                                    //queryUserTB(StaticVariableEnum.DLLCROOTPATH, LCRAFeatureLayer, clickPoint, mapPoint);
-                                } else {
-                                    List<UserLayer> userLayerList = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
-                                    int size = userLayerList.size();
-                                    for (int i = 0; i < size; ++i) {
-                                        String path = userLayerList.get(i).getPath();
-                                        if (QueriedLayerIndex != -1 && path.equals(LayerFieldsSheetList.get(QueriedLayerIndex).getLayerPath())) {
-                                            ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
-                                            pointCollection = null;
-                                            if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            //queryPTuBan(clickPoint, mapPoint);
-                        //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
-                    } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
-                        pointCollection.add(wgs84Point);
-                        if (pointCollection.size() == 1) {
-                            removeGraphicsOverlayers();
-                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                            SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
-                            graphicsOverlay_1.getGraphics().add(fillGraphic);
-                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                        } else if (pointCollection.size() == 2) {
-                            removeGraphicsOverlayers();
-                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
-                            graphicsOverlay_1.getGraphics().add(fillGraphic);
-                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                        } else if (pointCollection.size() > 2) {
-                            removeGraphicsOverlayers();
-                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                            SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
-                            switch (RunningAnalyseFunction) {
-                                case ANA_NEED:
-                                    Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), lineSymbol);
-                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
-                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                                    break;
-                                case ANA_AREA:
-                                    fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), fillSymbol);
-                                    graphicsOverlay_1.getGraphics().add(fillGraphic);
-                                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                                    break;
-                            }
-                        }
-                    } else if (DrawType == DisplayEnum.DRAW_POLYLINE) {
-                        pointCollection.add(wgs84Point);
-                        if (pointCollection.size() == 1) {
-                            removeGraphicsOverlayers();
-                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                            SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
-                            graphicsOverlay_1.getGraphics().add(fillGraphic);
-                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                        } else if (pointCollection.size() >= 2) {
-                            removeGraphicsOverlayers();
-                            GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                            SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
-                            Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
-                            graphicsOverlay_1.getGraphics().add(fillGraphic);
-                            mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                            DecimalFormat format = new DecimalFormat("0.00");
-                            Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4523)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
-                        }
-                    } else if (DrawType == DisplayEnum.DRAW_POINT) {
-                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
-                        SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
-                        Graphic fillGraphic = new Graphic(wgs84Point, pointSymbol);
-                        graphicsOverlay_1.getGraphics().add(fillGraphic);
-                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                    }
-                }else if (RunningFunction == DisplayEnum.FUNC_ADDPOI){
-                    Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point.getX() + "; " + wgs84Point.getY());
-                    final Point wgs84Point1 = (Point) GeometryEngine.project(wgs84Point, SpatialReferences.getWgs84());
-                    Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point1.getX() + "; " + wgs84Point1.getY());
-                    final PointF wgs84Point2 = new PointF((float) wgs84Point1.getY(), (float)wgs84Point1.getX());
-                    RunningFunction = DisplayEnum.FUNC_NONE;
-                    showStandardWidget();
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setTitle("提示");
-                    builder.setMessage("请选择你要添加的图层");
-                    builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            CreatePOI = true;
-                            POIType = 0;
-                            GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 0));
-                            POIType = -1;
-                            CreatePOI = false;
-                        }
-                    });
-                    builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            CreatePOI = true;
-                            POIType = 1;
-
-                            GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 1));
-
-                            POIType = -1;
-                            CreatePOI = false;
-                        }
-                    });
-                    builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            CreatePOI = true;
-                            POIType = 2;
-                            GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 2));
-                            POIType = -1;
-                            CreatePOI = false;
-                        }
-                    });
-                    builder.show();
-                }else if (Deleting){
-                    ChooseUserTuban(clickPoint);
-                    ChooseAndShowWhiteblankLine(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
-                    queryPoiForDelete(mMapView.locationToScreen(clickPoint));
-                    ChoosedAndShowTrail(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
-                }
+               // TODO 解决因未加载mmpk而单击屏幕造成的闪退
+                OnTap(v);
                 return true;
             }
         });
@@ -3876,6 +3704,187 @@ public class MainActivity extends AppCompatActivity {
                 //setFAMVisible(false);
             }
         });*/
+    }
+
+    private void OnTap(MotionEvent v){
+        Log.d(TAG, "onSingleTapConfirmed: " + v.toString());
+        // get the point that was clicked and convert it to a point in map coordinates
+        final android.graphics.Point screenPoint = new android.graphics.Point(Math.round(v.getX()),
+                Math.round(v.getY()));
+        // create a map point from screen point
+        final Point mapPoint = mMapView.screenToLocation(screenPoint);
+        if (mapPoint!=null) {
+            // convert to WGS84 for lat/lon format
+            final Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4523));
+                /*if (numx == 0) {
+                    Point pt = mMapView.screenToLocation(new android.graphics.Point(Math.round(mMapView.getWidth() / 2), Math.round(((mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this))) / 2)));
+                    //Log.w(TAG, "run: " + pt.getX() + "; " + pt.getY());
+                    OriginLocation = (Point) GeometryEngine.project(pt, SpatialReference.create(4523));
+                    numx++;
+                }*/
+            // create a textview for the callout
+                /*TextView calloutContent = new TextView(getApplicationContext());
+                calloutContent.setTextColor(Color.BLACK);
+                calloutContent.setSingleLine();
+                // format coordinates to 4 decimal places
+                calloutContent.setText("Lat: " +  String.format("%.4f", wgs84Point.getY()) +
+                        ", Lon: " + String.format("%.4f", wgs84Point.getX()));
+
+                // get callout, set content and show
+                Callout mCallout = mMapView.getCallout();
+                mCallout.setLocation(mapPoint);
+                mCallout.setContent(calloutContent);
+                mCallout.show();*/
+
+            final Point clickPoint = mMapView.screenToLocation(screenPoint);
+            if (RunningFunction == DisplayEnum.FUNC_ANA) {
+                if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
+                    mCallout = mMapView.getCallout();
+                    mCallout.dismiss();
+                    pieChartView.setVisibility(View.GONE);
+                    // center on tapped point
+                    //mMapView.setViewpointCenterAsync(wgs84Point);
+                    Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point);
+                    inMap = false;
+                    Log.w(TAG, "onSingleTapConfirmed: ");
+
+                    Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
+                    if (!queryPoi(mMapView.locationToScreen(clickPoint)))
+                        if (!inUserDrawedTuban(clickPoint)) {
+                            // TODO 2020/9/8 重要图斑查询逻辑！！！
+                            if (!isQueryUserLayer) {
+                                // 原版
+                                //queryTB(clickPoint, mapPoint);
+                                // 新版
+                                queryTBFor20200903(clickPoint, mapPoint);
+                                //queryUserTB(StaticVariableEnum.DLLCROOTPATH, LCRAFeatureLayer, clickPoint, mapPoint);
+                            } else {
+                                List<UserLayer> userLayerList = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
+                                int size = userLayerList.size();
+                                for (int i = 0; i < size; ++i) {
+                                    String path = userLayerList.get(i).getPath();
+                                    if (QueriedLayerIndex != -1 && path.equals(LayerFieldsSheetList.get(QueriedLayerIndex).getLayerPath())) {
+                                        ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
+                                        pointCollection = null;
+                                        if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    //queryPTuBan(clickPoint, mapPoint);
+                    //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
+                } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
+                    pointCollection.add(wgs84Point);
+                    if (pointCollection.size() == 1) {
+                        removeGraphicsOverlayers();
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    } else if (pointCollection.size() == 2) {
+                        removeGraphicsOverlayers();
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    } else if (pointCollection.size() > 2) {
+                        removeGraphicsOverlayers();
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                        SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
+                        switch (RunningAnalyseFunction) {
+                            case ANA_NEED:
+                                Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), lineSymbol);
+                                graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                break;
+                            case ANA_AREA:
+                                fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), fillSymbol);
+                                graphicsOverlay_1.getGraphics().add(fillGraphic);
+                                mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                                break;
+                        }
+                    }
+                } else if (DrawType == DisplayEnum.DRAW_POLYLINE) {
+                    pointCollection.add(wgs84Point);
+                    if (pointCollection.size() == 1) {
+                        removeGraphicsOverlayers();
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                    } else if (pointCollection.size() >= 2) {
+                        removeGraphicsOverlayers();
+                        GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                        SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
+                        Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
+                        graphicsOverlay_1.getGraphics().add(fillGraphic);
+                        mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                        DecimalFormat format = new DecimalFormat("0.00");
+                        Toast.makeText(MainActivity.this, format.format(GeometryEngine.lengthGeodetic(new Polyline(pointCollection, SpatialReference.create(4523)), new LinearUnit(LinearUnitId.METERS), GeodeticCurveType.GEODESIC)) + "米", Toast.LENGTH_SHORT).show();
+                    }
+                } else if (DrawType == DisplayEnum.DRAW_POINT) {
+                    GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
+                    SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 10);
+                    Graphic fillGraphic = new Graphic(wgs84Point, pointSymbol);
+                    graphicsOverlay_1.getGraphics().add(fillGraphic);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
+                }
+            } else if (RunningFunction == DisplayEnum.FUNC_ADDPOI) {
+                Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point.getX() + "; " + wgs84Point.getY());
+                final Point wgs84Point1 = (Point) GeometryEngine.project(wgs84Point, SpatialReferences.getWgs84());
+                Log.w(TAG, "onSingleTapConfirmed: " + wgs84Point1.getX() + "; " + wgs84Point1.getY());
+                final PointF wgs84Point2 = new PointF((float) wgs84Point1.getY(), (float) wgs84Point1.getX());
+                RunningFunction = DisplayEnum.FUNC_NONE;
+                showStandardWidget();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("提示");
+                builder.setMessage("请选择你要添加的图层");
+                builder.setNeutralButton(strings[0], new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        CreatePOI = true;
+                        POIType = 0;
+                        GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 0));
+                        POIType = -1;
+                        CreatePOI = false;
+                    }
+                });
+                builder.setNegativeButton(strings[1], new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        CreatePOI = true;
+                        POIType = 1;
+
+                        GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 1));
+
+                        POIType = -1;
+                        CreatePOI = false;
+                    }
+                });
+                builder.setPositiveButton(strings[2], new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        CreatePOI = true;
+                        POIType = 2;
+                        GoNormalSinglePOIPage(AddNormalPOI(wgs84Point2, 2));
+                        POIType = -1;
+                        CreatePOI = false;
+                    }
+                });
+                builder.show();
+            } else if (Deleting) {
+                ChooseUserTuban(clickPoint);
+                ChooseAndShowWhiteblankLine(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
+                queryPoiForDelete(mMapView.locationToScreen(clickPoint));
+                ChoosedAndShowTrail(new PointF(Float.valueOf(Double.toString(wgs84Point.getX())), Float.valueOf(Double.toString(wgs84Point.getY()))));
+            }
+        }
     }
 
     private void InitDeletingBt(){
@@ -5129,6 +5138,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doSpecificOperation(){
+        //开始内存占用监测
         Sampler.getInstance().init(MainActivity.this, 100);
         Sampler.getInstance().start();
     }
@@ -5224,7 +5234,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
-        layerList.add(new layer("影像", "", false));
+        layerList.add(new layer("影像", "", true));
         AddStandardLayer();
         isOK1 = true;
         setLeftRecyclerView();
@@ -5274,7 +5284,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initSurfaceCenterPoint(final MobileMapPackage mainMobileMapPackage){
         OriginScale = mMapView.getMapScale();
-        if (mainMobileMapPackage.getPath().toString().contains("临沧")) {
+        /*if (mainMobileMapPackage.getPath().toString().contains("临沧")) {
             Log.w(TAG, "run: " + mainMobileMapPackage.getPath().toString());
             // TODO 初始比例尺
             //OriginLocation = new Point(99.626302, 23.928384, 0, SpatialReference.create(4326));
@@ -5283,16 +5293,17 @@ public class MainActivity extends AppCompatActivity {
             //新版本2020/9/2
             OriginLocation = new Point(99.6178, 23.9106, 0, SpatialReference.create(4326));
             mMapView.setViewpointCenterAsync(OriginLocation, 1500000);
-            /*OriginLocation = new Point(103.883, 28.325, 0, SpatialReference.create(4326));
-            mMapView.setViewpointCenterAsync(OriginLocation, 15000);*/
-        }else mMapView.setViewpointScaleAsync(100000);
+        }else mMapView.setViewpointScaleAsync(100000);*/
+        OriginLocation = new Point(103.645, 27.98, SpatialReference.create(4326));
+        mMapView.setViewpointCenterAsync(OriginLocation, 700000);
     }
 
     private List<Layer> BaseMMPKLayer;
     private void readMMPKData(){
         BaseMMPKLayer = new ArrayList<>();
-        Log.w(TAG, "readMMPKData: " + StaticVariableEnum.MMPKROOTPATH );
-        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(StaticVariableEnum.MMPKROOTPATH);
+        File file = new File(StaticVariableEnum.YSMMPKROOTPATH);
+        Log.w(TAG, "readMMPKData: " + StaticVariableEnum.YSMMPKROOTPATH + ", 文件存在： " + file.exists());
+        final MobileMapPackage mainMobileMapPackage = new MobileMapPackage(StaticVariableEnum.YSMMPKROOTPATH);
         mainMobileMapPackage.loadAsync();
         mainMobileMapPackage.addDoneLoadingListener(new Runnable() {
             @Override
@@ -5300,6 +5311,7 @@ public class MainActivity extends AppCompatActivity {
                 LoadStatus mainLoadStatus = mainMobileMapPackage.getLoadStatus();
                 if (mainLoadStatus == LoadStatus.LOADED) {
                     List<ArcGISMap> mainArcGISMapL = mainMobileMapPackage.getMaps();
+                    Log.w(TAG, "readMMPKData: " + mainArcGISMapL.size());
                     map = mainArcGISMapL.get(0);
                     //map.setMaxScale(2000);
                     mMapView.setMap(map);
@@ -5317,7 +5329,10 @@ public class MainActivity extends AppCompatActivity {
                     featureLayerShapefile();*/
                     //Log.w(TAG, "run: " + mMapView.getWidth() + "; " + (mMapView.getTop() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)) + "; " + (mMapView.getBottom() + getStatusBarHeight(MainActivity.this) + getDaoHangHeight(MainActivity.this)));
 
-                }else mainMobileMapPackage.loadAsync();
+                }else {
+                    Log.w(TAG, "readMMPKData: " + mainMobileMapPackage.getLoadError());
+                    mainMobileMapPackage.loadAsync();
+                }
             }
         });
     }
@@ -5330,6 +5345,8 @@ public class MainActivity extends AppCompatActivity {
         color_Whiteblank = Color.RED;
         map = new ArcGISMap();
         mCallout = mMapView.getCallout();
+
+        //在地图中显示当前位置
         locationDisplay = mMapView.getLocationDisplay();
         Log.w(TAG, "initVariable: " + locationDisplay.getLocation().getPosition());
         locationDisplay.setShowLocation(true);
@@ -5363,8 +5380,11 @@ public class MainActivity extends AppCompatActivity {
         readPGDB();
         readXZCAreaGDB();*/
 
-        // TODO 2020/9/2 读取地矿院使用的新数据
-        readLCOutsideWorkDataForGDB();
+        // 2020/9/2 读取地矿院使用的新数据
+        //readLCOutsideWorkDataForGDB();
+
+        //读取永善县Geodatabase数据
+        readYSGeodatabaseDataForGDB();
     }
 
     private void readDLLCGDBForShape(){
@@ -5480,10 +5500,10 @@ public class MainActivity extends AppCompatActivity {
                     BaseLayerFieldsSheetList = new ArrayList<>();
                     LayerFieldsSheetList = new ArrayList<>();
                     //featureLayerList = new ArrayList<>();
-                     for(int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
+                    for(int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
                         Log.w(TAG, "run 2020/9/2: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
                         String TableName = localGdb.getGeodatabaseFeatureTables().get(i).getTableName();
-                         List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
+                        List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
                         switch (TableName) {
                             case "DGX":
                                 FieldNameSheet fns = new FieldNameSheet("BSGC", "高程值");
@@ -5539,9 +5559,9 @@ public class MainActivity extends AppCompatActivity {
                                 break;
                         }
                         FeatureLayer fl = new FeatureLayer(localGdb.getGeodatabaseFeatureTable(localGdb.getGeodatabaseFeatureTables().get(i).getTableName()));
-                         Log.w(TAG, "run 2020/9/2: " + fl.getName() + ", " + fl.getFeatureTable().getGeometryType());
-                         BaseLayerFieldsSheetList.add(new LayerFieldsSheet(fl, "", FieldNameSheetList));
-                         LayerFieldsSheetList.add(new LayerFieldsSheet(fl, "", FieldNameSheetList));
+                        Log.w(TAG, "run 2020/9/2: " + fl.getName() + ", " + fl.getFeatureTable().getGeometryType());
+                        BaseLayerFieldsSheetList.add(new LayerFieldsSheet(fl, "", FieldNameSheetList));
+                        LayerFieldsSheetList.add(new LayerFieldsSheet(fl, "", FieldNameSheetList));
                         //featureLayerList.add(new FeatureLayer(localGdb.getGeodatabaseFeatureTable(localGdb.getGeodatabaseFeatureTables().get(i).getTableName())));
                     }
 
@@ -5560,6 +5580,192 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, "run: 20200904: " + LayerFieldsSheetList.size());
                     setRecyclerViewForDynamicChooseFrame();
                     //useUserLayer();
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+    }
+
+    private void readYSGeodatabaseDataForGDB(){
+        // TODO 2021/7/23 读取永善县新数据
+        if (isFileExist(StaticVariableEnum.YSZRZYROOTPATH)) {
+            final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.YSZRZYROOTPATH);
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    BaseLayerFieldsSheetList = new ArrayList<>();
+                    LayerFieldsSheetList = new ArrayList<>();
+                    //featureLayerList = new ArrayList<>();
+                    for(int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
+                        Log.w(TAG, "run 2020/9/2: " + localGdb.getGeodatabaseFeatureTables().get(i).getTableName());
+                        String TableName = localGdb.getGeodatabaseFeatureTables().get(i).getTableName();
+                        List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
+                        switch (TableName) {
+                            /*case "DGX":
+                                FieldNameSheet fns = new FieldNameSheet("BSGC", "高程值");
+                                FieldNameSheetList.add(fns);
+                                break;
+                            case "STBHHX":
+                                //FieldNameSheetList.add(null);
+                                break;
+                            case "YJJBNT":
+                                //FieldNameSheetList.add(null);
+                                break;
+                            case "XZQ":
+                                FieldNameSheet fns1 = new FieldNameSheet("XZQMC", "行政区名称");
+                                FieldNameSheetList.add(fns1);
+                                break;
+                            case "PDT":
+                                FieldNameSheet fns2 = new FieldNameSheet("PDJB", "坡度级别");
+                                FieldNameSheetList.add(fns2);
+                                break;
+                            case "DLTB_3diao":
+                                FieldNameSheet fns3 = new FieldNameSheet("QSDWMC", "权属单位名称");
+                                FieldNameSheet fns4 = new FieldNameSheet("QSXZ", "权属性质");
+                                FieldNameSheet fns5 = new FieldNameSheet("DLMC", "地类名称");
+                                FieldNameSheet fns6 = new FieldNameSheet("DLBM", "地类编码");
+                                FieldNameSheet fns7 = new FieldNameSheet("TBDLMJ", "图斑地类面积");
+                                FieldNameSheet fns8 = new FieldNameSheet("KCMJ", "扣除面积");
+                                FieldNameSheetList.add(fns3);
+                                FieldNameSheetList.add(fns4);
+                                FieldNameSheetList.add(fns5);
+                                FieldNameSheetList.add(fns6);
+                                FieldNameSheetList.add(fns7);
+                                FieldNameSheetList.add(fns8);
+                                break;
+                            case "DLTB_2diao":
+                                FieldNameSheet fns9 = new FieldNameSheet("QSDWMC", "权属单位名称");
+                                FieldNameSheet fns10 = new FieldNameSheet("DLMC", "地类名称");
+                                FieldNameSheet fns11 = new FieldNameSheet("DLBM", "地类编码");
+                                FieldNameSheet fns12 = new FieldNameSheet("TBMJ", "图斑面积");
+                                FieldNameSheetList.add(fns9);
+                                FieldNameSheetList.add(fns10);
+                                FieldNameSheetList.add(fns11);
+                                FieldNameSheetList.add(fns12);
+                                break;
+                            case "DK":
+                                FieldNameSheet fns13 = new FieldNameSheet("FBFMC", "发包方名称");
+                                FieldNameSheet fns14 = new FieldNameSheet("CBFMC", "承包方名称");
+                                FieldNameSheetList.add(fns13);
+                                FieldNameSheetList.add(fns14);
+                                break;
+                            case "CJDCQ":
+                                FieldNameSheet fns15 = new FieldNameSheet("ZLDWMC", "坐落单位名称");
+                                FieldNameSheetList.add(fns15);
+                                break;*/
+                            case "地名点":
+                                FieldNameSheet fns = new FieldNameSheet("标准名称", "名称");
+                                FieldNameSheetList.add(fns);
+                                break;
+                            case "土地利用变更调查数据2020年":
+                                FieldNameSheet fns16 = new FieldNameSheet("QSDWMC", "权属单位名称");
+                                FieldNameSheet fns18 = new FieldNameSheet("DLMC", "地类名称");
+                                FieldNameSheet fns19 = new FieldNameSheet("DLBM", "地类编码");
+                                FieldNameSheet fns17 = new FieldNameSheet("TBMJ", "图斑面积");
+                                FieldNameSheetList.add(fns16);
+                                FieldNameSheetList.add(fns17);
+                                FieldNameSheetList.add(fns18);
+                                FieldNameSheetList.add(fns19);
+                                break;
+                            case "二调地类图斑":
+                                FieldNameSheet fns20 = new FieldNameSheet("QSDWMC", "权属单位名称");
+                                FieldNameSheet fns22 = new FieldNameSheet("DLMC", "地类名称");
+                                FieldNameSheet fns23 = new FieldNameSheet("DLBM", "地类编码");
+                                FieldNameSheet fns21 = new FieldNameSheet("TBMJ", "图斑面积");
+                                FieldNameSheetList.add(fns20);
+                                FieldNameSheetList.add(fns21);
+                                FieldNameSheetList.add(fns22);
+                                FieldNameSheetList.add(fns23);
+                                break;
+                            case "土地规划地类":
+                                FieldNameSheet fns1 = new FieldNameSheet("GHDLMC", "规划地类名称");
+                                FieldNameSheetList.add(fns1);
+                                FieldNameSheet fns24 = new FieldNameSheet("GHDLMJ", "规划地类面积");
+                                FieldNameSheetList.add(fns24);
+                                FieldNameSheet fns25 = new FieldNameSheet("TBMJ", "图斑面积");
+                                FieldNameSheetList.add(fns25);
+                                break;
+                            case "村级调查区":
+                                FieldNameSheet fns2 = new FieldNameSheet("ZLDWMC", "坐落单位名称");
+                                FieldNameSheetList.add(fns2);
+                                break;
+                            case "城镇开发边界试划":
+                                FieldNameSheet fns3 = new FieldNameSheet("GHFQMC", "规划分区名称");
+                                FieldNameSheet fns4 = new FieldNameSheet("MJ", "面积");
+                                FieldNameSheetList.add(fns3);
+                                FieldNameSheetList.add(fns4);
+
+                                break;
+                            case "批地数据":
+                                FieldNameSheet fns9 = new FieldNameSheet("XMMC", "项目名称");
+                                FieldNameSheet fns10 = new FieldNameSheet("PZWH", "批准文号");
+                                FieldNameSheetList.add(fns9);
+                                FieldNameSheetList.add(fns10);
+
+                                break;
+                            case "永善县稳定耕地":
+                                FieldNameSheet fns13 = new FieldNameSheet("QSDWMC", "权属单位名称");
+                                FieldNameSheet fns14 = new FieldNameSheet("DLMC", "地类名称");
+                                FieldNameSheetList.add(fns13);
+                                FieldNameSheetList.add(fns14);
+                                FieldNameSheet fns11 = new FieldNameSheet("DLBM", "地类编码");
+                                FieldNameSheet fns12 = new FieldNameSheet("TBMJ", "图斑面积");
+                                FieldNameSheetList.add(fns11);
+                                FieldNameSheetList.add(fns12);
+                                break;
+                            case "土地承包经营权":
+                                FieldNameSheet fns15 = new FieldNameSheet("ZJRXM", "指界人姓名");
+                                FieldNameSheetList.add(fns15);
+                                break;
+                            case "用地规划":
+                                FieldNameSheet fns5 = new FieldNameSheet("YDXZ", "用地性质");
+                                FieldNameSheetList.add(fns5);
+                                break;
+                            case "生态保护红线2021年7月15日":
+                                FieldNameSheet fns6 = new FieldNameSheet("ZRBHDMC", "自然保护地名称");
+                                FieldNameSheetList.add(fns6);
+                                break;
+                            case "生态保护红线调整后202103012207改":
+                                FieldNameSheet fns7 = new FieldNameSheet("ZRBHDMC", "自然保护地名称");
+                                FieldNameSheetList.add(fns7);
+                                break;
+                            case "永善县2017年至2019年县规划区内供地红线":
+                                FieldNameSheet fns8 = new FieldNameSheet("PZWH", "批准文号");
+                                FieldNameSheetList.add(fns8);
+                                FieldNameSheet fns26 = new FieldNameSheet("GYFS", "供应方式");
+                                FieldNameSheetList.add(fns26);
+                                FieldNameSheet fns27 = new FieldNameSheet("TDYT", "土地用途");
+                                FieldNameSheetList.add(fns27);
+                                FieldNameSheet fns28 = new FieldNameSheet("SRR", "售让人");
+                                FieldNameSheetList.add(fns28);
+                                break;
+                            case "永善县农转用项目图斑2010至2020":
+                                FieldNameSheet fns29 = new FieldNameSheet("PZWH", "批准文号");
+                                FieldNameSheetList.add(fns29);
+                                FieldNameSheet fns30 = new FieldNameSheet("XMMC", "项目名称");
+                                FieldNameSheetList.add(fns30);
+                                break;
+                            case "永善县土地整治验收项目图斑2019及以前":
+                                FieldNameSheet fns31 = new FieldNameSheet("JBXX_XMMC", "项目名称");
+                                FieldNameSheetList.add(fns31);
+                                FieldNameSheet fns32 = new FieldNameSheet("YS_YSWH", "验收文号");
+                                FieldNameSheetList.add(fns32);
+                                break;
+                            case "乡级行政区":
+                                FieldNameSheet fns33 = new FieldNameSheet("XZQMC", "行政区名称");
+                                FieldNameSheetList.add(fns33);
+                                FieldNameSheet fns34 = new FieldNameSheet("XZQDM", "行政区代码");
+                                FieldNameSheetList.add(fns34);
+                                break;
+                        }
+                        FeatureLayer fl = new FeatureLayer(localGdb.getGeodatabaseFeatureTable(localGdb.getGeodatabaseFeatureTables().get(i).getTableName()));
+                        Log.w(TAG, "run 2020/9/2: " + fl.getName() + ", " + fl.getFeatureTable().getGeometryType());
+                        BaseLayerFieldsSheetList.add(new LayerFieldsSheet(fl, "", FieldNameSheetList));
+                        LayerFieldsSheetList.add(new LayerFieldsSheet(fl, "", FieldNameSheetList));
+                    }
+                    Log.w(TAG, "run: 20200904: " + LayerFieldsSheetList.size());
+                    setRecyclerViewForDynamicChooseFrame();
                 }
             });
             Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
@@ -5676,13 +5882,8 @@ public class MainActivity extends AppCompatActivity {
         //去除水印
         //ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166");
 
-        Random r = new Random();
 
-        FeaturevalueAndColor = new HashMap<>();
-        for (int i = 0; i < 2000; i++) {
-            FeaturevalueAndColor.put(i, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)));
-        }
-
+        RandomColorCreator();
         // TODO 暂时删除
         queriedMyTuban = new my_tb();
         requestAuthority();
@@ -5695,6 +5896,15 @@ public class MainActivity extends AppCompatActivity {
 
         /*Toast.makeText(MainActivity.this, DeviceUtil.GetAndroidID(this), Toast.LENGTH_LONG).show();
         Log.w(TAG, "onCreate: " + DeviceUtil.GetAndroidID(this));*/
+    }
+
+    private void RandomColorCreator(){
+        Random r = new Random();
+
+        FeaturevalueAndColor = new HashMap<>();
+        for (int i = 0; i < 2000; i++) {
+            FeaturevalueAndColor.put(i, Color.argb(128, r.nextInt(255), r.nextInt(255), r.nextInt(255)));
+        }
     }
 
     private double[] GetCoordinate(String QueryString){
