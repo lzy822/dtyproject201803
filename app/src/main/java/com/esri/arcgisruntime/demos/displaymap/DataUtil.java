@@ -59,6 +59,8 @@ public class DataUtil {
                     xzq.setGrade(1);
                 }else if (xzqList.get(i).getType().contains("乡级")){
                     xzq.setGrade(2);
+                }else if (xzqList.get(i).getType().contains("村级")){
+                    xzq.setGrade(3);
                 }
                 xzq.updateAll("xzqdm = ?", xzqList.get(i).getXzqdm());
             }
@@ -73,7 +75,7 @@ public class DataUtil {
         int size_whiteBlanks = whiteBlanks.size();
         List<PointCollection> plist = new ArrayList<>();
         for (int i = 0; i < size_whiteBlanks; ++i) {
-            PointCollection points = new PointCollection(SpatialReference.create(4521));
+            PointCollection points = new PointCollection(SpatialReference.create(4523));
             //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
             String[] strings = whiteBlanks.get(i).getPts().split("lzy");
             Log.w(TAG, "drawWhiteBlank1: " + strings.length);
@@ -81,11 +83,11 @@ public class DataUtil {
                 String[] strings1 = strings[kk].split(",");
                 if (strings1.length == 2) {
                     Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
-                    com.esri.arcgisruntime.geometry.Point wgs84Point = (com.esri.arcgisruntime.geometry.Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4521));
+                    com.esri.arcgisruntime.geometry.Point wgs84Point = (com.esri.arcgisruntime.geometry.Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4523));
                     points.add(wgs84Point);
                 }
             }
-            Polyline polyline = (Polyline)GeometryEngine.project(new Polyline(points), SpatialReference.create(4490));
+            Polyline polyline = (Polyline)GeometryEngine.project(new Polyline(points), SpatialReference.create(4523));
             PartCollection parts = new PartCollection(polyline.getParts());
             PointCollection pointCollection = new PointCollection(parts.getPartsAsPoints());
             plist.add(pointCollection);
@@ -204,6 +206,7 @@ public class DataUtil {
         float maxlng = 0;
         float minlng = 0;
         for (int i = 0; i < strings.length; i = i + 2){
+            Log.w(TAG, "recordTrail: " + strings[i]);
             float temp = Float.valueOf(strings[i]);
             if (temp > maxlat) maxlat = temp;
             else if (temp < minlat) minlat = temp;
@@ -874,6 +877,436 @@ public class DataUtil {
         sb = sb.append("tapepath").append(";");
         sb = sb.append("imgpath").append("\n");
         return sb;
+    }
+
+    public static void makeKML(String save_folder_name, String SubFolder){
+        List<File> files = new ArrayList<File>();
+        //POI
+        List<POI> pois = LitePal.findAll(POI.class);
+        if (pois.size() > 0) {
+            files.add(makePOIKML(pois, save_folder_name, SubFolder));
+        }
+        //Trail
+        //List<Trail> trails = LitePal.findAll(Trail.class);
+        //if (trails.size() > 0) files.add(makeTrailKML(trails));
+        //Lines_WhiteBlank
+        //List<Lines_WhiteBlank> whiteBlanks = LitePal.findAll(Lines_WhiteBlank.class);
+        //if (whiteBlanks.size() > 0) files.add(makeWhiteBlankKML(whiteBlanks));
+    }
+
+    public static File makePOIKML(final List<POI> pois, String save_folder_name, String SubFolder){
+        StringBuffer sb = new StringBuffer();
+        int size_POI = pois.size();
+        makeKMLHead(sb, "POI");
+        for (int i = 0; i < size_POI; ++i){
+            sb.append("    ").append("<Placemark id=\"ID_").append(plusID(i)).append("\">").append("\n");
+            sb.append("      ").append("<name>").append(pois.get(i).getPoic()).append("</name>").append("\n");
+            sb.append("      ").append("<Snippet></Snippet>").append("\n");
+            //属性表内容
+            sb = makeCDATAHead(sb);
+            sb.append("<td>").append(pois.get(i).getPoic()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            sb.append("<tr>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("\n");
+            sb.append("\n");
+            sb.append("<table style=\"font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-spacing:0px; padding:3px 3px 3px 3px\">").append("\n");
+            sb.append("\n");
+            //
+            sb.append("<tr>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("id").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getId()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("name").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getName()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("ic").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getIc()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("type").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getType()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("POIC").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getPoic()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("photoStr").append("</td>").append("\n");
+            sb.append("\n");
+            List<MPHOTO> mphotos = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MPHOTO.class);
+            String photoStr = "";
+            for (int j = 0; j < mphotos.size(); ++j){
+                if (j == 0){
+                    photoStr = mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/"), mphotos.get(j).getPath().length());
+                }else photoStr = photoStr + "|" + mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+            }
+            sb.append("<td>").append(photoStr).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("description").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getDescription()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("tapeStr").append("</td>").append("\n");
+            sb.append("\n");
+            List<MTAPE> mtapes = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MTAPE.class);
+            String tapeStr = "";
+            for (int j = 0; j < mtapes.size(); ++j){
+                if (j == 0){
+                    tapeStr = mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/"), mtapes.get(j).getPath().length());
+                }else tapeStr = tapeStr + "|" + mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+            }
+            sb.append("<td>").append(tapeStr).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("VideoStr").append("</td>").append("\n");
+            sb.append("\n");
+            List<MVEDIO> mvedios = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MVEDIO.class);
+            String VideoStr = "";
+            for (int j = 0; j < mvedios.size(); ++j){
+                if (j == 0){
+                    VideoStr = mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/"), mvedios.get(j).getPath().length());
+                }else VideoStr = VideoStr + "|" + mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/") + 1, mvedios.get(j).getPath().length());
+            }
+            sb.append("<td>").append(VideoStr).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("time").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getTime()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("x").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getX()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            //
+            sb.append("<tr bgcolor=\"#D4E4F3\">").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append("y").append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("<td>").append(pois.get(i).getY()).append("</td>").append("\n");
+            sb.append("\n");
+            sb.append("</tr>").append("\n");
+            sb.append("\n");
+            //
+            sb = makeCDATATail(sb);
+            sb.append("      ").append("<styleUrl>#IconStyle00</styleUrl>").append("\n");
+            sb.append("      ").append("<Point>").append("\n");
+            sb.append("        ").append("<altitudeMode>clampToGround</altitudeMode>").append("\n");
+            sb.append("        ").append("<coordinates>").append(" ").append(pois.get(i).getY()).append(",").append(pois.get(i).getX()).append(",").append(0).append("</coordinates>").append("\n");
+            sb.append("      ").append("</Point>").append("\n");
+            sb.append("    ").append("</Placemark>").append("\n");
+            //
+        }
+        sb = makeKMLTail(sb);
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output" + "/" + SubFolder);
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output" + "/" + SubFolder,  outputPath + ".kml");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
+        return file1;
+    }
+
+    public static void makeWhiteBlankKML(String save_folder_name, String SubFolder){
+        final List<whiteblank> whiteBlanks = LitePal.findAll(whiteblank.class);
+        int size_whiteBlanks = whiteBlanks.size();
+        List<PointCollection> plist = new ArrayList<>();
+        for (int i = 0; i < size_whiteBlanks; ++i) {
+            PointCollection points = new PointCollection(SpatialReference.create(4523));
+            //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
+            String[] strings = whiteBlanks.get(i).getPts().split("lzy");
+            Log.w(TAG, "drawWhiteBlank1: " + strings.length);
+            for (int kk = 0; kk < strings.length; ++kk) {
+                String[] strings1 = strings[kk].split(",");
+                if (strings1.length == 2) {
+                    Log.w(TAG, "drawWhiteBlank2: " + strings1[0] + "; " + strings1[1]);
+                    com.esri.arcgisruntime.geometry.Point wgs84Point = (com.esri.arcgisruntime.geometry.Point) GeometryEngine.project(new Point(Double.valueOf(strings1[0]), Double.valueOf(strings1[1])), SpatialReference.create(4523));
+                    points.add(wgs84Point);
+                }
+            }
+            Polyline polyline = (Polyline)GeometryEngine.project(new Polyline(points), SpatialReference.create(4523));
+            PartCollection parts = new PartCollection(polyline.getParts());
+            PointCollection pointCollection = new PointCollection(parts.getPartsAsPoints());
+            plist.add(pointCollection);
+        }
+        //PointCollection polyline = GeometryEngine.project(points, SpatialReference.create(4490));
+        StringBuffer sb = new StringBuffer();
+        makeKMLHead(sb, "WhiteBlank");
+        for (int i = 0; i < size_whiteBlanks; ++i){
+            sb.append("    ").append("<Placemark id=\"ID_").append(plusID(i)).append("\">").append("\n");
+            sb.append("      ").append("<name>").append(i).append("</name>").append("\n");
+            sb.append("      ").append("<Snippet></Snippet>").append("\n");
+            //属性表内容
+            sb = makeCDATAHead(sb);
+            sb = makeCDATATail(sb);
+            sb.append("      ").append("<styleUrl>#LineStyle00</styleUrl>").append("\n");
+            sb.append("      ").append("<MultiGeometry>").append("\n");
+            sb.append("        ").append("<LineString>").append("\n");
+            sb.append("          ").append("<extrude>0</extrude>").append("\n");
+            sb.append("          ").append("<tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode>").append("\n");
+            String[] lines_str = whiteBlanks.get(i).getPts().split("lzy");
+            Log.w(TAG, "onClick: 2020/9/7: " + whiteBlanks.get(i).getPts());
+            StringBuffer str = new StringBuffer();
+            /*for (int k = 0; k < lines_str.length; ++k) {
+                str.append(" ").append(lines_str[k]).append(",").append("0");
+            }*/
+            for (int j = 0; j < plist.get(i).size(); j++) {
+                str.append(" ").append(plist.get(i).get(j).getX()).append(",").append(plist.get(i).get(j).getY()).append(",").append("0");
+            }
+            sb.append("          ").append("<coordinates>").append(str).append("</coordinates>").append("\n");
+            sb.append("        ").append("</LineString>").append("\n");
+            sb.append("      ").append("</MultiGeometry>").append("\n");
+            sb.append("    ").append("</Placemark>").append("\n");
+            //
+        }
+        sb = makeKMLTailForLine(sb);
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output/" + SubFolder);
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output/" + SubFolder,  "白板" + outputPath + ".kml");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeTxt(String type, String ic, String save_folder_name, String SubFolder){
+        try {
+            final List<POI> pois = LitePal.where("type = ? and ic = ?", type, ic).find(POI.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHead(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getIc()).append(";").append(pois.get(i).getName()).append(";").append(pois.get(i).getPoic()).append(";");
+                List<MPHOTO> mphotos = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MPHOTO.class);
+                String photoStr = "";
+                for (int j = 0; j < mphotos.size(); ++j) {
+                    if (j == 0) {
+                        photoStr = mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+                    } else
+                        photoStr = photoStr + "|" + mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+                }
+                photoStr = URLDecoder.decode(photoStr, "utf-8");
+                sb.append(photoStr).append(";");
+                List<MTAPE> mtapes = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MTAPE.class);
+                String tapeStr = "";
+                for (int j = 0; j < mtapes.size(); ++j) {
+                    if (j == 0) {
+                        tapeStr = mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+                    } else
+                        tapeStr = tapeStr + "|" + mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+                }
+                tapeStr = URLDecoder.decode(tapeStr, "utf-8");
+                List<MVEDIO> mvedios = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MVEDIO.class);
+                String VideoStr = "";
+                for (int j = 0; j < mvedios.size(); ++j) {
+                    if (j == 0) {
+                        VideoStr = mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/") + 1, mvedios.get(j).getPath().length());
+                    } else
+                        VideoStr = VideoStr + "|" + mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/") + 1, mvedios.get(j).getPath().length());
+                }
+                VideoStr = URLDecoder.decode(VideoStr, "utf-8");
+                sb.append(tapeStr).append(";").append(VideoStr).append(";").append(pois.get(i).getDescription()).append(";").append(pois.get(i).getTime()).append(";").append(pois.get(i).getType()).append(";").append(pois.get(i).getY()).append(";").append(pois.get(i).getX()).append("\n");
+            }
+            makeFile(sb, type, save_folder_name, SubFolder);
+        }catch (UnsupportedEncodingException e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeTxt(String type, String save_folder_name, String SubFolder){
+        try {
+            final List<POI> pois = LitePal.where("type = ?", type).find(POI.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHead(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getIc()).append(";").append(pois.get(i).getName()).append(";").append(pois.get(i).getPoic()).append(";");
+                List<MPHOTO> mphotos = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MPHOTO.class);
+                String photoStr = "";
+                for (int j = 0; j < mphotos.size(); ++j) {
+                    if (j == 0) {
+                        photoStr = mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+                    } else
+                        photoStr = photoStr + "|" + mphotos.get(j).getPath().substring(mphotos.get(j).getPath().lastIndexOf("/") + 1, mphotos.get(j).getPath().length());
+                }
+                photoStr = URLDecoder.decode(photoStr, "utf-8");
+                sb.append(photoStr).append(";");
+                List<MTAPE> mtapes = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MTAPE.class);
+                String tapeStr = "";
+                for (int j = 0; j < mtapes.size(); ++j) {
+                    if (j == 0) {
+                        tapeStr = mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+                    } else
+                        tapeStr = tapeStr + "|" + mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
+                }
+                tapeStr = URLDecoder.decode(tapeStr, "utf-8");
+                List<MVEDIO> mvedios = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MVEDIO.class);
+                String VideoStr = "";
+                for (int j = 0; j < mvedios.size(); ++j) {
+                    if (j == 0) {
+                        VideoStr = mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/") + 1, mvedios.get(j).getPath().length());
+                    } else
+                        VideoStr = VideoStr + "|" + mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/") + 1, mvedios.get(j).getPath().length());
+                }
+                VideoStr = URLDecoder.decode(VideoStr, "utf-8");
+                sb.append(tapeStr).append(";").append(VideoStr).append(";").append(pois.get(i).getDescription()).append(";").append(pois.get(i).getTime()).append(";").append(pois.get(i).getType()).append(";").append(pois.get(i).getY()).append(";").append(pois.get(i).getX()).append("\n");
+            }
+            makeFile(sb, type, save_folder_name, SubFolder);
+        }catch (UnsupportedEncodingException e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeTxt1(String save_folder_name, String SubFolder){
+        try {
+            final List<DMBZ> pois = LitePal.findAll(DMBZ.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHeadDMP(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getXH()).append(";").append(pois.get(i).getDY()).append(";").append(pois.get(i).getMC()).append(";").append(pois.get(i).getBZMC()).append(";").append(pois.get(i).getXZQMC()).append(";").append(pois.get(i).getXZQDM()).append(";").append(pois.get(i).getSZDW()).append(";").append(pois.get(i).getSCCJ()).append(";").append(pois.get(i).getGG()).append(";").append(pois.get(i).getIMGPATH()).append(";").append(pois.get(i).getLng()).append(";");
+                sb.append(pois.get(i).getLat()).append("\n");
+            }
+            makeFileDMP(sb, save_folder_name, SubFolder);
+        }catch (Exception e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeFileDMP(StringBuffer sb, String save_folder_name, String SubFolder){
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output" + "/" + SubFolder);
+        if (!file.exists() && !file.isDirectory()) {
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output" + "/" + SubFolder, "DMP" + outputPath + ".txt");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        } catch (IOException e) {
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeTxtDMP(String save_folder_name, String SubFolder){
+        try {
+            final List<DMPoint> pois = LitePal.findAll(DMPoint.class);
+            Log.w(TAG, "makeTxt: " + pois.size());
+            StringBuffer sb = new StringBuffer();
+            int size_POI = pois.size();
+            sb = makeTxtHeadDMP(sb);
+            for (int i = 0; i < size_POI; ++i) {
+                //属性表内容
+                sb.append(pois.get(i).getXh()).append(";").append(pois.get(i).getQydm()).append(";").append(pois.get(i).getLbdm()).append(";").append(pois.get(i).getBzmc()).append(";").append(pois.get(i).getCym()).append(";").append(pois.get(i).getJc()).append(";").append(pois.get(i).getBm()).append(";").append(pois.get(i).getDfyz()).append(";").append(pois.get(i).getZt()).append(";").append(pois.get(i).getDmll()).append(";").append(pois.get(i).getDmhy()).append(";").append(pois.get(i).getLsyg()).append(";").append(pois.get(i).getDlstms()).append(";").append(pois.get(i).getZlly()).append(";").append(pois.get(i).getLat()).append(";").append(pois.get(i).getLng()).append(";").append(pois.get(i).getTapepath());
+                sb.append(pois.get(i).getImgpath()).append("\n");
+            }
+            makeFileDMP(sb, save_folder_name, SubFolder);
+        }catch (Exception e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
+    public static void makeFile(StringBuffer sb, String type, String save_folder_name, String SubFolder){
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output" + "/" + SubFolder);
+        if (!file.exists() && !file.isDirectory()) {
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output" + "/" + SubFolder, "DMBZ" + type + outputPath + ".txt");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+        } catch (IOException e) {
+            Log.w(TAG, e.toString());
+        }
     }
 
     public static void makeTxt(String type){

@@ -15,6 +15,7 @@
         android:id="@+id/query_poi_map"
         android:icon="@drawable/ic_my_location"
         android:title="@string/Loc"
+        android:visible="false"
         app:showAsAction="always" />
     <item
         android:id="@+id/back_pois"

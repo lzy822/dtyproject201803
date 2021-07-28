@@ -11,6 +11,7 @@ import android.location.LocationProvider;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
@@ -21,6 +22,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.esri.arcgisruntime.demos.displaymap.MainActivity.UPDATE_TEXT;
 
 /**
  * 路径记录的后台服务类
@@ -59,7 +62,6 @@ public class RecordTrail extends Service {
     class RecordTrailBinder extends Binder {
 
     }*/
-
     public RecordTrail() {
     }
 
@@ -120,17 +122,28 @@ public class RecordTrail extends Service {
         Log.w(TAG, "2021/1/15 onDestroy: " + m_cTrail);
         isLocateEnd = true;
         recordTrail(last_x, last_y);
-        Trail trail = new Trail();
-        List<Trail> trails = LitePal.findAll(Trail.class);
-        trail.setIc(m_ic);
-        trail.setName("路径" + Integer.toString(trails.size() + 1));
-        trail.setPath(m_cTrail);
-        float[] spatialIndex = DataUtil.getSpatialIndex(m_cTrail);
-        trail.setMaxlat(spatialIndex[0]);
-        trail.setMinlat(spatialIndex[1]);
-        trail.setMaxlng(spatialIndex[2]);
-        trail.setMinlng(spatialIndex[3]);
-        trail.save();
+        if (m_cTrail.trim().length()>0) {
+            m_cTrail=m_cTrail.trim();
+            Log.w(TAG, "当前有: 坐标串" + m_cTrail);
+            Trail trail = new Trail();
+            List<Trail> trails = LitePal.findAll(Trail.class);
+            trail.setIc(m_ic);
+            trail.setName("路径" + Integer.toString(trails.size() + 1));
+            trail.setPath(m_cTrail);
+            float[] spatialIndex = DataUtil.getSpatialIndex(m_cTrail);
+            trail.setMaxlat(spatialIndex[0]);
+            trail.setMinlat(spatialIndex[1]);
+            trail.setMaxlng(spatialIndex[2]);
+            trail.setMinlng(spatialIndex[3]);
+            trail.save();
+
+            Message message = new Message();
+            message.what = UPDATE_TEXT;
+            MainActivity.instance.handler.sendMessage(message);
+        }
+        else{
+            Toast.makeText(RecordTrail.this, "当前轨迹为空，可能是没有GPS信号", Toast.LENGTH_LONG).show();
+        }
     }
 
     public static int appearNumber(String srcText, String findText) {
@@ -145,24 +158,22 @@ public class RecordTrail extends Service {
 
     //记录轨迹
     private void recordTrail(float x, float y){
-        Log.w(TAG, "recordTrail: " + x + ", " + y);
-        isLocate++;
-        last_x = x;
-        last_y = y;
-        //locError(Integer.toString(isLocate));
-        //if (location != null) {
-        if (isLocateEnd || isLocate == 1){
-            if (!m_cTrail.isEmpty()){
-                if (isLocate > 2) {
-                    int num = appearNumber(m_cTrail, " ");
-                    String str = m_cTrail;
-                    for (int i = 0; i <= num - 2; i++) {
-                        str = str.substring(str.indexOf(" ") + 1);
-                    }
-                    m_cTrail = m_cTrail.substring(0, m_cTrail.length() - str.length());
-                } else m_cTrail = m_cTrail + " " + Float.toString(x) + " " + Float.toString(y);
-            }else m_cTrail = m_cTrail + Float.toString(x) + " " + Float.toString(y);
-        }else m_cTrail = m_cTrail + " " + Float.toString(x) + " " + Float.toString(y) + " " + Float.toString(x) + " " + Float.toString(y);
+        if (x != 0 && y != 0) {
+            if (isLocateEnd || isLocate == 1) {
+                if (!m_cTrail.isEmpty()) {
+                    if (isLocate > 2) {
+                        int num = appearNumber(m_cTrail, " ");
+                        String str = m_cTrail;
+                        for (int i = 0; i <= num - 2; i++) {
+                            str = str.substring(str.indexOf(" ") + 1);
+                        }
+                        m_cTrail = m_cTrail.substring(0, m_cTrail.length() - str.length());
+                    } else
+                        m_cTrail = m_cTrail + " " + Float.toString(x) + " " + Float.toString(y);
+                } else m_cTrail = m_cTrail + Float.toString(x) + " " + Float.toString(y);
+            } else
+                m_cTrail = m_cTrail + " " + Float.toString(x) + " " + Float.toString(y) + " " + Float.toString(x) + " " + Float.toString(y);
+        }
         //setHereLocation();
         //locError(Integer.toString(m_lat) + "," + Double.toString(m_long) + "Come here");
 
@@ -192,8 +203,8 @@ public class RecordTrail extends Service {
             Log.d(TAG, "onCreate.location = " + location);
             updateView(location);
 
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, locationListener);
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 5, locationListener);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 2, locationListener);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000, 2, locationListener);
         }catch (SecurityException  e){
             e.printStackTrace();
         }

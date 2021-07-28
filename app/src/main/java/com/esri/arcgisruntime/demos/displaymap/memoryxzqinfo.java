@@ -5,8 +5,17 @@ import org.litepal.crud.LitePalSupport;
 import java.util.List;
 
 public class memoryxzqinfo extends LitePalSupport{
+    private String layername;
     private String name;
     private String keyAndValues;
+
+    public String getLayername() {
+        return layername;
+    }
+
+    public void setLayername(String layername) {
+        this.layername = layername;
+    }
 
     public String getName() {
         return name;

@@ -41,6 +41,8 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
 
     private OnRecyclerItemClickListener mOnItemClick;
 
+    private String LastXZQName="";
+
     static class ViewHolder extends RecyclerView.ViewHolder {
         //private OnRecyclerItemLongListener mOnItemLong = null;
         CardView cardView;
@@ -74,7 +76,10 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
                 xzq xzq = xzqs.get(position);
-                mOnItemClick.onItemClick(v, xzq.getXzqdm(), position);
+                if (xzq.getGrade() == 1 || xzq.getGrade() == 2)
+                    mOnItemClick.onItemClick(v, xzq.getXzqmc(), position);
+                else if (xzq.getGrade() == 3)
+                    mOnItemClick.onItemClick(v, xzq.getSjxzq() + xzq.getXzqmc(), position);
                 /*
                 Intent intent = new Intent(mContext, MainInterface.class);
                 intent.putExtra("num", map.getM_num());
@@ -87,19 +92,75 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
                 int position = holder.getAdapterPosition();
                 xzq xzq = xzqs.get(position);
                 Log.w(TAG, "onClick: " + xzq.getXzqmc());
+
                 SharedPreferences pref1 = mContext.getSharedPreferences("xzq", MODE_PRIVATE);
                 xzqs = DataUtil.bubbleSort(LitePal.where("grade = ?", Integer.toString(1)).find(xzq.class));
-                if (pref1.getString("name", "").equals(xzq.getXzqmc())){
+
+                SharedPreferences.Editor editor = mContext.getSharedPreferences("xzq", MODE_PRIVATE).edit();
+                editor.putString("name", xzq.getXzqmc());
+                editor.apply();
+
+                List<xzq> xzqList = LitePal.findAll(xzq.class);
+                if (xzq.getXzqmc().equals(LastXZQName)){
+                    if (xzq.getGrade() == 1){
+                        editor.putString("name", "");
+                        editor.apply();
+                    }
+                    else if (xzq.getGrade() == 2){
+                        editor.putString("name", "");
+                        editor.apply();
+                        List<xzq> Grade2xzqs = LitePal.where("grade = ?", Integer.toString(2)).find(xzq.class);
+                        for (int j = 0; j < Grade2xzqs.size(); j++) {
+                            xzqs.add(Grade2xzqs.get(j));
+                        }
+                    }
+                    LastXZQName = "";
+                }
+                else{
+                    for (int i = 0; i < xzqList.size(); i++) {
+                        xzq mxzq = xzqList.get(i);
+                        if (xzq.getXzqmc().equals(mxzq.getXzqmc())) {
+                            if (mxzq.getGrade() == 1) {
+                                xzqs.addAll(LitePal.where("sjxzq = ? and grade = ?", mxzq.getXzqmc(), Integer.toString(2)).find(xzq.class));
+                            } else if (mxzq.getGrade() == 2) {
+                                List<xzq> Grade2xzqs = LitePal.where("grade = ?", Integer.toString(2)).find(xzq.class);
+                                for (int j = 0; j < Grade2xzqs.size(); j++) {
+                                    if (Grade2xzqs.get(j).getXzqmc().equals(mxzq.getXzqmc()))
+                                    {
+                                        xzqs.add(mxzq);
+                                        xzqs.addAll(LitePal.where("sjxzq = ? and grade = ?", mxzq.getXzqmc(), Integer.toString(3)).find(xzq.class));
+                                    }
+                                    else
+                                        xzqs.add(Grade2xzqs.get(j));
+                                }
+                            }
+                        }
+                    /*if (pref1.getString("name", "").equals(xzq.getXzqmc())){
+                        xzqs.add(xzqList.get(i));
+                        xzqs.addAll(LitePal.where("sjxzq = ? and grade = ?", xzq.getXzqmc(), Integer.toString(3)).find(xzq.class));
+                    }
+                    else
+                        xzqs.add(xzqList.get(i));*/
+                    }
+                    LastXZQName = pref1.getString("name", "");
+                }
+                /*if (pref1.getString("name", "").equals(xzq.getXzqmc())){
                     SharedPreferences.Editor editor = mContext.getSharedPreferences("xzq", MODE_PRIVATE).edit();
                     editor.putString("name", "");
                     editor.apply();
-                }else {
+                }else if (xzq.getGrade()==1){
                     SharedPreferences.Editor editor = mContext.getSharedPreferences("xzq", MODE_PRIVATE).edit();
                     editor.putString("name", xzq.getXzqmc());
                     editor.apply();
                     xzqs.addAll(LitePal.where("sjxzq = ? and grade = ?", xzq.getXzqmc(), Integer.toString(2)).find(xzq.class));
                     xzqs = DataUtil.bubbleSort(xzqs);
-                }
+                }else  if (xzq.getGrade()==2){
+                    SharedPreferences.Editor editor = mContext.getSharedPreferences("xzq", MODE_PRIVATE).edit();
+                    editor.putString("name", xzq.getXzqmc());
+                    editor.apply();
+                    xzqs.addAll(LitePal.where("sjxzq = ? and grade = ?", xzq.getXzqmc(), Integer.toString(3)).find(xzq.class));
+                    xzqs = DataUtil.bubbleSort(xzqs);
+                }*/
                 //notifyItemChanged(position);
                 //notifyItemRangeChanged(0, xzqs.size());
                 notifyDataSetChanged();
@@ -135,9 +196,20 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
             holder.MapName.setText(xzq.getXzqmc());
         }
         else if (xzq.getGrade() == 2) {
-            holder.xzqIcon.setVisibility(View.INVISIBLE);
+            SharedPreferences pref1 = mContext.getSharedPreferences("xzq", MODE_PRIVATE);
+            if (xzq.getXzqmc().equals(pref1.getString("name", ""))) {
+                holder.xzqIcon.setImageResource(R.drawable.ic_remove_circle_outline_black_24dp);
+            }
+            else
+                holder.xzqIcon.setImageResource(R.drawable.ic_add_circle_outline_black_24dp);
+            holder.xzqIcon.setVisibility(View.VISIBLE);
             holder.MapName.setTextColor(Color.BLACK);
             holder.MapName.setText("\t" + "-" + xzq.getXzqmc());
+        }
+        else if (xzq.getGrade() == 3) {
+            holder.xzqIcon.setVisibility(View.INVISIBLE);
+            holder.MapName.setTextColor(Color.BLACK);
+            holder.MapName.setText("\t" + "---" + xzq.getXzqmc());
         }
     }
 
@@ -153,7 +225,7 @@ public class xzqTreeAdapter extends RecyclerView.Adapter<xzqTreeAdapter.ViewHold
     }
 
     public interface OnRecyclerItemClickListener{
-        void onItemClick(View view, String xzqdm, final int position);
+        void onItemClick(View view, String xzqmc, final int position);
     }
     public void setOnItemClickListener(OnRecyclerItemClickListener listener){
         this.mOnItemClick =  listener;

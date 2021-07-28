@@ -21,6 +21,7 @@ android {
 }
 
 dependencies {
+    implementation 'com.github.duanhong169:colorpicker:1.1.6'
     implementation 'com.github.lecho:hellocharts-android:v1.5.8'
     implementation 'com.esri.arcgisruntime:arcgis-android:100.4.0'
     implementation 'com.android.support:recyclerview-v7:27.1.1'

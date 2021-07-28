@@ -246,6 +246,22 @@
             app:fab_elevationCompat="6dp"
             app:fab_shadowColor="#000"
             app:fab_size="mini"
+            android:layout_above="@id/XZQQueryFAB" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/XZQQueryFAB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/ic_xzqbutton_24dp"
+            android:adjustViewBounds="false"
+            android:scaleType="fitEnd"
+            app:fab_colorNormal="#F50057"
+            app:fab_colorPressed="#E8004A"
+            app:fab_colorRipple="#C20024"
+            app:fab_elevationCompat="6dp"
+            app:fab_shadowColor="#000"
+            app:fab_size="mini"
             android:layout_above="@id/NeedQueryFAB" />
 
         <com.github.clans.fab.FloatingActionButton

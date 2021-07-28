@@ -20,6 +20,7 @@ public class StaticVariableEnum {
     public static final String DLLCROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧大理过程稿.geodatabase";
     public static final String LCDKYROOTPATH = Environment.getExternalStorageDirectory().toString() + "/临沧外业踏勘系统/临沧市级外业踏勘数据.geodatabase";
     public static final String YSZRZYROOTPATH = Environment.getExternalStorageDirectory().toString() + "/永善国土/永善县国土数据.geodatabase";
+    public static final String YSSIMPLEZRZYROOTPATH = Environment.getExternalStorageDirectory().toString() + "/永善国土/地名点和行政区划面.geodatabase";
     public static final String YSMMPKROOTPATH = Environment.getExternalStorageDirectory().toString() + "/永善国土/永善国土数据.mmpk";
 
 

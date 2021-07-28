@@ -667,69 +667,77 @@ public class photoshow extends AppCompatActivity {
             getBitmap();
         }
         if (resultCode == RESULT_OK && requestCode == TAKE_PHOTO) {
-            String imageuri;
-            if (Build.VERSION.SDK_INT >= 24) {
-                imageuri = DataUtil.getRealPath(imageUri.toString());
-            }else {
-                imageuri = imageUri.toString().substring(7);
-            }
-            File file = new File(imageuri);
-            if (file.length() != 0) {
-                try {
-                    MediaStore.Images.Media.insertImage(getContentResolver(), imageuri, "title", "description");
-                    // 最后通知图库更新
-                    photoshow.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + imageuri)));
-                }catch (IOException e){
+
+            if (imageUri != null) {
+                String imageuri;
+                if (Build.VERSION.SDK_INT >= 24) {
+                    imageuri = DataUtil.getRealPath(imageUri.toString());
+                } else {
+                    imageuri = imageUri.toString().substring(7);
                 }
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(photoshow.this.getResources().getText(R.string.DateAndTime).toString());
-                Date date = new Date(System.currentTimeMillis());
-                if (POIType == 0) {
-                    List<POI> POIs = LitePal.where("poic = ?", POIC).find(POI.class);
-                    POI poi = new POI();
-                    poi.setPhotonum(POIs.get(0).getPhotonum() + 1);
-                    poi.updateAll("poic = ?", POIC);
-                    MPHOTO mphoto = new MPHOTO();
-                    mphoto.setPoic(POIC);
-                    mphoto.setPath(imageuri);
-                    mphoto.setTime(simpleDateFormat.format(date));
-                    mphoto.save();
-                    refreshCardFromPOI();
-                }else if (POIType == 1){
-                    List<DMBZ> dmbzs = LitePal.where("xh = ?", DMXH).find(DMBZ.class);
-                    DMBZ dmbz = new DMBZ();
-                    if (dmbzs.get(0).getIMGPATH() != null) {
-                        String imgpath = dmbzs.get(0).getIMGPATH();
-                        if (DataUtil.appearNumber(imgpath, "\\|") + 1 > 0) dmbz.setIMGPATH(imgpath + "|" + imageuri);
-                        else dmbz.setIMGPATH(imageuri);
-                    }else dmbz.setIMGPATH(imageuri);
-                    dmbz.updateAll("xh = ?", DMXH);
-                    refreshCardFromDMBZ();
-                }else if (POIType == 2){
-                    List<DMLine> dmLines = LitePal.where("mapid = ?", DML).find(DMLine.class);
-                    DMLine dmLine = new DMLine();
-                    if (dmLines.get(0).getImgpath() != null) {
-                        String imgpath = dmLines.get(0).getImgpath();
-                        if (DataUtil.appearNumber(imgpath, "\\|") + 1 > 0) dmLine.setImgpath(imgpath + "|" + imageuri);
-                        else dmLine.setImgpath(imageuri);
-                    }else dmLine.setImgpath(imageuri);
-                    dmLine.updateAll("mapid = ?", DML);
-                    refreshCardFromDML();
-                }else if (POIType == 3){
-                    List<DMPoint> dmPoints = LitePal.where("mapid = ?", DMP).find(DMPoint.class);
-                    DMPoint dmPoint = new DMPoint();
-                    if (dmPoints.get(0).getImgpath() != null) {
-                        String imgpath = dmPoints.get(0).getImgpath();
-                        if (DataUtil.appearNumber(imgpath, "\\|") + 1 > 0) dmPoint.setImgpath(imgpath + "|" + imageuri);
-                        else dmPoint.setImgpath(imageuri);
-                    }else dmPoint.setImgpath(imageuri);
-                    dmPoint.updateAll("mapid = ?", DMP);
-                    refreshCardFromDMP();
+                File file = new File(imageuri);
+                if (file.length() != 0) {
+                    try {
+                        MediaStore.Images.Media.insertImage(getContentResolver(), imageuri, "title", "description");
+                        // 最后通知图库更新
+                        photoshow.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + imageuri)));
+                    } catch (IOException e) {
+                    }
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(photoshow.this.getResources().getText(R.string.DateAndTime).toString());
+                    Date date = new Date(System.currentTimeMillis());
+                    if (POIType == 0) {
+                        List<POI> POIs = LitePal.where("poic = ?", POIC).find(POI.class);
+                        POI poi = new POI();
+                        poi.setPhotonum(POIs.get(0).getPhotonum() + 1);
+                        poi.updateAll("poic = ?", POIC);
+                        MPHOTO mphoto = new MPHOTO();
+                        mphoto.setPoic(POIC);
+                        mphoto.setPath(imageuri);
+                        mphoto.setTime(simpleDateFormat.format(date));
+                        mphoto.save();
+                        refreshCardFromPOI();
+                    } else if (POIType == 1) {
+                        List<DMBZ> dmbzs = LitePal.where("xh = ?", DMXH).find(DMBZ.class);
+                        DMBZ dmbz = new DMBZ();
+                        if (dmbzs.get(0).getIMGPATH() != null) {
+                            String imgpath = dmbzs.get(0).getIMGPATH();
+                            if (DataUtil.appearNumber(imgpath, "\\|") + 1 > 0)
+                                dmbz.setIMGPATH(imgpath + "|" + imageuri);
+                            else dmbz.setIMGPATH(imageuri);
+                        } else dmbz.setIMGPATH(imageuri);
+                        dmbz.updateAll("xh = ?", DMXH);
+                        refreshCardFromDMBZ();
+                    } else if (POIType == 2) {
+                        List<DMLine> dmLines = LitePal.where("mapid = ?", DML).find(DMLine.class);
+                        DMLine dmLine = new DMLine();
+                        if (dmLines.get(0).getImgpath() != null) {
+                            String imgpath = dmLines.get(0).getImgpath();
+                            if (DataUtil.appearNumber(imgpath, "\\|") + 1 > 0)
+                                dmLine.setImgpath(imgpath + "|" + imageuri);
+                            else dmLine.setImgpath(imageuri);
+                        } else dmLine.setImgpath(imageuri);
+                        dmLine.updateAll("mapid = ?", DML);
+                        refreshCardFromDML();
+                    } else if (POIType == 3) {
+                        List<DMPoint> dmPoints = LitePal.where("mapid = ?", DMP).find(DMPoint.class);
+                        DMPoint dmPoint = new DMPoint();
+                        if (dmPoints.get(0).getImgpath() != null) {
+                            String imgpath = dmPoints.get(0).getImgpath();
+                            if (DataUtil.appearNumber(imgpath, "\\|") + 1 > 0)
+                                dmPoint.setImgpath(imgpath + "|" + imageuri);
+                            else dmPoint.setImgpath(imageuri);
+                        } else dmPoint.setImgpath(imageuri);
+                        dmPoint.updateAll("mapid = ?", DMP);
+                        refreshCardFromDMP();
+                    }
+                    getBitmap();
+                } else {
+                    file.delete();
+                    Toast.makeText(photoshow.this, R.string.TakePhotoError, Toast.LENGTH_LONG).show();
                 }
-                getBitmap();
-            }else {
-                file.delete();
-                Toast.makeText(photoshow.this, R.string.TakePhotoError, Toast.LENGTH_LONG).show();
             }
+            else
+                Toast.makeText(photoshow.this, "拍摄错误，请重新拍摄",Toast.LENGTH_LONG).show();
         }
     }
 

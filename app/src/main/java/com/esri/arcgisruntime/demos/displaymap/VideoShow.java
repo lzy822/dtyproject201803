@@ -612,7 +612,7 @@ public class VideoShow extends AppCompatActivity {
         }
         if (Build.VERSION.SDK_INT >= 24){
             //locError(Environment.getExternalStorageDirectory() + "/maphoto/" + Long.toString(timenow) + ".jpg");
-            imageUri = FileProvider.getUriForFile(this, "com.android.tuzhi.fileprovider", outputImage);
+            imageUri = FileProvider.getUriForFile(this, "com.android.displaymap.fileprovider", outputImage);
 
         }else imageUri = Uri.fromFile(outputImage);
         Log.w(TAG, "takeVideo: " + imageUri.toString());
@@ -785,57 +785,60 @@ public class VideoShow extends AppCompatActivity {
             ResultForPickVideo(uri);
         }
         else if (resultCode == RESULT_OK && requestCode == FLAG_REQUEST_CAMERA_VIDEO){
-            Toast.makeText(this, imageUri.toString(), Toast.LENGTH_LONG).show();
-            String imageuri1;
-            if (Build.VERSION.SDK_INT >= 24) {
-                imageuri1 = DataUtil.getRealPath(imageUri.toString());
-            }else {
-                imageuri1 = imageUri.toString().substring(7);
-            }
+            if (imageUri != null) {
+                Toast.makeText(this, imageUri.toString(), Toast.LENGTH_LONG).show();
+                String imageuri1;
+                if (Build.VERSION.SDK_INT >= 24) {
+                    imageuri1 = DataUtil.getRealPath(imageUri.toString());
+                } else {
+                    imageuri1 = imageUri.toString().substring(7);
+                }
                     /*videoView.setVideoPath(imageuri);//setVideoURI(Uri.parse(uriString));
                     videoView.start();*/
-            try {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(VideoShow.this.getResources().getText(R.string.DateAndTime).toString());
-                Date date = new Date(System.currentTimeMillis());
-                List<POI> POIs = LitePal.where("poic = ?", POIC).find(POI.class);
-                POI poi = new POI();
-                poi.setPhotonum(POIs.get(0).getVedionum() + 1);
-                poi.updateAll("poic = ?", POIC);
-                MVEDIO mvedio = new MVEDIO();
-                mvedio.setPoic(POIC);
-                mvedio.setPath(imageuri1);
-                mvedio.setTime(simpleDateFormat.format(date));
-                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-                retriever.setDataSource(imageuri1);
-                Bitmap bitmap = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
-                int degree = DataUtil.getPicRotate(imageuri1);
-                if (degree != 0) {
-                    Matrix m = new Matrix();
-                    m.setRotate(degree); // 旋转angle度
-                    bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-                }
-                File file2 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/video/img");
-                if (!file2.exists() && !file2.isDirectory()){
-                    file2.mkdirs();
-                }
-                long timenow = System.currentTimeMillis();
-                File outputImage = new File(Environment.getExternalStorageDirectory() + "/TuZhi/video/img", Long.toString(timenow) + ".jpg");
                 try {
-                    if (outputImage.exists()){
-                        outputImage.delete();
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(VideoShow.this.getResources().getText(R.string.DateAndTime).toString());
+                    Date date = new Date(System.currentTimeMillis());
+                    List<POI> POIs = LitePal.where("poic = ?", POIC).find(POI.class);
+                    POI poi = new POI();
+                    poi.setPhotonum(POIs.get(0).getVedionum() + 1);
+                    poi.updateAll("poic = ?", POIC);
+                    MVEDIO mvedio = new MVEDIO();
+                    mvedio.setPoic(POIC);
+                    mvedio.setPath(imageuri1);
+                    mvedio.setTime(simpleDateFormat.format(date));
+                    MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                    retriever.setDataSource(imageuri1);
+                    Bitmap bitmap = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                    int degree = DataUtil.getPicRotate(imageuri1);
+                    if (degree != 0) {
+                        Matrix m = new Matrix();
+                        m.setRotate(degree); // 旋转angle度
+                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
                     }
-                    outputImage.createNewFile();
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-                DataUtil.saveBitmap(bitmap, outputImage.getAbsolutePath());
-                mvedio.setThumbnailImg(outputImage.getAbsolutePath());
-                mvedio.save();
-                //iv.setImageBitmap(bitmap);
-            }
-            catch (Exception e){
+                    File file2 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/video/img");
+                    if (!file2.exists() && !file2.isDirectory()) {
+                        file2.mkdirs();
+                    }
+                    long timenow = System.currentTimeMillis();
+                    File outputImage = new File(Environment.getExternalStorageDirectory() + "/TuZhi/video/img", Long.toString(timenow) + ".jpg");
+                    try {
+                        if (outputImage.exists()) {
+                            outputImage.delete();
+                        }
+                        outputImage.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    DataUtil.saveBitmap(bitmap, outputImage.getAbsolutePath());
+                    mvedio.setThumbnailImg(outputImage.getAbsolutePath());
+                    mvedio.save();
+                    //iv.setImageBitmap(bitmap);
+                } catch (Exception e) {
 
+                }
             }
+            else
+                Toast.makeText(VideoShow.this, "拍摄错误，请重新拍摄",Toast.LENGTH_LONG).show();
         }
     }
 

@@ -13,6 +13,8 @@ import android.widget.CompoundButton;
 
 import java.util.List;
 
+import static android.content.ContentValues.TAG;
+
 public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChooseFrameAdapter.ViewHolder> {
     private static final String TAG = "DynamicChooseFrameAdapter";
     private Context mContext;
@@ -21,7 +23,7 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
 
     private List<LayerFieldsSheet> list;
 
-    private int CheckedIndex = -1;
+    public int CheckedIndex = -1;
 
     private DynamicChooseFrameAdapter.OnRecyclerItemLongListener mOnItemLong;
 
@@ -99,6 +101,17 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
     }
 
     @Override
+    public void onBindViewHolder(DynamicChooseFrameAdapter.ViewHolder holder, int position, List<Object> payloads) {
+        //notifyItemChanged(position);
+        if (payloads.isEmpty()){
+            onBindViewHolder(holder, position);
+        }else {
+            notifyItemChanged(position);
+            //Toast.makeText(mContext, Integer.toString(position), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
     public void onBindViewHolder(final DynamicChooseFrameAdapter.ViewHolder holder, int position) {
         LayerFieldsSheet lfs = list.get(position);
         if (position == CheckedIndex)
@@ -106,7 +119,6 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
         else
             holder.checkBox.setChecked(false);
         holder.checkBox.setText(lfs.getLayerShowName());
-        //holder.checkBox.setText(lfs.getFeatureLayer().getName());
         holder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -114,12 +126,15 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
                 if (list.size() != 0) {
                     LayerFieldsSheet dd = list.get(position);
                     mOnItemCheck.onItemCheckClick(holder, dd.getLayerShowName(), position);
+                    CheckedIndex = position;
+                    //notifyDataSetChanged();
                     //mOnItemCheck.onItemCheckClick(holder, "", position);
                 }
                 //holder.cardView.setCardBackgroundColor(Color.GRAY);
 
             }
         });
+        //holder.checkBox.setText(lfs.getFeatureLayer().getName());
     }
 
 

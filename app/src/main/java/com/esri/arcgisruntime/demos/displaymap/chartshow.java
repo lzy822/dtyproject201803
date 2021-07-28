@@ -52,7 +52,7 @@ import lecho.lib.hellocharts.view.PieChartView;
 
 public class chartshow extends AppCompatActivity {
     private static final String TAG = "chartshow";
-    private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市5309省标准乡级土地利用总体规划及基本农田数据库2000.geodatabase";
+    //private static final String rootPath1 = Environment.getExternalStorageDirectory().toString() + "/临沧市基本农田/临沧市5309省标准乡级土地利用总体规划及基本农田数据库2000.geodatabase";
 
     ProgressBar progressBar;
     TextView chartdata;
@@ -278,6 +278,7 @@ public class chartshow extends AppCompatActivity {
     }
 
     private List<KeyAndValue> parseKV(final String keyAndValues){
+        Log.w(TAG, "parseKV: " + keyAndValues);
         List<KeyAndValue> keyAndValues1 = new ArrayList<>();
         String[] strings1 = keyAndValues.split(",");
         for (int i = 0; i < strings1.length; ++i){
@@ -298,14 +299,19 @@ public class chartshow extends AppCompatActivity {
         progressBar = (ProgressBar) findViewById(R.id.progressBarLarge);
         //chartdata = (TextView) findViewById(R.id.chartdata);
         Intent intent = getIntent();
-        String xzqdm = intent.getStringExtra("xzqdm");
-        List<xzq> xzqs = LitePal.where("xzqdm = ?", xzqdm).find(xzq.class);
-        Log.w(TAG, "onCreate: " + xzqs.size() + "; " + xzqs.get(0).getXzqmc());
-        setTitle(xzqs.get(0).getXzqmc());
-        List<memoryxzqinfo> memoryxzqinfoList = LitePal.where("name = ?", xzqdm).find(memoryxzqinfo.class);
+        String LayerName = intent.getStringExtra("LayerName");
+        String xzqmc = intent.getStringExtra("xzqmc");
+        Log.w(TAG, "chartshow: lzy" + LayerName + ", " + xzqmc);
+        //Log.w(TAG, "onCreate: " + xzqs.size() + "; " + xzqs.get(0).getXzqmc());
+        setTitle(xzqmc + LayerName);
+        List<memoryxzqinfo> memoryxzqinfoList = LitePal.where("layername = ? and name = ?", LayerName, xzqmc).find(memoryxzqinfo.class);
         if (memoryxzqinfoList.size() == 0)
-            queryFunction(xzqdm);
+        {
+            Log.w(TAG, "onCreate111: 正在分析" + xzqmc + ", " + LayerName);
+            queryFunction(xzqmc, LayerName);
+        }
         else{
+            Log.w(TAG, "onCreate111: 有预设结果" + memoryxzqinfoList.get(0).getLayername() + ", " + memoryxzqinfoList.get(0).getName());
             progressBar.setVisibility(View.GONE);
             List<KeyAndValue> keyAndValues = parseKV(memoryxzqinfoList.get(0).getKeyAndValues());
             refreshRecycler(keyAndValues);
@@ -337,25 +343,26 @@ public class chartshow extends AppCompatActivity {
     Geodatabase localGdb;
     FeatureLayer featureLayer777;
     FeatureLayer featureLayer778;
-    private void queryFunction(final String xzqdm){
-        File file = new File(rootPath1);
+    private void queryFunction(final String xzqdm, final String LayerName){
+        File file = new File(StaticVariableEnum.YSZRZYROOTPATH);
         if (file.exists()){
-            localGdb = new Geodatabase(rootPath1);
+            localGdb = new Geodatabase(StaticVariableEnum.YSZRZYROOTPATH);
             Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
             Log.w(TAG, "run: " + localGdb.getPath());
             localGdb.loadAsync();
             localGdb.addDoneLoadingListener(new Runnable() {
                 @Override
                 public void run() {
-                    featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("土地规划地类"));
-                    featureLayer778 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable("行政区"));
+                    featureLayer777 = new FeatureLayer(localGdb.getGeodatabaseFeatureTable(LayerName));
+                    featureLayer778 = MainActivity.XZQAreaFeatureLayer;
+                    Log.w(TAG, "onCreate111: " + LayerName + ", " + xzqdm);
                     /*FeatureTable featureTable = featureLayer778.getFeatureTable();
                     List<Field> list = featureTable.getFields();
                     for (int i = 0; i < list.size(); ++i){
                         Log.w(TAG, "run: " + list.get(i).getName());
                     }*/
                     QueryParameters query = new QueryParameters();
-                    query.setWhereClause("XZQDM = " + xzqdm);
+                    query.setWhereClause("XZQMC = " + "'" + xzqdm + "'");
                     try {
                         FeatureTable mTable = featureLayer778.getFeatureTable();//得到查询属性表
                         final ListenableFuture<FeatureQueryResult> featureQueryResult
@@ -366,7 +373,9 @@ public class chartshow extends AppCompatActivity {
                                 try {
                                     FeatureQueryResult featureResul = featureQueryResult.get();
                                     for (Object element : featureResul) {
+                                        Log.w(TAG, "onCreate111: 找到行政区划面了");
                                         if (element instanceof Feature) {
+                                            Log.w(TAG, "onCreate111: " + wholeArea);
                                             Feature mFeatureGrafic = (Feature) element;
                                             Geometry geometry = mFeatureGrafic.getGeometry();
                                             QueryParameters query1 = new QueryParameters();
@@ -380,11 +389,13 @@ public class chartshow extends AppCompatActivity {
                                                 @Override
                                                 public void run() {
                                                     try {
+                                                        Log.w(TAG, "onCreate111: 相交分析成功");
                                                         FeatureQueryResult featureResul = featureQueryResult1.get();
                                                         List<QueryTaskInfo> queryTaskInfos = new ArrayList<>();
                                                         List<KeyAndValue> keyAndValues = new ArrayList<>();
                                                         for (Object element : featureResul) {
                                                             if (element instanceof Feature) {
+                                                                Log.w(TAG, "onCreate111: " + wholeArea);
                                                                 Feature mFeatureGrafic = (Feature) element;
                                                                 Geometry geometry = mFeatureGrafic.getGeometry();
                                                                 //Log.w(TAG, "run: " + GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500 + "亩");
@@ -395,14 +406,26 @@ public class chartshow extends AppCompatActivity {
                                                                 QueryTaskInfo queryTaskInfo = new QueryTaskInfo(GeometryEngine.areaGeodetic(geometry, new AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC) * 1500);
                                                                 for (String key : mQuerryString.keySet()) {
                                                                     //str = str + key + " : " + String.valueOf(mQuerryString.get(key)) + "\n";
-                                                                    if (key.equals("GHDLMC"))
-                                                                        queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
-                                                                    else if (key.equals("GHDLBM"))
-                                                                        queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
-                                                                    else if (key.equals("XZQMC"))
-                                                                        queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
-                                                                    else if (key.equals("XZQDM"))
-                                                                        queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                                                    if (LayerName.equals("土地规划地类")) {
+                                                                        if (key.equals("GHDLMC"))
+                                                                            queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
+                                                                        else if (key.equals("GHDLBM"))
+                                                                            queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
+                                                                        else if (key.equals("XZQMC"))
+                                                                            queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                                                        else if (key.equals("XZQDM"))
+                                                                            queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                                                    }
+                                                                    else{
+                                                                        if (key.equals("DLMC"))
+                                                                            queryTaskInfo.setTypename(String.valueOf(mQuerryString.get(key)));
+                                                                        else if (key.equals("DLBM"))
+                                                                            queryTaskInfo.setType(String.valueOf(mQuerryString.get(key)));
+                                                                        else if (key.equals("XZQMC"))
+                                                                            queryTaskInfo.setXzq(String.valueOf(mQuerryString.get(key)));
+                                                                        else if (key.equals("XZQDM"))
+                                                                            queryTaskInfo.setXzqdm(String.valueOf(mQuerryString.get(key)));
+                                                                    }
                                                                 }
                                                                 queryTaskInfos.add(queryTaskInfo);
                                                             }
@@ -426,6 +449,7 @@ public class chartshow extends AppCompatActivity {
                                                         }
                                                         progressBar.setVisibility(View.GONE);
                                                         memoryxzqinfo memoryxzqinfo = new memoryxzqinfo();
+                                                        memoryxzqinfo.setLayername(LayerName);
                                                         memoryxzqinfo.setName(xzqdm);
                                                         memoryxzqinfo.setKeyAndValues(classifyKV(keyAndValues));
                                                         memoryxzqinfo.save();

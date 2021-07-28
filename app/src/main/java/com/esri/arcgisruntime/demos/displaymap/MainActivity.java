@@ -30,6 +30,8 @@ import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -81,6 +83,7 @@ import com.esri.arcgisruntime.geometry.Envelope;
 import com.esri.arcgisruntime.geometry.GeodeticCurveType;
 import com.esri.arcgisruntime.geometry.Geometry;
 import com.esri.arcgisruntime.geometry.GeometryEngine;
+import com.esri.arcgisruntime.geometry.GeometryType;
 import com.esri.arcgisruntime.geometry.LinearUnit;
 import com.esri.arcgisruntime.geometry.LinearUnitId;
 import com.esri.arcgisruntime.geometry.PartCollection;
@@ -118,6 +121,7 @@ import com.flask.colorpicker.builder.ColorPickerClickListener;
 import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
 import com.github.clans.fab.FloatingActionButton;
 import org.litepal.LitePal;
+import org.litepal.crud.LitePalSupport;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -132,6 +136,7 @@ import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -146,6 +151,7 @@ import lecho.lib.hellocharts.model.PieChartData;
 import lecho.lib.hellocharts.model.SliceValue;
 import lecho.lib.hellocharts.util.ChartUtils;
 import lecho.lib.hellocharts.view.PieChartView;
+import top.defaults.colorpicker.ColorPickerPopup;
 
 public class MainActivity extends AppCompatActivity {
     private MapView mMapView;
@@ -215,7 +221,6 @@ public class MainActivity extends AppCompatActivity {
 
     //记录是否处于白板画图状态
     private boolean isWhiteBlank = false;
-    List<Point> whiteBlankPts;
     GraphicsOverlay graphicsOverlay_9;
     GraphicsOverlay graphicsOverlay_10;
     PointCollection points = new PointCollection(SpatialReference.create(4523));;
@@ -271,6 +276,15 @@ public class MainActivity extends AppCompatActivity {
     private void ParseTrails(){
         trails = LitePal.findAll(Trail.class);
         Log.w(TAG, "ParseTrails: " + trails.size());
+        for (int i = 0; i < trails.size(); i++) {
+            Log.w(TAG, "ParseTrails: " + trails.get(i).getPath());
+            if (trails.get(i).getPath().contains("0.0 0.0"))
+            {
+                Log.w(TAG, "ParseTrails: " + i + "已删除");
+                LitePal.deleteAll(Trail.class, "name = ?", trails.get(i).getName());
+                trails = LitePal.findAll(Trail.class);
+            }
+        }
     }
 
     private void UpdateTrails(){
@@ -293,7 +307,9 @@ public class MainActivity extends AppCompatActivity {
                 }
                 PointCollection points = new PointCollection(SpatialReference.create(4523));
                 for (int j = 0; j < Trails.length - 1; j = j + 2) {
-                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4523));
+                    Log.w(TAG, "updateChoosedPoi, Trails:  " + Trails[j+1] + ", " + Trails[j]);
+                    //Point wgs84Point = new Point(Double.valueOf(Trails[j+1]), Double.valueOf(Trails[j]));
+                    Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j+1]), Double.valueOf(Trails[j]), SpatialReferences.getWgs84()), SpatialReference.create(4523));
                     points.add(wgs84Point);
                 }
                 SimpleLineSymbol lineSymbol = null;
@@ -307,6 +323,18 @@ public class MainActivity extends AppCompatActivity {
                 Graphic g = new Graphic(polyline, lineSymbol);
                 graphics.add(g);
             }
+            /*PointCollection points = new PointCollection(SpatialReference.create(4523));
+            Point wgs84Point = (Point) GeometryEngine.project(new Point(103.6254, 27.7993, SpatialReferences.getWgs84()), SpatialReference.create(4523));
+            points.add(wgs84Point);
+            Point wgs84Point1 = (Point) GeometryEngine.project(new Point(103.6912, 27.9610, SpatialReferences.getWgs84()), SpatialReference.create(4523));
+            points.add(wgs84Point1);
+            Log.w(TAG, "updateChoosedPoi: " + wgs84Point1.getX() + ", " + wgs84Point1.getY());
+            SimpleLineSymbol lineSymbol = null;
+            lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 3);
+            Polyline polyline = new Polyline(points);
+            Graphic g = new Graphic(polyline, lineSymbol);
+            graphics.add(g);
+            Log.w(TAG, "updateChoosedPoi: " + "ok");*/
         }
     }
 
@@ -318,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
             Trails[i] = Float.valueOf(TrailString[i]);
         }
         for (int j = 0; j < Trails.length - 1; j = j + 2) {
-            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j]), Double.valueOf(Trails[j + 1])), SpatialReference.create(4523));
+            Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(Trails[j+1]), Double.valueOf(Trails[j]), SpatialReferences.getWgs84()), SpatialReference.create(4523));
             if (j != 0)
                 Multiline += " ";
             Multiline += wgs84Point.getX() + "," + wgs84Point.getY() + ",0";
@@ -364,13 +392,24 @@ public class MainActivity extends AppCompatActivity {
         recyclerView1.setLayoutManager(layoutManager1);
         //xzqTreeAdapter adapter1 = new xzqTreeAdapter(DataUtil.bubbleSort(LitePal.findAll(xzq.class)));
         xzqs = DataUtil.bubbleSort(LitePal.where("grade = ?", Integer.toString(1)).find(xzq.class));
+        Log.w(TAG, "readXZQ: " + xzqs.size());
         final xzqTreeAdapter adapter1 = new xzqTreeAdapter(xzqs);
         adapter1.setOnItemClickListener(new xzqTreeAdapter.OnRecyclerItemClickListener() {
             @Override
-            public void onItemClick(View view, String xzqdm, final int position) {
-                Intent intent = new Intent(MainActivity.this, chartshow.class);
-                intent.putExtra("xzqdm", xzqdm);
-                startActivity(intent);
+            public void onItemClick(View view, String xzqmc, final int position) {
+                if (XZQLayerName.equals("土地利用变更调查数据2020年") || XZQLayerName.equals("二调地类图斑") || XZQLayerName.equals("土地规划地类") || XZQLayerName.equals("永善县稳定耕地"))
+                {
+                    Intent intent = new Intent(MainActivity.this, chartshow.class);
+                    intent.putExtra("LayerName", XZQLayerName);
+                    intent.putExtra("xzqmc", xzqmc);
+                    startActivity(intent);
+                }else{
+                    Intent intent = new Intent(MainActivity.this, chartshow.class);
+                    intent.putExtra("LayerName", "土地利用变更调查数据2020年");
+                    intent.putExtra("xzqmc", xzqmc);
+                    startActivity(intent);
+                    //Toast.makeText(MainActivity.this, "请使用预设图层进行空间分析", Toast.LENGTH_LONG).show();
+                }
             }
         });
         recyclerView1.setAdapter(adapter1);
@@ -407,9 +446,9 @@ public class MainActivity extends AppCompatActivity {
 
         //popupWindow出现屏幕变为半透明
         WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.alpha = 1f;
+        lp.alpha = 0.5f;
         getWindow().setAttributes(lp);
-        popupWindow.showAtLocation(popView, Gravity.NO_GRAVITY,0,0);
+        popupWindow.showAtLocation(popView, Gravity.NO_GRAVITY, 0,0);
     }
 
     //获取文件读取权限
@@ -480,6 +519,15 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.cancel:
+                Log.w(TAG, "onOptionsItemSelected: ");
+                QueriedFeatureGraphic = null;
+                if (graphicsOverlay_QueriedFeatureLayer != null) {
+                    graphicsOverlay_QueriedFeatureLayer.getGraphics().clear();
+                    //if (graphicsOverlay_QueriedFeatureLayer != null)
+                    mMapView.getGraphicsOverlays().remove(graphicsOverlay_QueriedFeatureLayer);
+                    graphicsOverlay_QueriedFeatureLayer = null;
+                }
+
                 isQurey = DisplayEnum.I_NOQUREY;
                 invalidateOptionsMenu();
                 break;
@@ -496,57 +544,57 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    List<whiteblank> CurrentWhiteBlank = new ArrayList<>();
     private void showPopueWindowForWhiteblank(){
+        CurrentWhiteBlank = new ArrayList<>();
         final View popView = View.inflate(this, R.layout.popupwindow_whiteblank,null);
         isWhiteBlank = true;
-        whiteBlankPts = new ArrayList<>();
         FloatingActionButton back_pop = (FloatingActionButton) popView.findViewById(R.id.back_pop) ;
         back_pop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for (int i = 0; i < graphics.size(); ++i){
-                    graphicsOverlay_10.getGraphics().remove(graphics.get(i));
+
+                if (CurrentWhiteBlank.size() > 0) {
+                    for (int i = 0; i < graphics.size(); ++i) {
+                        graphicsOverlay_10.getGraphics().remove(graphics.get(i));
+                    }
+                    if (graphics.size() != 0) graphics.remove(graphics.size() - 1);
+                    graphicsOverlay_10.getGraphics().clear();
+                    for (int i = 0; i < graphics.size(); ++i) {
+                        graphicsOverlay_10.getGraphics().add(graphics.get(i));
+                    }
+                    mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
+                    mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
+                    //LitePal.deleteAll(whiteblank.class, "", whiteblanks.size());
+                    CurrentWhiteBlank.remove(CurrentWhiteBlank.size()-1);
                 }
-                if (graphics.size() != 0) graphics.remove(graphics.size() - 1);
-                graphicsOverlay_10.getGraphics().clear();
-                for (int i = 0; i < graphics.size(); ++i){
-                    graphicsOverlay_10.getGraphics().add(graphics.get(i));
+                else{
+                    Toast.makeText(MainActivity.this, "已清空当次所画白板", Toast.LENGTH_LONG).show();
                 }
-                mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
-                mMapView.getGraphicsOverlays().add(graphicsOverlay_10);
-                List<whiteblank> whiteblanks = LitePal.findAll(whiteblank.class);
-                LitePal.delete(whiteblank.class, whiteblanks.size());
             }
         });
         FloatingActionButton fff = (FloatingActionButton) popView.findViewById(R.id.colorSeeker_pop);
         fff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ColorPickerDialogBuilder
-                        .with(MainActivity.this)
-                        .setTitle(R.string.ChooseColor)
-                        .initialColor(Color.RED)
-                        .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
-                        .density(12)
-                        .setOnColorSelectedListener(new OnColorSelectedListener() {
-                            @Override
-                            public void onColorSelected(int selectedColor) {
-                            }
-                        })
-                        .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
-                                //changeBackgroundColor(selectedColor);
-                                color_Whiteblank = selectedColor;
-                            }
-                        })
-                        .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                            }
-                        })
+
+                Log.w(TAG, "onClick: " + "取样器已经打开");
+
+                new ColorPickerPopup.Builder(MainActivity.this)
+                        .initialColor(Color.RED) // Set initial color
+                        .enableBrightness(true) // Enable brightness slider or not
+                        .enableAlpha(true) // Enable alpha slider or not
+                        .okTitle("确定")
+                        .cancelTitle("取消")
+                        .showIndicator(true)
+                        .showValue(true)
                         .build()
-                        .show();
+                        .show(new ColorPickerPopup.ColorPickerObserver() {
+                            @Override
+                            public void onColorPicked(int color) {
+                                color_Whiteblank = color;
+                            }
+                        });
             }
         });
 
@@ -554,26 +602,8 @@ public class MainActivity extends AppCompatActivity {
         eraseContent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //try {
-                    //mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
                 Log.w(TAG, "onClick: " + mMapView.getGraphicsOverlays().size());
-                /*points.clear();
-                while (mMapView.getGraphicsOverlays().size() != 0){
-                    for (int i = 0; i < mMapView.getGraphicsOverlays().size(); ++i){
-                        mMapView.getGraphicsOverlays().remove(i);
-                    }
-                }*/
-
-
-                /*graphics.clear();
-                graphicsOverlay_10.getGraphics().clear();
-                mMapView.getGraphicsOverlays().remove(graphicsOverlay_10);
-                mMapView.getGraphicsOverlays().add(graphicsOverlay_10);*/
                 showWhiteBlankDialog();
-                /*}catch (Exception e){
-                    Toast.makeText(MainActivity.this, "已经清空白板", Toast.LENGTH_SHORT).show();
-                    Log.w(TAG, "onClick: " + e.toString());
-                }*/
             }
         });
 
@@ -635,9 +665,9 @@ public class MainActivity extends AppCompatActivity {
                         wb.setObjectID(GetNowTime());
                         wb.setPts(pts);
                         wb.setColor(color_Whiteblank);
-                        wb.save();
+                        //wb.save();
+                        CurrentWhiteBlank.add(wb);
                         points.clear();
-                        //whiteBlankPts.clear();
                         //Toast.makeText(MainActivity.this, "抬起", Toast.LENGTH_SHORT).show();
                         isOk = true;
                         break;
@@ -652,8 +682,6 @@ public class MainActivity extends AppCompatActivity {
                         Point mapPoint = mMapView.screenToLocation(screenPoint);
                         // convert to WGS84 for lat/lon format
                         Point wgs84Point = (Point) GeometryEngine.project(mapPoint, SpatialReference.create(4523));
-                        //whiteBlankPts.add(wgs84Point);
-                        //int size = whiteBlankPts.size();
                         //for (int i = 0; i < size; ++i){
                         points.add(wgs84Point);
                         //}
@@ -697,6 +725,9 @@ public class MainActivity extends AppCompatActivity {
         popwhiteblank.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                for (int i = 0; i < CurrentWhiteBlank.size(); i++) {
+                    CurrentWhiteBlank.get(i).save();
+                }
                 popupWindow.dismiss();
                 whiteBlank_fab.setVisibility(View.VISIBLE);
                 isOpenWhiteBlank = false;
@@ -752,7 +783,7 @@ public class MainActivity extends AppCompatActivity {
             if (ShowPoi)
                 updatePoi();
             if (ShowTrail)
-                UpdateTrails();
+                ParseAndUpdateTrails();
             if (ShowMyTuban)
                 parseAndUpdateMyTuban();
             if (ShowWhiteBlank)
@@ -770,7 +801,7 @@ public class MainActivity extends AppCompatActivity {
             if (ShowPoi)
                 updatePoi();
             if (ShowTrail)
-                UpdateTrails();
+                ParseAndUpdateTrails();
             if (ShowMyTuban)
                 parseAndUpdateMyTuban();
             if (ShowWhiteBlank)
@@ -989,6 +1020,15 @@ public class MainActivity extends AppCompatActivity {
                 AddPOIFunction();
             }
         });
+        FloatingActionButton XZQQueryFAB = findViewById(R.id.XZQQueryFAB);
+        XZQQueryFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RunningFunction = DisplayEnum.FUNC_ANA;
+                RunningAnalyseFunction = DisplayEnum.ANA_XZQ;
+                showPopueWindowForxzqTree();
+            }
+        });
         FloatingActionButton NeedQueryFAB = findViewById(R.id.NeedQueryFAB);
         NeedQueryFAB.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1023,6 +1063,8 @@ public class MainActivity extends AppCompatActivity {
         AreaMessureBT.setVisibility(View.INVISIBLE);*/
         FloatingActionButton AddPOIFAB = findViewById(R.id.AddPOIFAB);
         AddPOIFAB.setVisibility(View.INVISIBLE);
+        FloatingActionButton XZQQueryFAB = findViewById(R.id.XZQQueryFAB);
+        XZQQueryFAB.setVisibility(View.INVISIBLE);
         FloatingActionButton NeedQueryFAB = findViewById(R.id.NeedQueryFAB);
         NeedQueryFAB.setVisibility(View.INVISIBLE);
         FloatingActionButton DistanceMessureFAB = findViewById(R.id.DistanceMessureFAB);
@@ -2011,6 +2053,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    String XZQLayerName = "";
     private void queryTaskFor20200904(final QueryParameters query, final Polygon polygon){
         try {
             if (QueriedLayerIndex != -1 && QueriedLayerIndex < BaseLayerFieldsSheetList.size()) {
@@ -2051,7 +2094,7 @@ public class MainActivity extends AppCompatActivity {
                                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
                                         Map<String, Object> mQuerryString = mFeatureGrafic.getAttributes();
-                                        if (QueriedLayerIndex == 4 || QueriedLayerIndex == 12 || QueriedLayerIndex == 18) {
+                                        if (QueriedLayerIndex == 16 || QueriedLayerIndex == 15 || QueriedLayerIndex == 13 || QueriedLayerIndex == 4) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("DLMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
@@ -2067,26 +2110,55 @@ public class MainActivity extends AppCompatActivity {
                                                     break;
                                                 }
                                             }
-                                        } else if (QueriedLayerIndex == 7) {
-                                            String mkey = "";
+                                        } else if (QueriedLayerIndex == 14) {
                                             for (String key : mQuerryString.keySet()) {
-                                                if (key.equals("CBFMC")) {
-                                                    mkey += String.valueOf(mQuerryString.get(key));
-                                                }
-                                                else if (key.equals("FBFMC")) {
-                                                    mkey += ", " + String.valueOf(mQuerryString.get(key));
+                                                if (key.equals("GHDLMC")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
                                                 }
                                             }
-                                            if (hashMap.containsKey(mkey)) {
-                                                ChartQueryResult cqr = hashMap.get(mkey);
-                                                Polygon p = cqr.getPolygon();
-                                                cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
-                                                cqr.setArea(cqr.getArea() + area);
-                                            } else {
-                                                if (area > 0)
-                                                    hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                        } else if (QueriedLayerIndex == 11) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("ZLDWMC")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
                                             }
-                                        } else if (QueriedLayerIndex == 5 || QueriedLayerIndex == 16) {
+                                        }else if (QueriedLayerIndex == 12) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("GHFQMC")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }else if (QueriedLayerIndex == 10 || QueriedLayerIndex == 2) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("XMMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
@@ -2102,7 +2174,23 @@ public class MainActivity extends AppCompatActivity {
                                                     break;
                                                 }
                                             }
-                                        } else if (QueriedLayerIndex == 6 || QueriedLayerIndex == 7 || QueriedLayerIndex == 8 || QueriedLayerIndex == 9) {
+                                        }else if (QueriedLayerIndex == 9 || QueriedLayerIndex == 7) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("主导功能")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }else if (QueriedLayerIndex == 6 || QueriedLayerIndex == 8) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("ZRBHDMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
@@ -2118,7 +2206,7 @@ public class MainActivity extends AppCompatActivity {
                                                     break;
                                                 }
                                             }
-                                        } else if (QueriedLayerIndex == 17) {
+                                        }else if (QueriedLayerIndex == 1) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("JBXX_XMMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
@@ -2134,7 +2222,55 @@ public class MainActivity extends AppCompatActivity {
                                                     break;
                                                 }
                                             }
-                                        } else if (QueriedLayerIndex == 13) {
+                                        }else if (QueriedLayerIndex == 5) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("ZJRXM")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        } else if (QueriedLayerIndex == 0) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("YDXZ")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }else if (QueriedLayerIndex == 3) {
+                                            for (String key : mQuerryString.keySet()) {
+                                                if (key.equals("PZWH")) {
+                                                    String mkey = String.valueOf(mQuerryString.get(key));
+                                                    if (hashMap.containsKey(mkey)) {
+                                                        ChartQueryResult cqr = hashMap.get(mkey);
+                                                        Polygon p = cqr.getPolygon();
+                                                        cqr.setPolygon((Polygon) GeometryEngine.union(p, geometry));
+                                                        cqr.setArea(cqr.getArea() + area);
+                                                    } else {
+                                                        if (area > 0)
+                                                            hashMap.put(mkey, new ChartQueryResult(mkey, area, (Polygon) geometry));
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        } else if (QueriedLayerIndex == 17 || QueriedLayerIndex == 18) {
                                             for (String key : mQuerryString.keySet()) {
                                                 if (key.equals("XZQMC")) {
                                                     String mkey = String.valueOf(mQuerryString.get(key));
@@ -2232,7 +2368,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "三个点以上才可进行多边形查询，请重试！", Toast.LENGTH_SHORT).show();
             }
             else{
-                removeGraphicsOverlayers();
+                //removeGraphicsOverlayers();
                 Toast.makeText(MainActivity.this, "当前分析出错，请选择正确的面图层进行分析！", Toast.LENGTH_SHORT).show();
                 pieChartView.setVisibility(View.GONE);
                 mCallout.dismiss();
@@ -2726,7 +2862,48 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    private void loadRaster(final String name, final String path) {
+        // create a raster from a local raster file
+        Raster raster = new Raster(path);
+        // create a raster layer
+        final RasterLayer rasterLayer = new RasterLayer(raster);
+        rasterLayer.setVisible(UserLayerOpenStatus.get(path));
+        map.getOperationalLayers().add(rasterLayer);
+        // set viewpoint on the raster
+        rasterLayer.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                if (rasterLayer.getFullExtent() != null)
+                {
+                    mMapView.setViewpointGeometryAsync(rasterLayer.getFullExtent(), 50);
+                    /*List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
+                    LayerFieldsSheetList.add(new LayerFieldsSheet(name, path, FieldNameSheetList));
+                    setRecyclerViewForDynamicChooseFrame();*/
+                    Toast.makeText(MainActivity.this, "TIFF 已经显示", Toast.LENGTH_LONG).show();
+                    //initLayerList(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")));
+                    initLayerList();
+                }
+                else
+                {
+                    Toast.makeText(MainActivity.this, "TIFF 出错", Toast.LENGTH_LONG).show();
+                    LitePal.deleteAll(UserLayer.class, "path = ?", path);
+                    for (int i = 0; i < LayerFieldsSheetList.size(); i++) {
 
+                        String pathss = LayerFieldsSheetList.get(i).getLayerPath();
+                        if (pathss != null && pathss.equals(path))
+                        {
+                            LayerFieldsSheetList.remove(i);
+                            UserLayerOpenStatus.remove(path);
+                            break;
+                        }
+                        setRecyclerViewForDynamicChooseFrame();
+                    }
+                }
+            }
+        });
+    }
+
+    private String CurrentTifPath = "";
     private void loadRaster(final String path) {
         // create a raster from a local raster file
         Raster raster = new Raster(path);
@@ -2801,15 +2978,13 @@ public class MainActivity extends AppCompatActivity {
         // add the map to a map view
         //mMapView.setMap(map);
         // add the raster as an operational layer
-        rasterLayer.setVisible(true);
+        rasterLayer.setVisible(UserLayerOpenStatus.get(path));
         map.getOperationalLayers().add(rasterLayer);
         // set viewpoint on the raster
         rasterLayer.addDoneLoadingListener(new Runnable() {
             @Override
             public void run() {
-                //mMapView.setViewpointGeometryAsync(rasterLayer.getFullExtent(), 50);
                 Toast.makeText(MainActivity.this, "TIFF 已经显示", Toast.LENGTH_LONG).show();
-                Log.w(TAG, "initLayerList: " + map.getOperationalLayers().size());
                 //initLayerList(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")));
                 initLayerList();
             }
@@ -2850,6 +3025,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private HashMap<String, Boolean> UserLayerOpenStatus = new HashMap<String, Boolean>();
     private HashMap<Integer, Integer> FeaturevalueAndColor;
     private void featureLayerShapefile(final String path, final int color) {
         // load the shapefile with a local path
@@ -2912,7 +3088,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         shapefileFeatureLayer.setRenderer(uniqueValueRenderer);
                     }*/
-                    shapefileFeatureLayer.setVisible(true);
+                    shapefileFeatureLayer.setVisible(UserLayerOpenStatus.get(path));
                     // add the feature layer to the map
                     //mMapView.getMap().getOperationalLayers().add(shapefileFeatureLayer);
                     map.getOperationalLayers().add(shapefileFeatureLayer);
@@ -3211,32 +3387,93 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void readXZQ(){
-        File file1 = new File(Environment.getExternalStorageDirectory().toString() + "/临沧市行政区.txt");
-        try {
-            FileInputStream in = new FileInputStream(file1);
-            InputStreamReader reader = new InputStreamReader(in, "utf-8");
-            BufferedReader br = new BufferedReader(reader);
-            String s = null;
-            while ((s = br.readLine()) != null) {
-                s = s.replace("\n", "");
-                String[] strings = s.split(",");
-                xzq xzq = new xzq();
-                xzq.setXzqdm(strings[0]);
-                xzq.setXzqmc(strings[1]);
-                xzq.setSjxzq(strings[2]);
-                xzq.setType(strings[3]);
-                xzq.save();
+    private void readOtherData(){
+        //
+        List<memoryxzqinfo> memoryxzqinfos = LitePal.findAll(memoryxzqinfo.class);
+        /*for (int i = 0; i < memoryxzqinfos.size(); i++) {
+            memoryxzqinfos.
+        }*/
+        if (memoryxzqinfos.size()<64)
+        {
+            LitePal.deleteAll(memoryxzqinfo.class);
+            File file1 = new File(Environment.getExternalStorageDirectory().toString() + "/永善国土/永善县.txt");
+            try {
+                FileInputStream in = new FileInputStream(file1);
+                InputStreamReader reader = new InputStreamReader(in, "utf-8");
+                BufferedReader br = new BufferedReader(reader);
+                String s = null;
+                while ((s = br.readLine()) != null) {
+                    s = s.replace("\n", "");
+                    String[] strings = s.split(";");
+                    double SumArea = 0;
+                    memoryxzqinfo memoryxzqinfo = new memoryxzqinfo();
+                    memoryxzqinfo.setLayername(strings[0]);
+                    memoryxzqinfo.setName(strings[1]);
+                    String keyAndValues = "";
+                    for (int i = 2; i < strings.length; i++) {
+                        double Area = Double.valueOf(strings[i].substring(strings[i].indexOf(",")+1))/666.67;
+                        SumArea += Area;
+                        if (strings.length-1 == i)
+                            keyAndValues += strings[i].substring(0, strings[i].indexOf(",")) + ":" + Area + "," + SumArea;
+                        else
+                            keyAndValues += strings[i].substring(0, strings[i].indexOf(",")) + ":" + Area + ",";
+                    }
+                    Log.w(TAG, "readOtherData: " + strings[0] + ", " + strings[1] + ", " + keyAndValues);
+                    memoryxzqinfo.setKeyAndValues(keyAndValues);
+                    memoryxzqinfo.save();
+                }
+                reader.close();
+                in.close();
+            } catch (UnsupportedEncodingException | FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            reader.close();
-            in.close();
-        } catch (UnsupportedEncodingException | FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            //List<xzq> xzqs = LitePal.findAll(xzq.class);
         }
-        //List<xzq> xzqs = LitePal.findAll(xzq.class);
-        DataUtil.xzqClassify(LitePal.findAll(xzq.class));
+        /*List<xzq> xzqList1 = LitePal.findAll(xzq.class);
+        Log.w(TAG, "readXZQ: " + xzqList.size());
+        for (int i = 0; i < xzqList1.size(); i++) {
+            Log.w(TAG, "readXZQ: " + xzqList1.get(i).getXzqmc() + ", " + xzqList1.get(i).getGrade());
+        }*/
+    }
+
+    private void readXZQ(){
+        //LitePal.deleteAll(xzq.class);
+        List<xzq> xzqList = LitePal.findAll(xzq.class);
+        if (xzqList.size()==0)
+        {
+            File file1 = new File(Environment.getExternalStorageDirectory().toString() + "/永善国土/永善县行政区划树.txt");
+            try {
+                FileInputStream in = new FileInputStream(file1);
+                InputStreamReader reader = new InputStreamReader(in, "utf-8");
+                BufferedReader br = new BufferedReader(reader);
+                String s = null;
+                while ((s = br.readLine()) != null) {
+                    s = s.replace("\n", "");
+                    String[] strings = s.split(",");
+                    xzq xzq = new xzq();
+                    xzq.setXzqdm(strings[0]);
+                    xzq.setXzqmc(strings[1]);
+                    xzq.setSjxzq(strings[2]);
+                    xzq.setType(strings[3]);
+                    xzq.save();
+                }
+                reader.close();
+                in.close();
+            } catch (UnsupportedEncodingException | FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //List<xzq> xzqs = LitePal.findAll(xzq.class);
+            DataUtil.xzqClassify(LitePal.findAll(xzq.class));
+        }
+        /*List<xzq> xzqList1 = LitePal.findAll(xzq.class);
+        Log.w(TAG, "readXZQ: " + xzqList.size());
+        for (int i = 0; i < xzqList1.size(); i++) {
+            Log.w(TAG, "readXZQ: " + xzqList1.get(i).getXzqmc() + ", " + xzqList1.get(i).getGrade());
+        }*/
     }
 
     private void StartMapQueryStatus(){
@@ -3644,6 +3881,7 @@ public class MainActivity extends AppCompatActivity {
                 /*if (!MapQuery) ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()));
                 else ScaleShow.setText("云南省地图院数据分院研发 当前比例  1 : " + String.valueOf((int)mMapView.getMapScale()) + " (图面查询中)");*/
                 ShowScreenBottomTipText();
+                ShowOrRemoveLayer();
             }
         });
         LocHereBT = (FloatingActionButton) findViewById(R.id.LocHere);
@@ -3704,6 +3942,30 @@ public class MainActivity extends AppCompatActivity {
                 //setFAMVisible(false);
             }
         });*/
+    }
+
+    private void ShowOrRemoveLayer(){
+        // TODO 2021/7/26
+        if ((int)mMapView.getMapScale()<50000) {
+            /*
+            for (int i = 0; i < layerList.size(); i++) {
+                String Name = layerList.get(i).getName();
+                if (Name.equals("地名点") || Name.equals("土地利用变更调查数据2020年") || Name.equals("二调地类图斑") || Name.equals("土地规划地类") || Name.equals("永善县稳定耕地") || Name.equals("土地承包经营权") || Name.equals("永久基本农田保护红线")) {
+                    layerList.get(i).setStatus(true);
+                    layers.get(i).getLayer().setVisible(true);
+                }
+            }*/
+        }
+        else{
+            for (int i = 0; i < layerList.size(); i++) {
+                String Name = layerList.get(i).getName();
+                if (Name.equals("地名点") || Name.equals("土地利用变更调查数据2020年") || Name.equals("二调地类图斑") || Name.equals("土地规划地类") || Name.equals("永善县稳定耕地") || Name.equals("土地承包经营权") || Name.equals("永久基本农田保护红线")) {
+                    layerList.get(i).setStatus(false);
+                    layers.get(i).getLayer().setVisible(false);
+                }
+            }
+        }
+        setLeftRecyclerView();
     }
 
     private void OnTap(MotionEvent v){
@@ -4040,7 +4302,8 @@ public class MainActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        LitePal.deleteAll(whiteblank.class);
+                        CurrentWhiteBlank.clear();
+                        //LitePal.deleteAll(whiteblank.class);
                         ShowStandardLayers();
                         Toast.makeText(MainActivity.this, R.string.EraseFinish, Toast.LENGTH_SHORT).show();
                     }
@@ -4082,6 +4345,21 @@ public class MainActivity extends AppCompatActivity {
         normalDialog.show();
     }
 
+    public static MainActivity instance = null;
+    public static final int UPDATE_TEXT = 1;
+    public Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UPDATE_TEXT:
+                    Log.w(TAG, "handleMessage: " );
+                    Log.w(TAG, "handleMessage: " + "当前有" + LitePal.findAll(Trail.class).size() + "条轨迹");
+                    drawGraphicsOverlayer();
+                    ShowScreenBottomTipText();
+            }
+        }
+    };
+
     private void showTrailDialogForStart(final ImageButton TrailBt){
         /* @setIcon 设置对话框图标
          * @setTitle 设置对话框标题
@@ -4098,7 +4376,10 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         getLocation();
                         if (location != null)
+                        {
                             StartRecordingTrail(TrailBt);
+                            Log.w(TAG, "onClick: " + "当前有" + LitePal.findAll(Trail.class).size() + "条轨迹");
+                        }
                     }
                 });
         normalDialog.setNegativeButton("取消",
@@ -4120,8 +4401,6 @@ public class MainActivity extends AppCompatActivity {
         invalidateOptionsMenu();
         Intent stop_mService = new Intent(MainActivity.this, RecordTrail.class);
         stopService(stop_mService);
-        drawGraphicsOverlayer();
-        ShowScreenBottomTipText();
     }
 
     private void StartRecordingTrail(final ImageButton TrailBt){
@@ -4337,6 +4616,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void OutputData(){
+        String SubFolder = Long.toString(System.currentTimeMillis());
         List<POI> pois = LitePal.findAll(POI.class);
         List<String> types = new ArrayList<>();
         Log.w(TAG, "runlzy: " + pois.size());
@@ -4357,15 +4637,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        DataUtil.makeKML();
+        DataUtil.makeKML(MainActivity.this.getResources().getText(R.string.save_folder_name1).toString(), SubFolder);
         Log.w(TAG, "runlzy: " + types.size());
         if (types.size() > 0) {
             for (int i = 0; i < types.size(); ++i) {
-                DataUtil.makeTxt(types.get(i));
+                DataUtil.makeTxt(types.get(i), MainActivity.this.getResources().getText(R.string.save_folder_name1).toString(), SubFolder);
             }
-        }else DataUtil.makeTxt("");
-        DataUtil.makeTxt1();
-        DataUtil.makeWhiteBlankKML();
+        }else DataUtil.makeTxt("", MainActivity.this.getResources().getText(R.string.save_folder_name1).toString(), SubFolder);
+        DataUtil.makeTxt1(MainActivity.this.getResources().getText(R.string.save_folder_name1).toString(), SubFolder);
+        DataUtil.makeWhiteBlankKML(MainActivity.this.getResources().getText(R.string.save_folder_name1).toString(), SubFolder);
         List<File> files = new ArrayList<File>();
         StringBuffer sb = new StringBuffer();
         int size_POI = pois.size();
@@ -4465,12 +4745,12 @@ public class MainActivity extends AppCompatActivity {
             sb.append("<m_color>").append(lines_whiteBlanks.get(i).getColor()).append("</m_color>").append("\n");
         }
         sb.append("</Lines_WhiteBlank>").append("\n");
-        File file = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output");
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + MainActivity.this.getResources().getText(R.string.save_folder_name1) + "/Output" + "/" + SubFolder);
         if (!file.exists() && !file.isDirectory()){
             file.mkdirs();
         }
         final String outputPath = Long.toString(System.currentTimeMillis());
-        File file1 = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".dtdb");
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/" + MainActivity.this.getResources().getText(R.string.save_folder_name1) + "/Output" + "/" + SubFolder,  outputPath + ".dtdb");
         try {
             FileOutputStream of = new FileOutputStream(file1);
             of.write(sb.toString().getBytes());
@@ -4487,7 +4767,7 @@ public class MainActivity extends AppCompatActivity {
                     //toolbar.setTitle("数据打包中");
                 }
             });
-            File zipFile = new File(Environment.getExternalStorageDirectory() + "/TuZhi/" + "/Output",  outputPath + ".zip");
+            File zipFile = new File(Environment.getExternalStorageDirectory() + "/" + MainActivity.this.getResources().getText(R.string.save_folder_name1) + "/Output" + "/" + SubFolder,  outputPath + ".zip");
             //InputStream inputStream = null;
             ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFile));
             zipOut.setComment("test");
@@ -4656,7 +4936,7 @@ public class MainActivity extends AppCompatActivity {
                 if (ShowPoi)
                     updatePoi();
                 if (ShowTrail)
-                    UpdateTrails();
+                    ParseAndUpdateTrails();
                 if (ShowMyTuban)
                     parseAndUpdateMyTuban();
                 if (ShowWhiteBlank)
@@ -4673,7 +4953,19 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean queryUserTB(String path, FeatureLayer featureLayer, final Point clickPoint, final Point mapPoint){
         QueryParameters query = new QueryParameters();
-        query.setGeometry(clickPoint);// 设置空间几何对象
+        query.setGeometry(clickPoint);
+        /*Log.w(TAG, "queryUserTB: " + featureLayer.getFeatureTable().getGeometryType());
+        if (featureLayer.getFeatureTable().getGeometryType() == GeometryType.POLYGON)
+        {
+            Log.w(TAG, "queryUserTB: " + "这是个面！");
+            query.setSpatialRelationship(QueryParameters.SpatialRelationship.WITHIN);// 设置空间几何对象
+        }
+        else if (featureLayer.getFeatureTable().getGeometryType() == GeometryType.POLYLINE)
+        {
+            Log.w(TAG, "queryUserTB: " + "这是根线！");
+            query.setSpatialRelationship(QueryParameters.SpatialRelationship.INTERSECTS);// 设置空间几何对象
+        }*/
+        query.setSpatialRelationship(QueryParameters.SpatialRelationship.WITHIN);
         if (isFileExist(path) & MapQuery) {
             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
             try {
@@ -4694,7 +4986,7 @@ public class MainActivity extends AppCompatActivity {
                                     // TODO 用户添加图层的分析模块
                                     //analyseFunction((Polygon) geometry);
                                     //ChoosedPolygonForUserLayer = (Polygon)geometry;
-                                    AnalyseGeometry(geometry);
+                                    //AnalyseGeometry(geometry);
                                     GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                                     SimpleMarkerSymbol pointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.DIAMOND, Color.RED, 5);
                                     SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
@@ -4731,6 +5023,7 @@ public class MainActivity extends AppCompatActivity {
                                     mCallout.show();
                                     Log.w(TAG, "run: callout" + mCallout.isShowing());
                                     inMap = true;
+                                    break;
                                 }
                             }
                         } catch (Exception e) {
@@ -4788,7 +5081,7 @@ public class MainActivity extends AppCompatActivity {
         final QueryParameters query = new QueryParameters();
         query.setGeometry(GrossGeometry);// 设置空间几何对象
         query.setSpatialRelationship(QueryParameters.SpatialRelationship.INTERSECTS);
-        if (isFileExist(StaticVariableEnum.LCDKYROOTPATH) & MapQuery) {
+        if (isFileExist(StaticVariableEnum.YSZRZYROOTPATH) & MapQuery) {
             //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getOperationalLayers().get(10);
             try {
                 if (QueriedLayerIndex != -1 && QueriedLayerIndex < BaseLayerFieldsSheetList.size()) {
@@ -5177,7 +5470,8 @@ public class MainActivity extends AppCompatActivity {
             Log.w(TAG, "onClick: 2020/12/7 For Update: " + tifList.get(i).getPath());
             layerList.add(new layer(tifList.get(i).getName(), tifList.get(i).getPath(), map.getOperationalLayers().get(i).isVisible()));
         }*/
-        for (int i = size - 1, j = 0; i > -1; i--){
+        List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
+        for (int i = size - 1, j = tifList.size()-1; i > -1; i--){
             Log.w(TAG, "initLayerList: " + map.getOperationalLayers().get(i).getName());
             if (!map.getOperationalLayers().get(i).getName().contains(".tpk")) {
                 //当此图层不是切片图层时
@@ -5188,9 +5482,13 @@ public class MainActivity extends AppCompatActivity {
 
                 if (map.getOperationalLayers().get(i).getName().isEmpty()){
                     //图层名为空
-                    List<UserLayer> tifList = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
-                    layerList.add(new layer(tifList.get(j).getName(), tifList.get(j).getPath(), map.getOperationalLayers().get(i).isVisible()));
-                    j++;
+                    try {
+                        layerList.add(new layer(tifList.get(j).getName(), tifList.get(j).getPath(), map.getOperationalLayers().get(i).isVisible()));
+                    }
+                    catch (Exception e){
+
+                    }
+                    j--;
                 }
                 else
                 {
@@ -5239,6 +5537,7 @@ public class MainActivity extends AppCompatActivity {
         isOK1 = true;
         setLeftRecyclerView();
 
+        Log.w(TAG, "size: " + "done");
     }
 
     private void AddStandardLayer(){
@@ -5385,6 +5684,7 @@ public class MainActivity extends AppCompatActivity {
 
         //读取永善县Geodatabase数据
         readYSGeodatabaseDataForGDB();
+        readYSSimpleQueryGeodatabaseDataForGDB();
     }
 
     private void readDLLCGDBForShape(){
@@ -5490,6 +5790,9 @@ public class MainActivity extends AppCompatActivity {
     // TODO 2020/9/3 读取地矿院GDB方法
     List<LayerFieldsSheet> BaseLayerFieldsSheetList = null;
     List<LayerFieldsSheet> LayerFieldsSheetList = null;
+
+    List<FeatureLayer> SimpleFeatureLayers = new ArrayList<>();
+
     private void readLCOutsideWorkDataForGDB(){
         if (isFileExist(StaticVariableEnum.LCDKYROOTPATH)) {
             final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.LCDKYROOTPATH);
@@ -5586,8 +5889,29 @@ public class MainActivity extends AppCompatActivity {
         } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
     }
 
+    private void readYSSimpleQueryGeodatabaseDataForGDB(){
+        if (isFileExist(StaticVariableEnum.YSSIMPLEZRZYROOTPATH)) {
+            final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.YSSIMPLEZRZYROOTPATH);
+            localGdb.loadAsync();
+            localGdb.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+                    for(int i = 0; i < localGdb.getGeodatabaseFeatureTables().size(); ++i){
+                        FeatureLayer fl = new FeatureLayer(localGdb.getGeodatabaseFeatureTables().get(i));
+                        String name =fl.getName();
+                        if (name.equals("行政区面"))
+                            XZQAreaFeatureLayer = fl;
+                        SimpleFeatureLayers.add(fl);
+                    }
+                }
+            });
+            Log.w(TAG, "run: " + localGdb.getLoadStatus().toString());
+        } else Toast.makeText(MainActivity.this, R.string.QueryError_1, Toast.LENGTH_SHORT).show();
+    }
+
+    public static FeatureLayer XZQAreaFeatureLayer = null;
+
     private void readYSGeodatabaseDataForGDB(){
-        // TODO 2021/7/23 读取永善县新数据
         if (isFileExist(StaticVariableEnum.YSZRZYROOTPATH)) {
             final Geodatabase localGdb = new Geodatabase(StaticVariableEnum.YSZRZYROOTPATH);
             localGdb.loadAsync();
@@ -5737,7 +6061,7 @@ public class MainActivity extends AppCompatActivity {
                                 FieldNameSheetList.add(fns26);
                                 FieldNameSheet fns27 = new FieldNameSheet("TDYT", "土地用途");
                                 FieldNameSheetList.add(fns27);
-                                FieldNameSheet fns28 = new FieldNameSheet("SRR", "售让人");
+                                FieldNameSheet fns28 = new FieldNameSheet("SRR", "受让人");
                                 FieldNameSheetList.add(fns28);
                                 break;
                             case "永善县农转用项目图斑2010至2020":
@@ -5757,6 +6081,18 @@ public class MainActivity extends AppCompatActivity {
                                 FieldNameSheetList.add(fns33);
                                 FieldNameSheet fns34 = new FieldNameSheet("XZQDM", "行政区代码");
                                 FieldNameSheetList.add(fns34);
+                                break;
+                            case "县级行政区面":
+                                FieldNameSheet fns35 = new FieldNameSheet("XZQMC", "行政区名称");
+                                FieldNameSheetList.add(fns35);
+                                FieldNameSheet fns36 = new FieldNameSheet("XZQDM", "行政区代码");
+                                FieldNameSheetList.add(fns36);
+                                break;
+                            case "行政区面":
+                                FieldNameSheet fns37 = new FieldNameSheet("XZQMC", "行政区名称");
+                                FieldNameSheetList.add(fns37);
+                                FieldNameSheet fns38 = new FieldNameSheet("XZQDM", "行政区代码");
+                                FieldNameSheetList.add(fns38);
                                 break;
                         }
                         FeatureLayer fl = new FeatureLayer(localGdb.getGeodatabaseFeatureTable(localGdb.getGeodatabaseFeatureTables().get(i).getTableName()));
@@ -5879,10 +6215,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        instance = this;
         //去除水印
         //ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166");
 
-
+        readOtherData();
+        readXZQ();
         RandomColorCreator();
         // TODO 暂时删除
         queriedMyTuban = new my_tb();
@@ -6001,6 +6339,8 @@ public class MainActivity extends AppCompatActivity {
         InputDataBt.setVisibility(View.VISIBLE);
         FloatingActionButton AddPOIFAB = (FloatingActionButton) findViewById(R.id.AddPOIFAB);
         AddPOIFAB.setVisibility(View.VISIBLE);
+        FloatingActionButton XZQQueryFAB = findViewById(R.id.XZQQueryFAB);
+        XZQQueryFAB.setVisibility(View.VISIBLE);
         FloatingActionButton NeedQueryFAB = findViewById(R.id.NeedQueryFAB);
         NeedQueryFAB.setVisibility(View.VISIBLE);
         FloatingActionButton DistanceMessureFAB = (FloatingActionButton) findViewById(R.id.DistanceMessureFAB);
@@ -6741,14 +7081,14 @@ public class MainActivity extends AppCompatActivity {
 
     public void drawGraphicsOverlayer(){
         initialiseGraphics();
-        if(ShowTrail)
-            ParseAndUpdateTrails();
         if (ShowPoi)
             updatePoi();
         if (ShowWhiteBlank)
             updateWhiteBlank();
         if (ShowMyTuban)
             parseAndUpdateMyTuban();
+        if(ShowTrail)
+            ParseAndUpdateTrails();
         updateGraphicsOverlayer();
     }
 
@@ -6776,6 +7116,7 @@ public class MainActivity extends AppCompatActivity {
                 if (poic.equals(pois.get(j).getPoic())){
                     SimpleMarkerSymbol makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.rgb(0, 255, 255), 20);
                     Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(j).getY()), Double.valueOf(pois.get(j).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4523));
+                    Log.w(TAG, "updateChoosedPoi, POI: " + pois.get(j).getY() + ", " + pois.get(j).getX());
                     Graphic g = new Graphic(wgs84Point, makerSymbol);
                     graphics.add(g);
                     break;
@@ -6959,6 +7300,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 Log.w(TAG, "drawWhiteBlank2: " + pois.get(i).getX() + "; " + pois.get(i).getY());
                 Point wgs84Point = (Point) GeometryEngine.project(new Point(Double.valueOf(pois.get(i).getY()), Double.valueOf(pois.get(i).getX()), SpatialReferences.getWgs84()), SpatialReference.create(4523));
+                Log.w(TAG, "updateChoosedPoi, POI: " + pois.get(i).getY() + ", " + pois.get(i).getX());
                 Log.w(TAG, "drawWhiteBlank2: " + wgs84Point.getX() + "; " + wgs84Point.getY());
                 Graphic g = new Graphic(wgs84Point, makerSymbol);
                 graphics.add(g);
@@ -7059,7 +7401,16 @@ public class MainActivity extends AppCompatActivity {
                             showListPopupWindowforListViewForCXZ(searchView, query);*/
                             double[] coordinate = GetCoordinate(query);
                             if (coordinate == null)
-                                showListPopupWindowforListViewFor20200903(searchView, query);
+                            {
+                                if (query.equals("lzyswds"))
+                                {
+                                    LitePal.deleteAll(memoryxzqinfo.class);
+                                    readOtherData();
+                                    Toast.makeText(MainActivity.this, "预设数据读取完毕", Toast.LENGTH_LONG).show();
+                                }
+                                else
+                                    showListPopupWindowforListViewFor20200903(searchView, query);
+                            }
                             else{
                                 if (coordinate[0]>180)
                                     ResetMapViewForNow(new Point(coordinate[0], coordinate[1], 0, SpatialReference.create(4523)), 2000, 0);
@@ -7739,7 +8090,7 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setAttributes(lp);
         popupWindow.showAtLocation(popView, Gravity.TOP, 0, 50);
     }
-
+    //TODO 简单查询
     public void showListPopupWindowforListViewFor20200903(View view, String searchString) {
         final View popView = View.inflate(this, R.layout.popupwindow_listview,null);
         searchString = searchString.trim();
@@ -7761,7 +8112,7 @@ public class MainActivity extends AppCompatActivity {
         QueryParameters query = new QueryParameters();
         //make search case insensitive
         query.setWhereClause("upper(XZQMC) LIKE '%" + searchString.toUpperCase() + "%'");
-        Log.w(TAG, "searchForState: " );
+        Log.w(TAG, "searchForState: "  + searchString);
         // call select features
         if (mMapView.getMap().getOperationalLayers().size() != 0) {
 
@@ -7772,9 +8123,10 @@ public class MainActivity extends AppCompatActivity {
                 final String string = searchString;
                 AttributeQueryFeatureLayer = null;
                 //FeatureLayer fl;
-                for (int i = 0; i < LayerFieldsSheetList.size(); i++) {
-                    FeatureLayer mfl = LayerFieldsSheetList.get(i).getFeatureLayer();
-                    if (mfl.getName().equals("XZQ"))
+                for (int i = 0; i < SimpleFeatureLayers.size(); i++) {
+                    FeatureLayer mfl = SimpleFeatureLayers.get(i);
+                    Log.w(TAG, "searchForState: " + mfl.getName());
+                    if (mfl.getName().equals("行政区面"))
                     {
                         AttributeQueryFeatureLayer = mfl;
                         break;
@@ -7800,7 +8152,7 @@ public class MainActivity extends AppCompatActivity {
                                     Envelope envelope = feature.getGeometry().getExtent();
                                     //String name = feature.getAttributes().get("图上名称").toString();
                                     String name = feature.getAttributes().get("XZQMC").toString();
-                                    boolean hasSame = false;
+                                    /*boolean hasSame = false;
                                     for (int i = 0; i < queryInfos.size(); ++i) {
                                         if (name.equals(queryInfos.get(i).getName()))
                                         {
@@ -7812,7 +8164,9 @@ public class MainActivity extends AppCompatActivity {
                                         Log.w(TAG, "run: " + "hasSame");
                                         QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
                                         queryInfos.add(queryInfo);
-                                    }
+                                    }*/
+                                    QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
+                                    queryInfos.add(queryInfo);
                                 }
                                 Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
                                 items = new String[queryInfos.size()];
@@ -7833,7 +8187,7 @@ public class MainActivity extends AppCompatActivity {
 
         QueryParameters query1 = new QueryParameters();
         //make search case insensitive
-        query1.setWhereClause("upper(ZLDWMC) LIKE '%" + searchString.toUpperCase() + "%'");
+        query1.setWhereClause("upper(标准名称) LIKE '%" + searchString.toUpperCase() + "%'");
         Log.w(TAG, "searchForState: " );
         // call select features
         if (mMapView.getMap().getOperationalLayers().size() != 0) {
@@ -7845,9 +8199,9 @@ public class MainActivity extends AppCompatActivity {
                 final String string = searchString;
                 AttributeQueryFeatureLayer = null;
                 //FeatureLayer fl;
-                for (int i = 0; i < LayerFieldsSheetList.size(); i++) {
-                    FeatureLayer mfl = LayerFieldsSheetList.get(i).getFeatureLayer();
-                    if (mfl.getName().equals("CJDCQ"))
+                for (int i = 0; i < SimpleFeatureLayers.size(); i++) {
+                    FeatureLayer mfl = SimpleFeatureLayers.get(i);
+                    if (mfl.getName().equals("地名点"))
                     {
                         AttributeQueryFeatureLayer = mfl;
                         break;
@@ -7872,8 +8226,13 @@ public class MainActivity extends AppCompatActivity {
                                     //Log.w(TAG, "run: " + feature.getAttributes().get("图上名称"));
                                     Envelope envelope = feature.getGeometry().getExtent();
                                     //String name = feature.getAttributes().get("图上名称").toString();
-                                    String name = feature.getAttributes().get("ZLDWMC").toString();
-                                    boolean hasSame = false;
+                                    String name = feature.getAttributes().get("标准名称").toString();
+                                    String xzq = feature.getAttributes().get("ZLDWMC").toString();
+                                    String type = feature.getAttributes().get("类别").toString();
+
+                                    QueryInfo queryInfo = new QueryInfo(name + ", " + type + ", " + xzq, feature, envelope);
+                                    queryInfos.add(queryInfo);
+                                    /*boolean hasSame = false;
                                     for (int i = 0; i < queryInfos.size(); ++i) {
                                         if (name.equals(queryInfos.get(i).getName()))
                                             hasSame = true;
@@ -7882,7 +8241,7 @@ public class MainActivity extends AppCompatActivity {
                                         Log.w(TAG, "run: " + "hasSame");
                                         QueryInfo queryInfo = new QueryInfo(name, feature, envelope);
                                         queryInfos.add(queryInfo);
-                                    }
+                                    }*/
                                 }
                                 Log.w(TAG, "showListPopupWindow: " + queryInfos.size());
                                 items = new String[queryInfos.size()];
@@ -7899,8 +8258,17 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onItemClick(View view, String xzqdm, int position) {
                                         //mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope(), 200);
-                                        mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope());
-
+                                        switch (queryInfos.get(position).getFeature().getGeometry().getGeometryType())
+                                        {
+                                            case POINT:
+                                                mMapView.setViewpointCenterAsync((Point)queryInfos.get(position).getFeature().getGeometry(), 2000);
+                                                mMapView.setViewpointRotationAsync(0);
+                                                break;
+                                                default:
+                                                mMapView.setViewpointGeometryAsync(queryInfos.get(position).getEnvelope());
+                                                break;
+                                        }
+                                        ShowQueriedFeature(queryInfos.get(position).getFeature());
                                         //Select the feature
                                         //DMPointFeatureLayer.selectFeature(queryInfos.get(position).getFeature());
                 /*for (int i = 0; i < BaseLayerFieldsSheetList.size(); i++) {
@@ -7972,6 +8340,52 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setAttributes(lp);
         popupWindow.showAtLocation(popView, Gravity.TOP, 0, 50);
     }
+
+    private void ShowQueriedFeature(Feature feature){
+
+        QueriedFeatureGraphic = null;
+        if (graphicsOverlay_QueriedFeatureLayer != null) {
+            graphicsOverlay_QueriedFeatureLayer.getGraphics().clear();
+            //if (graphicsOverlay_QueriedFeatureLayer != null)
+            mMapView.getGraphicsOverlays().remove(graphicsOverlay_QueriedFeatureLayer);
+            graphicsOverlay_QueriedFeatureLayer = null;
+
+        }
+        Log.w(TAG, "ShowQueriedFeature: " + feature.getGeometry().getGeometryType());
+        switch (feature.getGeometry().getGeometryType()){
+            case POINT:
+                SimpleMarkerSymbol makerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.rgb(255, 0, 255), 20);
+                QueriedFeatureGraphic = new Graphic(feature.getGeometry(), makerSymbol);
+                break;
+            case POLYGON:
+                SimpleLineSymbol QueriedlineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 3);
+                SimpleFillSymbol QueriedfillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.VERTICAL, Color.rgb(255, 0, 255), QueriedlineSymbol);
+                QueriedFeatureGraphic = new Graphic(feature.getGeometry(), QueriedfillSymbol);
+                break;
+            case POLYLINE:
+                SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(255, 0, 255), 3);
+                QueriedFeatureGraphic = new Graphic(feature.getGeometry(), lineSymbol);
+                break;
+        }
+
+        graphicsOverlay_QueriedFeatureLayer = new GraphicsOverlay(GraphicsOverlay.RenderingMode.DYNAMIC);
+        try {
+            graphicsOverlay_QueriedFeatureLayer.getGraphics().clear();
+            graphicsOverlay_QueriedFeatureLayer.getGraphics().add(QueriedFeatureGraphic);
+        }catch (ArcGISRuntimeException e){
+            Log.w(TAG, "drawGraphicsOverlayer: " + e.toString());
+        }
+        //if (graphicsOverlay_QueriedFeatureLayer != null)
+            mMapView.getGraphicsOverlays().remove(graphicsOverlay_QueriedFeatureLayer);
+        mMapView.getGraphicsOverlays().add(graphicsOverlay_QueriedFeatureLayer);
+
+        /*SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(0, 255, 255), 3);
+        Polyline polyline = new Polyline(points);
+        Graphic g = new Graphic(polyline, lineSymbol);
+        graphics.add(g);*/
+    }
+    GraphicsOverlay graphicsOverlay_QueriedFeatureLayer;
+    Graphic QueriedFeatureGraphic;
 
     public void showListPopupWindowforListViewForUserLayer(View view, String searchString) {
         queryInfos.clear();
@@ -8251,7 +8665,11 @@ public class MainActivity extends AppCompatActivity {
                         else {
                             map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(false);
                             for (int i = 0; i < layerList.size(); ++i){
-                                if (name.equals(layerList.get(i).getName())) layerList.get(i).setStatus(false);
+                                if (name.equals(layerList.get(i).getName())) {
+                                    layerList.get(i).setStatus(false);
+                                    UserLayerOpenStatus.remove(layerList.get(i).getPath());
+                                    UserLayerOpenStatus.put(layerList.get(i).getPath(), false);
+                                }
                             }
                         }
 
@@ -8286,12 +8704,73 @@ public class MainActivity extends AppCompatActivity {
                             drawGraphicsOverlayer();
                         }
                         else {
-
-                            map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
-                            for (int i = 0; i < layerList.size(); ++i) {
-                                if (name.equals(layerList.get(i).getName()))
-                                    layerList.get(i).setStatus(true);
+                            if (name.equals("土地利用变更调查数据2020年") || name.equals("二调地类图斑") || name.equals("土地规划地类") || name.equals("永善县稳定耕地") || name.equals("土地承包经营权") || name.equals("永久基本农田保护红线"))
+                            {
+                                if (mMapView.getMapScale() < 50000) {
+                                    map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
+                                    for (int i = 0; i < layerList.size(); ++i) {
+                                        if (name.equals(layerList.get(i).getName()))
+                                        {
+                                            layerList.get(i).setStatus(true);
+                                            for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
+                                                LayerFieldsSheet layerFieldsSheet = LayerFieldsSheetList.get(j);
+                                                if (j < BaseLayerFieldsSheetList.size()) {
+                                                    if (layerList.get(i).getName().equals(layerFieldsSheet.getLayerShowName())) {
+                                                        XZQLayerName = LayerFieldsSheetList.get(j).getLayerShowName();
+                                                        DynamicCheckFunction(j);
+                                                        break;
+                                                    }
+                                                }
+                                                else{
+                                                    if (layerList.get(i).getPath().equals(layerFieldsSheet.getLayerPath())) {
+                                                        XZQLayerName = LayerFieldsSheetList.get(j).getLayerShowName();
+                                                        DynamicCheckFunction(j);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    holder.checkBox.setChecked(false);
+                                    Toast.makeText(MainActivity.this, "该数据层要素过多，易导致程序异常，请在1：50000以上比例尺再打开",Toast.LENGTH_LONG).show();
+                                }
                             }
+                            else
+                            {
+                                map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
+                                for (int i = 0; i < layerList.size(); ++i) {
+                                    if (name.equals(layerList.get(i).getName()))
+                                    {
+                                        layerList.get(i).setStatus(true);
+                                        UserLayerOpenStatus.remove(layerList.get(i).getPath());
+                                        UserLayerOpenStatus.put(layerList.get(i).getPath(), true);
+
+                                        for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
+                                            LayerFieldsSheet layerFieldsSheet = LayerFieldsSheetList.get(j);
+                                            if (j < BaseLayerFieldsSheetList.size()) {
+                                                if (layerList.get(i).getName().equals(layerFieldsSheet.getLayerShowName())) {
+                                                    XZQLayerName = LayerFieldsSheetList.get(j).getLayerShowName();
+                                                    DynamicCheckFunction(j);
+                                                    break;
+                                                }
+                                            }
+                                            else{
+                                                if (layerList.get(i).getPath().equals(layerFieldsSheet.getLayerPath())) {
+                                                    XZQLayerName = LayerFieldsSheetList.get(j).getLayerShowName();
+                                                    DynamicCheckFunction(j);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+
                         }
                     }
                     else {
@@ -8348,20 +8827,20 @@ public class MainActivity extends AppCompatActivity {
                                 public void onClick(DialogInterface dialog, int which) {
                                     // TODO 2021/1/18 样式管理器
 
-                                    ColorPickerDialogBuilder
-                                            .with(MainActivity.this)
-                                            .setTitle(R.string.ChooseColor)
-                                            .initialColor(Color.RED)
-                                            .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
-                                            .density(12)
-                                            .setOnColorSelectedListener(new OnColorSelectedListener() {
+                                    Log.w(TAG, "onClick: " + "取样器已经打开");
+
+                                    new ColorPickerPopup.Builder(MainActivity.this)
+                                            .initialColor(Color.RED) // Set initial color
+                                            .enableBrightness(true) // Enable brightness slider or not
+                                            .enableAlpha(true) // Enable alpha slider or not
+                                            .okTitle("确定")
+                                            .cancelTitle("取消")
+                                            .showIndicator(true)
+                                            .showValue(true)
+                                            .build()
+                                            .show(new ColorPickerPopup.ColorPickerObserver() {
                                                 @Override
-                                                public void onColorSelected(int selectedColor) {
-                                                }
-                                            })
-                                            .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
+                                                public void onColorPicked(int color) {
                                                     WindowManager wm = (WindowManager) MainActivity.this
                                                             .getSystemService(Context.WINDOW_SERVICE);
                                                     DisplayMetrics dm = new DisplayMetrics();
@@ -8380,26 +8859,18 @@ public class MainActivity extends AppCompatActivity {
                                                     setRecyclerViewForDynamicChooseFrame();
 
 
-                                                    UserLayer userLayer = new UserLayer(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")), path, UserLayer.SHP_FILE, selectedColor);
+                                                    UserLayer userLayer = new UserLayer(path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf(".")), path, UserLayer.SHP_FILE, color);
 
                                                     //userLayer.setShpColor(selectedColor);
 
                                                     userLayer.save();
-                                                    setRecyclerViewForDynamicChooseFrame();
+                                                    //setRecyclerViewForDynamicChooseFrame(LayerFieldsSheetList.size()-1);
                                                     Log.w(TAG, "useUserLayer: " + LitePal.findAll(UserLayer.class).size());
                                                     //useUserLayer();
                                                     showUserLayer(userLayer);
                                                     ResetMapViewForNow(wgs84Point, MapScale, Rotation);
                                                 }
-                                            })
-                                            .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int which) {
-                                                }
-                                            })
-                                            .build()
-                                            .show();
-
+                                            });
                                 }
                             })
                             .show();
@@ -8414,7 +8885,7 @@ public class MainActivity extends AppCompatActivity {
                                     Log.w(TAG, "onClick: 2020/12/7 For Left: " + name + "; " + path);
 
                                     RemoveUserLayer(name, path);
-                                    setRecyclerViewForDynamicChooseFrame();
+                                    //setRecyclerViewForDynamicChooseFrame();
                                 }
                             })
                             .setNegativeButton("否", new DialogInterface.OnClickListener() {
@@ -8439,6 +8910,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemCheckListener(new DynamicChooseFrameAdapter.OnRecyclerItemCheckListener() {
             @Override
             public void onItemCheckClick(DynamicChooseFrameAdapter.ViewHolder holder, String name, int position) {
+                XZQLayerName = LayerFieldsSheetList.get(position).getLayerShowName();
                 DynamicCheckFunction(position);
             }
         });
@@ -8506,33 +8978,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void RemoveUserLayer(String pName, String path){
         try {
-            Boolean isDeleted = false;
+            Log.w(TAG, "size: " + path);
             if(path.substring(path.length()-4).contains("tif") || path.substring(path.length()-4).contains("TIF")) {
+                List<UserLayer> list = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
+                Log.w(TAG, "run 2020/9/2: " + list.get(0).getName());
+                ;
+                for (int i = 0; i < list.size(); ++i) {
+                    String mpath = list.get(i).getPath();
+                    String name = list.get(i).getName();
 
-                if (!isDeleted) {
-                    List<UserLayer> list = LitePal.where("type = ?", Integer.toString(UserLayer.TIF_FILE)).find(UserLayer.class);
-                    Log.w(TAG, "run 2020/9/2: " + list.get(0).getName());
-                    ;
-                    for (int i = 0; i < list.size(); ++i) {
-                        String mpath = list.get(i).getPath();
-                        String name = list.get(i).getName();
 
-                        if (mpath.equals(path)) {
-                            LitePal.deleteAll(UserLayer.class, "path = ?", mpath);
-                            list.remove(i);
-                            --i;
-                            for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
-                                if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
-                                    LayerFieldsSheetList.remove(j);
-                                    map.getOperationalLayers().clear();
-                                    for (int k = 0; k < BaseMMPKLayer.size(); k++) {
-                                        map.getOperationalLayers().add(BaseMMPKLayer.get(k));
-                                    }
-                                    initLayerList();
-                                }
-                            }
-                            break;
+                    if (mpath.equals(path)) {
+                        LitePal.deleteAll(UserLayer.class, "path = ?", mpath);
+                        list.remove(i);
+                        map.getOperationalLayers().clear();
+                        for (int k = 0; k < BaseMMPKLayer.size(); k++) {
+                            map.getOperationalLayers().add(BaseMMPKLayer.get(k));
                         }
+                        initLayerList();
+                        break;
                     }
                 }
             }
@@ -8542,14 +9006,12 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < list.size(); ++i) {
                     String mpath = list.get(i).getPath();
                     String name = list.get(i).getName();
-                    Log.w(TAG, "RemoveUserLayer: " + mpath + ", " + name + ", " + pName + ", " + path);
 
 
                     if (mpath.equals(path)) {
                         LitePal.deleteAll(UserLayer.class, "path = ?", mpath);
                         list.remove(i);
                         --i;
-                        isDeleted = true;
                         for (int j = 0; j < LayerFieldsSheetList.size(); j++) {
                             if (path.equals(LayerFieldsSheetList.get(j).getLayerPath())) {
                                 LayerFieldsSheetList.remove(j);
@@ -8582,6 +9044,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemCheckListener(new DynamicChooseFrameAdapter.OnRecyclerItemCheckListener() {
             @Override
             public void onItemCheckClick(DynamicChooseFrameAdapter.ViewHolder holder, String name, int position) {
+                XZQLayerName = LayerFieldsSheetList.get(position).getLayerShowName();
                 DynamicCheckFunction1(position);
             }
         });
@@ -8626,6 +9089,7 @@ public class MainActivity extends AppCompatActivity {
     private void DynamicCheckFunction1(int position){
         Log.w(TAG, "onClick: 2020/9/7 : " + position);
         QueriedLayerIndex = position;
+        XZQLayerName = LayerFieldsSheetList.get(QueriedLayerIndex).getLayerShowName();
         if (QueriedLayerIndex >= BaseLayerFieldsSheetList.size())
             isQueryUserLayer = true;
         else
@@ -9024,40 +9488,28 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     if (!hasSameFile) {
-                        //TODO 2021/1/17 Color
-
-                        ColorPickerDialogBuilder
-                                .with(MainActivity.this)
-                                .setTitle(R.string.ChooseColor)
-                                .initialColor(Color.RED)
-                                .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
-                                .density(12)
-                                .setOnColorSelectedListener(new OnColorSelectedListener() {
+                        Log.w(TAG, "onClick: " + "取样器已经打开");
+                        new ColorPickerPopup.Builder(MainActivity.this)
+                                .initialColor(Color.RED) // Set initial color
+                                .enableBrightness(true) // Enable brightness slider or not
+                                .enableAlpha(true) // Enable alpha slider or not
+                                .okTitle("确定")
+                                .cancelTitle("取消")
+                                .showIndicator(true)
+                                .showValue(true)
+                                .build()
+                                .show(new ColorPickerPopup.ColorPickerObserver() {
                                     @Override
-                                    public void onColorSelected(int selectedColor) {
-                                    }
-                                })
-                                .setPositiveButton(R.string.Confirm, new ColorPickerClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
-                                        UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE, selectedColor);
+                                    public void onColorPicked(int color) {
+                                        UserLayer userLayer = new UserLayer(shp_path.substring(shp_path.lastIndexOf("/") + 1, shp_path.lastIndexOf(".")), shp_path, UserLayer.SHP_FILE, color);
                                         userLayer.save();
                                         Log.w(TAG, "useUserLayer: " + LitePal.findAll(UserLayer.class).size());
                                         //useUserLayer();
                                         showUserLayer(userLayer);
                                         Toast.makeText(MainActivity.this, shp_path, Toast.LENGTH_LONG).show();
-                                        ResetMapView();
-
+                                        //ResetMapView();
                                     }
-                                })
-                                .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                    }
-                                })
-                                .build()
-                                .show();
-
+                                });
                     }
                     else
                         Toast.makeText(MainActivity.this, "不能重复添加图层文件！", Toast.LENGTH_LONG).show();
@@ -9076,13 +9528,15 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     if (!hasSameFile1) {
+                        CurrentTifPath = tif_path;
                         Log.w(TAG, "onClick: 2020/12/7 For Input: " + tif_path);
                         UserLayer userLayer1 = new UserLayer(tif_path.substring(tif_path.lastIndexOf("/") + 1, tif_path.lastIndexOf(".")), tif_path, UserLayer.TIF_FILE);
                         userLayer1.save();
                         showUserLayer(userLayer1);
                         //useUserLayer();
                         Toast.makeText(MainActivity.this, tif_path, Toast.LENGTH_LONG).show();
-                        ResetMapView();
+                        //TODO tiffffff
+                        //ResetMapView();
                     }
                     else
                         Toast.makeText(MainActivity.this, "不能重复添加图层文件！", Toast.LENGTH_LONG).show();
@@ -9123,6 +9577,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkUserLayerFile(List<UserLayer> userLayerList){
         try {
+            UserLayerOpenStatus.clear();
             int size = userLayerList.size();
             for (int i = 0 ; i < size; ++i){
                 String path = userLayerList.get(i).getPath();
@@ -9131,6 +9586,9 @@ public class MainActivity extends AppCompatActivity {
                     LitePal.deleteAll(UserLayer.class, "path = ?", path);
                     userLayerList.remove(i);
                     --i;
+                }
+                else{
+                    UserLayerOpenStatus.put(path, false);
                 }
             }
         }catch (Exception e){
@@ -9152,11 +9610,11 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case UserLayer.SHP_FILE:
                         featureLayerShapefile(path, userLayerList.get(i).getShpColor());
+                        List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
+                        LayerFieldsSheetList.add(new LayerFieldsSheet(userLayerList.get(i).getName(), userLayerList.get(i).getPath(), FieldNameSheetList));
+                        setRecyclerViewForDynamicChooseFrame();
                         break;
                 }
-                List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
-                LayerFieldsSheetList.add(new LayerFieldsSheet(userLayerList.get(i).getName(), userLayerList.get(i).getPath(), FieldNameSheetList));
-                setRecyclerViewForDynamicChooseFrame();
             }
         }catch (Exception e){
             Log.w(TAG, "checkUserLayer: " + e.toString());
@@ -9164,7 +9622,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void ResetMapView() {
-        mMapView.setViewpointCenterAsync(new Point(99.6178, 23.9106, 0, SpatialReference.create(4326)), 1500000);
+        mMapView.setViewpointCenterAsync(OriginLocation, 700000);
         mMapView.setViewpointRotationAsync(0);
     }
 
@@ -9175,21 +9633,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void showUserLayer(UserLayer userLayer){
         try {
+            UserLayerOpenStatus.put(userLayer.getPath(), true);
             /*LayerFieldsSheetList.clear();
             LayerFieldsSheetList.addAll(BaseLayerFieldsSheetList);*/
                 String path = userLayer.getPath();
                 //TODO 完成用户图层使用逻辑
                 switch (userLayer.getType()){
                     case UserLayer.TIF_FILE:
-                        loadRaster(path);
+                        loadRaster(userLayer.getName(), path);
+
                         break;
                     case UserLayer.SHP_FILE:
                         featureLayerShapefile(path, userLayer.getShpColor());
+                        List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
+                        LayerFieldsSheetList.add(new LayerFieldsSheet(userLayer.getName(), userLayer.getPath(), FieldNameSheetList));
+                        //setRecyclerViewForDynamicChooseFrame();
+                        XZQLayerName = LayerFieldsSheetList.get(LayerFieldsSheetList.size()-1).getLayerShowName();
+                        DynamicCheckFunction(LayerFieldsSheetList.size()-1);
                         break;
                 }
-            List<FieldNameSheet> FieldNameSheetList = new ArrayList<>();
-            LayerFieldsSheetList.add(new LayerFieldsSheet(userLayer.getName(), userLayer.getPath(), FieldNameSheetList));
-            setRecyclerViewForDynamicChooseFrame();
         }catch (Exception e){
             Log.w(TAG, "checkUserLayer: " + e.toString());
         }
