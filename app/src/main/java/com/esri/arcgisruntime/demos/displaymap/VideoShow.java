@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -618,6 +619,8 @@ public class VideoShow extends AppCompatActivity {
         Log.w(TAG, "takeVideo: " + imageUri.toString());
         Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        MediaScannerConnection.scanFile(VideoShow.this, new String[]{
+                outputImage.getAbsolutePath()},null,null);
         startActivityForResult(intent, FLAG_REQUEST_CAMERA_VIDEO);
     }
 

@@ -13,6 +13,7 @@ import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -1430,6 +1431,8 @@ public class singlepoi extends AppCompatActivity {
         Log.w(TAG, "takeVideo: " + imageUri.toString());
         Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        MediaScannerConnection.scanFile(singlepoi.this, new String[]{
+                outputImage.getAbsolutePath()},null,null);
         startActivityForResult(intent, FLAG_REQUEST_CAMERA_VIDEO);
     }
 
@@ -2110,6 +2113,8 @@ public class singlepoi extends AppCompatActivity {
         }else imageUri = Uri.fromFile(outputImage);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        MediaScannerConnection.scanFile(singlepoi.this, new String[]{
+                outputImage.getAbsolutePath()},null,null);
         startActivityForResult(intent, TAKE_PHOTO);
     }
 
@@ -2165,7 +2170,7 @@ public class singlepoi extends AppCompatActivity {
                     Intent intent = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
                     startActivityForResult(intent, REQUEST_CODE_TAPE);
                 } else {
-                    Toast.makeText(singlepoi.this, "相机权限禁用了。请务必开启相机权限", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(singlepoi.this, "录音权限禁用了。请务必开启相机权限", Toast.LENGTH_SHORT).show();
                 }
                 break;
             default:
@@ -2547,8 +2552,9 @@ public class singlepoi extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         if (POITYPE == 0) {
                             LitePal.deleteAll(POI.class, "poic = ?", POIC);
-                            LitePal.deleteAll(MPHOTO.class, "poic = ?", POIC);
                             LitePal.deleteAll(MTAPE.class, "poic = ?", POIC);
+                            LitePal.deleteAll(MVEDIO.class, "poic = ?", POIC);
+                            LitePal.deleteAll(MPHOTO.class, "poic = ?", POIC);
                         }else if (POITYPE == 1) {
                             LitePal.deleteAll(DMBZ.class, "xh = ?", DMXH);
                         }else if (POITYPE == 2) {

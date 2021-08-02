@@ -3,6 +3,7 @@ package com.esri.arcgisruntime.demos.displaymap;
 import android.content.Context;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,8 @@ import com.esri.arcgisruntime.mapping.ArcGISMap;
 
 import java.util.List;
 
+import static android.content.ContentValues.TAG;
+
 /**
  * Created by 54286 on 2018/3/20.
  */
@@ -20,6 +23,10 @@ import java.util.List;
 public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
     private static final String TAG = "layerAdapter";
     private Context mContext;
+
+    public void setLayerList(List<layer> layerList) {
+        this.layerList = layerList;
+    }
 
     private List<layer> layerList;
 
@@ -96,7 +103,21 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
     }
 
     @Override
+    public void onBindViewHolder(layerAdapter.ViewHolder holder, int position, List<Object> payloads) {
+        //notifyItemChanged(position);
+        Log.w(TAG, "find here" + payloads.toString() );
+        if (payloads.isEmpty()){
+            onBindViewHolder(holder, position);
+        }else {
+            notifyItemChanged(position);
+            //Toast.makeText(mContext, Integer.toString(position), Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "find here" + payloads.toString() );
+        }
+    }
+
+    @Override
     public void onBindViewHolder(final layerAdapter.ViewHolder holder, int position) {
+        Log.w(TAG, "正在重载左侧滑块 " + position);
         layer mlayer = layerList.get(position);
         if (mlayer.isStatus())
             holder.checkBox.setChecked(true);
@@ -117,7 +138,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
                     int position = holder.getAdapterPosition();
                     if (layerList.size() != 0) {
                         layer layer = layerList.get(position);
-                        mOnItemCheck.onItemCheckClick(holder, layer.getName(), position);
+                        mOnItemCheck.onItemCheckClick(holder, layer.getName(), layer.getPath(), position);
                     }
                     //holder.cardView.setCardBackgroundColor(Color.GRAY);
 
@@ -174,7 +195,7 @@ public class layerAdapter extends RecyclerView.Adapter<layerAdapter.ViewHolder>{
         this.mOnItemLong =  listener;
     }
     public interface OnRecyclerItemCheckListener{
-        void onItemCheckClick(layerAdapter.ViewHolder holder, String name, int position);
+        void onItemCheckClick(layerAdapter.ViewHolder holder, String name, String path,  int position);
     }
     public void setOnItemCheckListener(layerAdapter.OnRecyclerItemCheckListener listener){
         //Log.w(TAG, "setOnItemLongClickListener: " );

@@ -8,6 +8,15 @@ public class LayerFieldsSheet {
     private String LayerShowName;
     private String LayerPath;
     private FeatureLayer featureLayer;
+    private Boolean visible;
+
+    public Boolean getVisible() {
+        return visible;
+    }
+
+    public void setVisible(Boolean visible) {
+        this.visible = visible;
+    }
 
     public String getLayerShowName() {
         return LayerShowName;
@@ -54,6 +63,7 @@ public class LayerFieldsSheet {
         this.featureLayer = featureLayer;
         FieldNameSheetList = fieldNameSheetList;
         getLayerShowName(featureLayer.getName());
+        LayerPath = path;
     }
 
     private void getLayerShowName(String name){

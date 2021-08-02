@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
+import android.media.MediaScannerConnection;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Environment;
@@ -18,6 +19,7 @@ import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.PointCollection;
 import com.esri.arcgisruntime.geometry.Polyline;
 import com.esri.arcgisruntime.geometry.SpatialReference;
+import com.esri.arcgisruntime.geometry.SpatialReferences;
 
 import org.litepal.LitePal;
 
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -510,11 +513,11 @@ public class DataUtil {
         sb = sb.append("<Document id=\"" + str + "\">").append("\n");
         sb = sb.append("  ").append("<name>" + str + "</name>").append("\n");
         sb = sb.append("  ").append("<Snippet></Snippet>").append("\n");
-        if (str.equals("WhiteBlank")) sb.append("  ").append("<description><![CDATA[界线]]></description>");
+        if (str.equals("WhiteBlank")) sb.append("  ").append("<description><![CDATA[界线]]></description>").append("\n");
         sb = sb.append("  ").append("<Folder id=\"FeatureLayer0\">").append("\n");
         sb = sb.append("    ").append("<name>" + str + "</name>").append("\n");
         sb = sb.append("    ").append("<Snippet></Snippet>").append("\n");
-        if (str.equals("WhiteBlank")) sb.append("    ").append("<description><![CDATA[界线]]></description>");
+        if (str.equals("WhiteBlank")) sb.append("    ").append("<description><![CDATA[界线]]></description>").append("\n");
         return sb;
     }
 
@@ -833,6 +836,7 @@ public class DataUtil {
         sb = sb.append("poic").append(";");
         sb = sb.append("photo").append(";");
         sb = sb.append("tape").append(";");
+        sb = sb.append("video").append(";");
         sb = sb.append("description").append(";");
         sb = sb.append("time").append(";");
         sb = sb.append("type").append(";");
@@ -1059,7 +1063,8 @@ public class DataUtil {
             sb.append("      ").append("<styleUrl>#IconStyle00</styleUrl>").append("\n");
             sb.append("      ").append("<Point>").append("\n");
             sb.append("        ").append("<altitudeMode>clampToGround</altitudeMode>").append("\n");
-            sb.append("        ").append("<coordinates>").append(" ").append(pois.get(i).getY()).append(",").append(pois.get(i).getX()).append(",").append(0).append("</coordinates>").append("\n");
+            Point cgcs2000Point = (Point)GeometryEngine.project(new Point(pois.get(i).getY(), pois.get(i).getX(), SpatialReferences.getWgs84()), SpatialReference.create(4490));
+            sb.append("        ").append("<coordinates>").append(" ").append(cgcs2000Point.getX()).append(",").append(cgcs2000Point.getY()).append(",").append(0).append("</coordinates>").append("\n");
             sb.append("      ").append("</Point>").append("\n");
             sb.append("    ").append("</Placemark>").append("\n");
             //
@@ -1075,16 +1080,88 @@ public class DataUtil {
             FileOutputStream of = new FileOutputStream(file1);
             of.write(sb.toString().getBytes());
             of.close();
+            MediaScannerConnection.scanFile(MainActivity.instance, new String[]{(file1).getAbsolutePath()},null,null);
         }catch (IOException e){
             Log.w(TAG, e.toString());
         }
         return file1;
     }
 
+    public static void makeTrailKML(String save_folder_name, String SubFolder){
+        final List<Trail> trails = LitePal.findAll(Trail.class);
+        int size_trail = trails.size();
+        List<PointCollection> plist = new ArrayList<>();
+
+        for (int i = 0; i < size_trail; ++i) {
+            PointCollection points = new PointCollection(SpatialReference.create(4490));
+            //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
+            Log.w(TAG, "makeTrailKML: " + trails.get(i).getPath());
+            String[] strings = trails.get(i).getPath().split(" ");
+            Log.w(TAG, "drawWhiteBlank1: " + strings.length);
+            for (int kk = 0; kk < strings.length; kk=kk+2) {
+                com.esri.arcgisruntime.geometry.Point wgs84Point = (com.esri.arcgisruntime.geometry.Point) GeometryEngine.project(new Point(Double.valueOf(strings[kk+1]), Double.valueOf(strings[kk]), SpatialReferences.getWgs84()), SpatialReference.create(4490));
+
+                points.add(wgs84Point.getX(), wgs84Point.getY());
+            }
+            Polyline polyline = (Polyline)GeometryEngine.project(new Polyline(points), SpatialReference.create(4490));
+            PartCollection parts = new PartCollection(polyline.getParts());
+            PointCollection pointCollection = new PointCollection(parts.getPartsAsPoints());
+            plist.add(pointCollection);
+        }
+
+        //PointCollection polyline = GeometryEngine.project(points, SpatialReference.create(4490));
+        StringBuffer sb = new StringBuffer();
+        makeKMLHead(sb, "WhiteBlank");
+        for (int i = 0; i < size_trail; ++i){
+            sb.append("    ").append("<Placemark id=\"ID_").append(plusID(i)).append("\">").append("\n");
+            sb.append("      ").append("<name>").append(i).append("</name>").append("\n");
+            sb.append("      ").append("<Snippet></Snippet>").append("\n");
+            //属性表内容
+            sb = makeCDATAHead(sb);
+            sb = makeCDATATail(sb);
+            sb.append("      ").append("<styleUrl>#LineStyle00</styleUrl>").append("\n");
+            sb.append("      ").append("<MultiGeometry>").append("\n");
+            sb.append("        ").append("<LineString>").append("\n");
+            sb.append("          ").append("<extrude>0</extrude>").append("\n");
+            sb.append("          ").append("<tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode>").append("\n");
+            String[] lines_str = trails.get(i).getPath().split("lzy");
+            Log.w(TAG, "onClick: 2020/9/7: " + trails.get(i).getPath());
+            StringBuffer str = new StringBuffer();
+            /*for (int k = 0; k < lines_str.length; ++k) {
+                str.append(" ").append(lines_str[k]).append(",").append("0");
+            }*/
+            for (int j = 0; j < plist.get(i).size(); j++) {
+                //Point pt = (Point)GeometryEngine.project(new Point(plist.get(i).get(j).getX(), plist.get(i).get(j).getY(), SpatialReference.create(4490)), SpatialReference.create(4490));
+                str.append(" ").append(plist.get(i).get(j).getX()).append(",").append(plist.get(i).get(j).getY()).append(",").append("0");
+            }
+            sb.append("          ").append("<coordinates>").append(str).append("</coordinates>").append("\n");
+            sb.append("        ").append("</LineString>").append("\n");
+            sb.append("      ").append("</MultiGeometry>").append("\n");
+            sb.append("    ").append("</Placemark>").append("\n");
+            //
+        }
+        sb = makeKMLTailForLine(sb);
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output/" + SubFolder);
+        if (!file.exists() && !file.isDirectory()){
+            file.mkdirs();
+        }
+        String outputPath = Long.toString(System.currentTimeMillis());
+        File file1 = new File(Environment.getExternalStorageDirectory() + "/" + save_folder_name + "/Output/" + SubFolder,  "轨迹" + outputPath + ".kml");
+        try {
+            FileOutputStream of = new FileOutputStream(file1);
+            of.write(sb.toString().getBytes());
+            of.close();
+            MediaScannerConnection.scanFile(MainActivity.instance, new String[]{(file1).getAbsolutePath()},null,null);
+        }catch (IOException e){
+            Log.w(TAG, e.toString());
+        }
+    }
+
     public static void makeWhiteBlankKML(String save_folder_name, String SubFolder){
         final List<whiteblank> whiteBlanks = LitePal.findAll(whiteblank.class);
         int size_whiteBlanks = whiteBlanks.size();
         List<PointCollection> plist = new ArrayList<>();
+
         for (int i = 0; i < size_whiteBlanks; ++i) {
             PointCollection points = new PointCollection(SpatialReference.create(4523));
             //geometry_WhiteBlank geometryWhiteBlank = new geometry_WhiteBlank(whiteblanks.get(i).getLineSymbol(), whiteblanks.get(i).getPolyline());
@@ -1125,7 +1202,9 @@ public class DataUtil {
                 str.append(" ").append(lines_str[k]).append(",").append("0");
             }*/
             for (int j = 0; j < plist.get(i).size(); j++) {
-                str.append(" ").append(plist.get(i).get(j).getX()).append(",").append(plist.get(i).get(j).getY()).append(",").append("0");
+                Point pt = (Point)GeometryEngine.project(new Point(plist.get(i).get(j).getX(), plist.get(i).get(j).getY(), SpatialReference.create(4523)), SpatialReference.create(4490));
+                Log.w(TAG, "drawWhiteBlank2: " + plist.get(i).get(j).getX() + ", " + plist.get(i).get(j).getY());
+                str.append(" ").append(pt.getX()).append(",").append(pt.getY()).append(",").append("0");
             }
             sb.append("          ").append("<coordinates>").append(str).append("</coordinates>").append("\n");
             sb.append("        ").append("</LineString>").append("\n");
@@ -1144,6 +1223,7 @@ public class DataUtil {
             FileOutputStream of = new FileOutputStream(file1);
             of.write(sb.toString().getBytes());
             of.close();
+            MediaScannerConnection.scanFile(MainActivity.instance, new String[]{(file1).getAbsolutePath()},null,null);
         }catch (IOException e){
             Log.w(TAG, e.toString());
         }
@@ -1151,6 +1231,7 @@ public class DataUtil {
 
     public static void makeTxt(String type, String ic, String save_folder_name, String SubFolder){
         try {
+            //TODO 导出poi点信息
             final List<POI> pois = LitePal.where("type = ? and ic = ?", type, ic).find(POI.class);
             Log.w(TAG, "makeTxt: " + pois.size());
             StringBuffer sb = new StringBuffer();
@@ -1233,7 +1314,8 @@ public class DataUtil {
                         VideoStr = VideoStr + "|" + mvedios.get(j).getPath().substring(mvedios.get(j).getPath().lastIndexOf("/") + 1, mvedios.get(j).getPath().length());
                 }
                 VideoStr = URLDecoder.decode(VideoStr, "utf-8");
-                sb.append(tapeStr).append(";").append(VideoStr).append(";").append(pois.get(i).getDescription()).append(";").append(pois.get(i).getTime()).append(";").append(pois.get(i).getType()).append(";").append(pois.get(i).getY()).append(";").append(pois.get(i).getX()).append("\n");
+                Point cgcs2000Point = (Point)GeometryEngine.project(new Point(pois.get(i).getY(), pois.get(i).getX(), SpatialReferences.getWgs84()), SpatialReference.create(4490));
+                sb.append(tapeStr).append(";").append(VideoStr).append(";").append(pois.get(i).getDescription()).append(";").append(pois.get(i).getTime()).append(";").append(pois.get(i).getType()).append(";").append(cgcs2000Point.getX()).append(";").append(cgcs2000Point.getY()).append("\n");
             }
             makeFile(sb, type, save_folder_name, SubFolder);
         }catch (UnsupportedEncodingException e){
@@ -1304,6 +1386,8 @@ public class DataUtil {
             FileOutputStream of = new FileOutputStream(file1);
             of.write(sb.toString().getBytes());
             of.close();
+            MediaScannerConnection.scanFile(MainActivity.instance, new String[]{(file).getAbsolutePath()},null,null);
+            MediaScannerConnection.scanFile(MainActivity.instance, new String[]{(file1).getAbsolutePath()},null,null);
         } catch (IOException e) {
             Log.w(TAG, e.toString());
         }

@@ -25,6 +25,10 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
 
     public int CheckedIndex = -1;
 
+    public void setCheckedIndex(int checkedIndex) {
+        CheckedIndex = checkedIndex;
+    }
+
     private DynamicChooseFrameAdapter.OnRecyclerItemLongListener mOnItemLong;
 
     private DynamicChooseFrameAdapter.OnRecyclerItemClickListener mOnItemClick;
@@ -47,6 +51,7 @@ public class DynamicChooseFrameAdapter extends RecyclerView.Adapter<DynamicChoos
     }
     public DynamicChooseFrameAdapter(List<LayerFieldsSheet> list) {
         this.list = list;
+        CheckedIndex = -1;
     }
     public DynamicChooseFrameAdapter(List<LayerFieldsSheet> list, int index) {
         this.list = list;

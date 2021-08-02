@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.media.MediaScannerConnection;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
@@ -157,6 +158,8 @@ public class photoshow extends AppCompatActivity {
         Log.w(TAG, "takePhoto: " + imageUri);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        MediaScannerConnection.scanFile(photoshow.this, new String[]{
+                outputImage.getAbsolutePath()},null,null);
         startActivityForResult(intent, TAKE_PHOTO);
     }
 

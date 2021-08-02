@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">自然资源系统</string>
+    <string name="app_name">永善自然资源辅助决策系统</string>
     <string name="version_info">1.7</string>
     <string name="save_folder_name1">TuZhi</string>
     <string name="action_search">简单查询</string>
