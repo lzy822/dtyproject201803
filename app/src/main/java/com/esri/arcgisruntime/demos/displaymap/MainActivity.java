@@ -4005,6 +4005,7 @@ public class MainActivity extends AppCompatActivity {
                             layers.get(i).getLayer().setVisible(true);
                             QuickDoRightInfos(layerList.get(i).getName(), layerList.get(i).getPath());
                             UncheckOtherLayer(layerList.get(i).getName());
+                            setLeftRecyclerView();
                             break;
                         }
                     }
@@ -4032,11 +4033,12 @@ public class MainActivity extends AppCompatActivity {
                     if (Name.equals("二调地类图斑") || Name.equals("土地规划地类") || Name.equals("永善县稳定耕地") || Name.equals("土地承包经营权") || Name.equals("永久基本农田保护红线"))
                     {
                         for (int j = 0; j < layerList.size(); j++) {
-                            if (layerList.get(j).getName().equals(Name) && HasThisWaitLayer(layerList.get(j).getName()) && layerList.get(j).getPath().equals("")){
+                            if (layerList.get(j).getName().equals(Name) && HasThisWaitLayer(layerList.get(j).getName()) && layerList.get(j).getPath().equals("") && !layerList.get(j).isStatus()){
                                 layerList.get(j).setStatus(true);
                                 layers.get(j).getLayer().setVisible(true);
                                 QuickDoRightInfos(layerList.get(j).getName(), layerList.get(j).getPath());
                                 UncheckOtherLayer(layerList.get(i).getName());
+                                setLeftRecyclerView();
                                 break;
                             }
                         }
@@ -4075,7 +4077,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }*/
         }
-        setLeftRecyclerView();
     }
 
     private void OnTap(MotionEvent v){
@@ -4091,7 +4092,8 @@ public class MainActivity extends AppCompatActivity {
 
             final Point clickPoint = mMapView.screenToLocation(screenPoint);
             if (RunningFunction == DisplayEnum.FUNC_ANA) {
-                if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE) {
+                if (QueryProcessType == DisplayEnum.NOQUERY && DrawType == DisplayEnum.DRAW_NONE)
+                {
                     mCallout = mMapView.getCallout();
                     mCallout.dismiss();
                     pieChartView.setVisibility(View.GONE);
@@ -4101,23 +4103,30 @@ public class MainActivity extends AppCompatActivity {
                     Log.w(TAG, "onSingleTapConfirmed: " + mapPoint);
                     if (!queryPoi(mMapView.locationToScreen(clickPoint)))
                     {
-                        if (!inUserDrawedTuban(clickPoint)) {
+                        if (!inUserDrawedTuban(clickPoint))
+                        {
                             // TODO 2020/9/8 重要图斑查询逻辑！！！
-                            if (!isQueryUserLayer) {
+                            if (!isQueryUserLayer)
+                            {
                                 // 原版
                                 //queryTB(clickPoint, mapPoint);
                                 // 新版
                                 queryTBFor20200903(clickPoint, mapPoint);
                                 //queryUserTB(StaticVariableEnum.DLLCROOTPATH, LCRAFeatureLayer, clickPoint, mapPoint);
-                            } else {
+                            }
+                            else
+                            {
                                 List<UserLayer> userLayerList = LitePal.where("type = ?", Integer.toString(UserLayer.SHP_FILE)).find(UserLayer.class);
                                 int size = userLayerList.size();
-                                for (int i = 0; i < size; ++i) {
+                                for (int i = 0; i < size; ++i)
+                                {
                                     String path = userLayerList.get(i).getPath();
-                                    if (QueriedLayerIndex != -1 && path.equals(LayerFieldsSheetList.get(QueriedLayerIndex).getLayerPath())) {
+                                    if (QueriedLayerIndex != -1 && QueriedLayerIndex < LayerFieldsSheetList.size() && path.equals(LayerFieldsSheetList.get(QueriedLayerIndex).getLayerPath()))
+                                    {
                                         ShapefileFeatureTable shapefileFeatureTable = new ShapefileFeatureTable(path);
                                         pointCollection = null;
-                                        if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint)) {
+                                        if (queryUserTB(path, new FeatureLayer(shapefileFeatureTable), clickPoint, mapPoint))
+                                        {
                                             break;
                                         }
                                     }
@@ -4127,28 +4136,36 @@ public class MainActivity extends AppCompatActivity {
                     }
                     //queryPTuBan(clickPoint, mapPoint);
                     //FeatureLayer featureLayer=(FeatureLayer) mMapView.getMap().getBasemap().getBaseLayers().get(0);
-                } else if (DrawType == DisplayEnum.DRAW_POLYGON) {
+                }
+                else if (DrawType == DisplayEnum.DRAW_POLYGON)
+                {
                     pointCollection.add(GussProject4523);
-                    if (pointCollection.size() == 1) {
+                    if (pointCollection.size() == 1)
+                    {
                         removeGraphicsOverlayers();
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                         SimpleMarkerSymbol lineSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.GREEN, 3);
                         Graphic fillGraphic = new Graphic(new Point(pointCollection.get(0).getX(), pointCollection.get(0).getY(), SpatialReference.create(4523)), lineSymbol);
                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                    } else if (pointCollection.size() == 2) {
+                    }
+                    else if (pointCollection.size() == 2)
+                    {
                         removeGraphicsOverlayers();
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
                         Graphic fillGraphic = new Graphic(new Polyline(pointCollection, SpatialReference.create(4523)), lineSymbol);
                         graphicsOverlay_1.getGraphics().add(fillGraphic);
                         mMapView.getGraphicsOverlays().add(graphicsOverlay_1);
-                    } else if (pointCollection.size() > 2) {
+                    }
+                    else if (pointCollection.size() > 2)
+                    {
                         removeGraphicsOverlayers();
                         GraphicsOverlay graphicsOverlay_1 = new GraphicsOverlay();
                         SimpleLineSymbol lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3);
                         SimpleFillSymbol fillSymbol = new SimpleFillSymbol(SimpleFillSymbol.Style.HORIZONTAL, Color.GREEN, lineSymbol);
-                        switch (RunningAnalyseFunction) {
+                        switch (RunningAnalyseFunction)
+                        {
                             case ANA_NEED:
                                 Graphic fillGraphic = new Graphic(new Polygon(pointCollection, SpatialReference.create(4523)), lineSymbol);
                                 graphicsOverlay_1.getGraphics().add(fillGraphic);
@@ -4161,7 +4178,9 @@ public class MainActivity extends AppCompatActivity {
                                 break;
                         }
                     }
-                } else if (DrawType == DisplayEnum.DRAW_POLYLINE) {
+                }
+                else if (DrawType == DisplayEnum.DRAW_POLYLINE)
+                {
                     pointCollection.add(GussProject4523);
                     if (pointCollection.size() == 1) {
                         removeGraphicsOverlayers();
@@ -4607,29 +4626,6 @@ public class MainActivity extends AppCompatActivity {
 
     //更新坐标信息
     private void updateView(Location location) {
-        /*
-        locError("isFullLocation : " + Boolean.toString(isFullLocation));
-        locError("location : " + location.toString());
-        if(isFullLocation && location != null){
-        Geocoder gc = new Geocoder(MainInterface.this);
-        List<Address> addresses = null;
-        String msg = "";
-        Log.d(TAG, "updateView.location = " + location);
-            try {
-                addresses = gc.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                //Log.d(TAG, "updateView.addresses = " + Integer.toString(addresses.size()));
-                if (addresses.size() > 0) Toast.makeText(MainInterface.this, "当前位置: " + addresses.get(0).getAddressLine(0), Toast.LENGTH_LONG).show();
-                else Toast.makeText(this, "你当前没有连接网络, 无法进行详细地址查询", Toast.LENGTH_LONG).show();
-                Log.d(TAG, "updateView.addresses = " + addresses);
-                if (addresses.size() > 0) {
-                    msg += addresses.get(0).getAdminArea().substring(0,2);
-                    msg += " " + addresses.get(0).getLocality().substring(0,2);
-                    Log.d(TAG, "updateView.addresses = " + msg);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }*/
         if (location != null) {
             m_lat = location.getLatitude();
             m_long = location.getLongitude();
@@ -4752,7 +4748,6 @@ public class MainActivity extends AppCompatActivity {
             sb.append("<photonum>").append(pois.get(i).getPhotonum()).append("</photonum>").append("\n");
             sb.append("<description>").append(pois.get(i).getDescription()).append("</description>").append("\n");
             sb.append("<tapenum>").append(pois.get(i).getTapenum()).append("</tapenum>").append("\n");
-            //Point cgcs2000Point = (Point)GeometryEngine.project(new Point(pois.get(i).getY(), pois.get(i).getX(), SpatialReferences.getWgs84()), SpatialReference.create(4490));
             sb.append("<x>").append(pois.get(i).getX()).append("</x>").append("\n");
             sb.append("<y>").append(pois.get(i).getY()).append("</y>").append("\n");
             sb.append("<time>").append(pois.get(i).getTime()).append("</time>").append("\n");
@@ -8954,6 +8949,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (mMapView.getMapScale() < 50000) {
                                     map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
                                     layerList.get(position).setStatus(true);
+                                    WaitLayerList.clear();
                                     QuickDoRightInfos(layerList.get(position).getName(), layerList.get(position).getPath());
                                     UncheckOtherLayer(layerList.get(position).getName(), adapter);
                                 }
@@ -8971,8 +8967,8 @@ public class MainActivity extends AppCompatActivity {
                             else if (path.equals("") && name.equals("土地利用变更调查数据2020年")){
                                 if (mMapView.getMapScale() < 24000) {
                                     map.getOperationalLayers().get(layers.get(position).getNum()).setVisible(true);
-
                                     layerList.get(position).setStatus(true);
+                                    WaitLayerList.clear();
                                     QuickDoRightInfos(layerList.get(position).getName(), layerList.get(position).getPath());
                                     UncheckOtherLayer(layerList.get(position).getName(), adapter);
                                 }

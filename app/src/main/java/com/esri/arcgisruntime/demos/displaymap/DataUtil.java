@@ -830,7 +830,8 @@ public class DataUtil {
         return file1;
     }
 
-    public static StringBuffer makeTxtHead(StringBuffer sb){
+    public static StringBuffer makeTxtHead(StringBuffer sb)
+    {
         sb = sb.append("ic").append(";");
         sb = sb.append("name").append(";");
         sb = sb.append("poic").append(";");
@@ -845,7 +846,8 @@ public class DataUtil {
         return sb;
     }
 
-    public static StringBuffer makeTxtHead1(StringBuffer sb){
+    public static StringBuffer makeTxtHead1(StringBuffer sb)
+    {
         sb = sb.append("XH").append(";");
         sb = sb.append("DY").append(";");
         sb = sb.append("MC").append(";");
@@ -861,7 +863,8 @@ public class DataUtil {
         return sb;
     }
 
-    public static StringBuffer makeTxtHeadDMP(StringBuffer sb){
+    public static StringBuffer makeTxtHeadDMP(StringBuffer sb)
+    {
         sb = sb.append("xh").append(";");
         sb = sb.append("qydm").append(";");
         sb = sb.append("lbdm").append(";");
@@ -883,11 +886,13 @@ public class DataUtil {
         return sb;
     }
 
-    public static void makeKML(String save_folder_name, String SubFolder){
+    public static void makeKML(String save_folder_name, String SubFolder)
+    {
         List<File> files = new ArrayList<File>();
         //POI
         List<POI> pois = LitePal.findAll(POI.class);
-        if (pois.size() > 0) {
+        if (pois.size() > 0)
+        {
             files.add(makePOIKML(pois, save_folder_name, SubFolder));
         }
         //Trail
@@ -898,11 +903,13 @@ public class DataUtil {
         //if (whiteBlanks.size() > 0) files.add(makeWhiteBlankKML(whiteBlanks));
     }
 
-    public static File makePOIKML(final List<POI> pois, String save_folder_name, String SubFolder){
+    public static File makePOIKML(final List<POI> pois, String save_folder_name, String SubFolder)
+    {
         StringBuffer sb = new StringBuffer();
         int size_POI = pois.size();
         makeKMLHead(sb, "POI");
-        for (int i = 0; i < size_POI; ++i){
+        for (int i = 0; i < size_POI; ++i)
+        {
             sb.append("    ").append("<Placemark id=\"ID_").append(plusID(i)).append("\">").append("\n");
             sb.append("      ").append("<name>").append(pois.get(i).getPoic()).append("</name>").append("\n");
             sb.append("      ").append("<Snippet></Snippet>").append("\n");
@@ -1002,8 +1009,10 @@ public class DataUtil {
             sb.append("\n");
             List<MTAPE> mtapes = LitePal.where("poic = ?", pois.get(i).getPoic()).find(MTAPE.class);
             String tapeStr = "";
-            for (int j = 0; j < mtapes.size(); ++j){
-                if (j == 0){
+            for (int j = 0; j < mtapes.size(); ++j)
+            {
+                if (j == 0)
+                {
                     tapeStr = mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/"), mtapes.get(j).getPath().length());
                 }else tapeStr = tapeStr + "|" + mtapes.get(j).getPath().substring(mtapes.get(j).getPath().lastIndexOf("/") + 1, mtapes.get(j).getPath().length());
             }
