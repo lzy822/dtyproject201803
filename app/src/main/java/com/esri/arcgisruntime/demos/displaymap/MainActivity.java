@@ -7515,6 +7515,9 @@ public class MainActivity extends AppCompatActivity {
                             {
                                 if (query.equals("lzyswds"))
                                 {
+                                    LitePal.deleteAll(my_tb.class);
+                                    LitePal.deleteAll(Trail.class);
+                                    LitePal.deleteAll(whiteblank.class);
                                     LitePal.deleteAll(MTAPE.class);
                                     LitePal.deleteAll(MPHOTO.class);
                                     LitePal.deleteAll(MVEDIO.class);
