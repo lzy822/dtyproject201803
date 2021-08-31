@@ -4496,6 +4496,7 @@ public class MainActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        Log.w(TAG, "onClick: " + "你取消了记录轨迹功能");
                     }
                 });
         // 显示
